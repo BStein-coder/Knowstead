@@ -119,6 +119,7 @@ test('Dienstbetrieb: Protokolldatei, sauberes Beenden per „cli stop“, Prüfu
       ws.once('error', reject);
     });
     ws.on('error', () => {});
+    const disconnected = new Promise<void>((resolve) => ws.once('close', () => resolve()));
 
     const stopBegan = Date.now();
     const stopped = cli('stop', '--timeout', '30');
@@ -126,6 +127,9 @@ test('Dienstbetrieb: Protokolldatei, sauberes Beenden per „cli stop“, Prüfu
     assert.match(stopped.stdout, /Server beendet/);
     assert.equal(await exited, 0, 'geordnet beendet');
     assert.ok(Date.now() - stopBegan < 8_000, `Beenden trotz offener Live-Verbindungen zügig (${Date.now() - stopBegan} ms)`);
+    // „cli stop“ lief synchron – dieser Prozess hat das Ende der Verbindung noch nicht verarbeitet. Erst die
+    // Ereignisschleife laufen lassen (unter Linux kommt das Ende des Serverprozesses sonst vor dem der Verbindung an).
+    await Promise.race([disconnected, new Promise((resolve) => setTimeout(resolve, 5_000))]);
     assert.equal(ws.readyState, WebSocket.CLOSED, 'WebSocket vom Server getrennt');
     assert.equal(fs.existsSync(path.join(dir, 'knowstead.stop')), false, 'Stopp-Datei aufgeräumt');
     assert.match(fs.readFileSync(path.join(dir, 'logs', 'knowstead.log'), 'utf8'), /Stopp-Anforderung empfangen/);

@@ -38,6 +38,12 @@ aktualisierte Abhängigkeiten.
   (`journalctl -u knowstead | grep -i "setup code"`); `grep Einrichtungscode` findet sie wie bisher.
 - Weiterhin deutsch sind `update.sh`, die übrigen Befehle der Kommandozeile und das Serverprotokoll.
 
+### Behoben
+
+- **Datenverzeichnis als Netzfreigabe unter Linux**: Eine Angabe in Windows-Schreibweise
+  (`\\server\freigabe\…`) weist der Installationskern jetzt auch unter Linux ab. Bisher galt sie dort als
+  gewöhnlicher Name – es entstand ein Ordner dieses Namens im Programmordner.
+
 ### Sicherheit
 
 - **Abhängigkeiten aktualisiert** – `npm audit` meldete fünf Hinweise hoher Schwere, drei mittlere und
@@ -65,6 +71,9 @@ aktualisierte Abhängigkeiten.
 - Inhalt der Installationspakete (`server/test/package-contents.test.ts`): Was die mitgelieferten Skripte
   einbinden, steht in der Paketliste; beide Vorlagen der `.env` haben dieselben Einträge. Der Paketbau
   prüft dasselbe am fertigen Paket und startet den Installationskern daraus einmal im Probelauf.
+- Die automatischen Prüfungen auf GitHub bauen die Oberfläche jetzt vor den Tests – der Test des
+  Installationskerns braucht sie. Damit liefen die Server-Tests erstmals unter Linux; zwei Eigenheiten sind
+  behoben (die Netzfreigabe oben und ein Wettlauf im Test zum Beenden mit offener WebSocket-Verbindung).
 
 ### Update-Hinweise
 

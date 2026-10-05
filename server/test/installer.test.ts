@@ -237,6 +237,9 @@ test('Installationskern: Konfiguration, Probestart, Prüfung und erneuter Lauf',
         assert.match(res.stderr, message);
         assert.equal(res.events.at(-1)?.event, 'error');
       }
+      // Die Netzfreigabe in Windows-Schreibweise ist unter Linux ein gewöhnlicher Name – ohne die Prüfung der Angabe
+      // selbst entstünde dort ein Ordner „\\server\freigabe\knowstead“ im Programmordner
+      assert.equal(fs.existsSync(path.join(ROOT, '\\\\server\\freigabe\\knowstead')), false, 'kein Ordner mit dem Namen der Freigabe angelegt');
     });
 
     await t.test('Belegter Port wird vor dem Probestart erkannt', async () => {

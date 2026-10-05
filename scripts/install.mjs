@@ -290,8 +290,11 @@ async function main() {
   } catch {
     fail(L(`Ungültige Adresse: ${baseUrl} (z. B. https://knowstead.firma.de)`, `Invalid address: ${baseUrl} (e.g. https://knowstead.example.com)`));
   }
-  const dataDir = path.resolve(root, option('data-dir') ?? existing.DATA_DIR ?? 'data');
-  if (/^\\\\/.test(dataDir)) {
+  const dataDirGiven = option('data-dir') ?? existing.DATA_DIR ?? 'data';
+  const dataDir = path.resolve(root, dataDirGiven);
+  // Netzfreigabe: am aufgelösten Pfad erkannt (Windows) – oder an der Windows-Schreibweise \\server\freigabe selbst.
+  // Unter Linux ist das ein gewöhnlicher Name; dort entstünde sonst ein Ordner dieses Namens im Programmordner.
+  if (/^\\\\/.test(dataDir) || /^\\\\/.test(dataDirGiven)) {
     fail(L('Das Datenverzeichnis darf nicht auf einer Netzfreigabe liegen (SQLite braucht lokale Dateisperren).', 'The data directory must not be on a network share (SQLite needs local file locks).'));
   }
   const service = option('service') ?? existing.KNOWSTEAD_SERVICE ?? null;
