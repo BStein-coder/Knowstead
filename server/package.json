@@ -21,7 +21,7 @@
     "@node-saml/node-saml": "^5.1.0",
     "diff": "^9.0.0",
     "docx": "^9.7.1",
-    "fastify": "^5.12.4",
+    "fastify": "^5.12.5",
     "fflate": "^0.8.3",
     "ldapts": "^8.2.0",
     "lib0": "^0.2.117",
