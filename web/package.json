@@ -52,7 +52,7 @@
     "pdfjs-dist": "^6.3.289",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-router": "^7.18.3",
+    "react-router": "^8.4.0",
     "y-protocols": "^1.0.7",
     "y-websocket": "^3.1.0",
     "yjs": "^13.6.32"
