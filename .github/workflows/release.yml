@@ -1,0 +1,69 @@
+# Release: Bei einem Tag „v2.0.0“ Installationspakete für Windows und Linux bauen, prüfen und als
+# GitHub-Release mit den Versionshinweisen aus CHANGELOG.md veröffentlichen.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Installationspaket (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Tag und Version in package.json stimmen überein
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME passt nicht zu package.json ($version)"; exit 1; }
+          node scripts/release-notes.mjs "$version" > /dev/null
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Paket bauen
+        run: node scripts/package.mjs --out release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paket-${{ matrix.os }}
+          path: |
+            release/*.zip
+            release/*.tar.gz
+            release/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: GitHub-Release
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: pakete
+          merge-multiple: true
+      - name: Versionshinweise aus CHANGELOG.md
+        run: node scripts/release-notes.mjs "${GITHUB_REF_NAME#v}" > notes.md
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" pakete/* --title "Knowstead ${GITHUB_REF_NAME#v}" --notes-file notes.md --verify-tag

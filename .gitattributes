@@ -1,0 +1,20 @@
+# Einheitliche Zeilenenden: LF im Repository und in der Arbeitskopie.
+# Windows-Batchdateien brauchen CRLF (cmd.exe findet Sprungmarken sonst nicht zuverlässig).
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.pdf binary
+*.docx binary
+*.zip binary
+*.db binary

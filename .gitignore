@@ -1,0 +1,29 @@
+# Abhängigkeiten
+node_modules/
+
+# Laufzeitdaten (Datenbank, Anhänge, Sicherungen, Serverschlüssel)
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Build-Ergebnisse
+web/dist/
+release/
+.knowstead-package.json
+.doku-package.json
+*.tsbuildinfo
+
+# Konfiguration mit Zugangsdaten
+.env
+.env.*
+!.env.example
+
+# Werkzeuge und Editoren
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
+*.log
+npm-debug.log*

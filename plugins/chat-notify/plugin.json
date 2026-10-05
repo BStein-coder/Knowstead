@@ -1,0 +1,63 @@
+{
+  "id": "chat-notify",
+  "name": "Chat-Benachrichtigungen",
+  "version": "1.0.0",
+  "description": "Schickt ausgewählte Ereignisse als Nachricht an Microsoft Teams, Slack, Mattermost oder Discord.",
+  "author": "Knowstead",
+  "server": "server.ts",
+  "translations": {
+    "en": {
+      "name": "Chat notifications",
+      "description": "Sends selected events as messages to Microsoft Teams, Slack, Mattermost or Discord.",
+      "settings": {
+        "url": { "label": "Webhook URL", "help": "Incoming webhook of the chat system. Stored encrypted." },
+        "format": { "label": "Format", "options": { "json": "Raw JSON (custom receiver)" } },
+        "events": { "label": "Events", "help": "Comma-separated. `*` for all, `page.*` for all page events." },
+        "spaces": { "label": "Only these spaces", "help": "Comma-separated space keys, e.g. HANDBOOK, TEAM. Empty = all spaces." },
+        "includeExcerpt": { "label": "Include a short excerpt of the content" }
+      }
+    }
+  },
+  "settings": [
+    {
+      "key": "url",
+      "label": "Webhook-URL",
+      "type": "password",
+      "required": true,
+      "help": "Eingehender Webhook des Chat-Systems. Wird verschlüsselt gespeichert."
+    },
+    {
+      "key": "format",
+      "label": "Format",
+      "type": "select",
+      "default": "teams",
+      "options": [
+        { "value": "teams", "label": "Microsoft Teams" },
+        { "value": "slack", "label": "Slack" },
+        { "value": "mattermost", "label": "Mattermost" },
+        { "value": "discord", "label": "Discord" },
+        { "value": "json", "label": "Rohes JSON (eigener Empfänger)" }
+      ]
+    },
+    {
+      "key": "events",
+      "label": "Ereignisse",
+      "type": "text",
+      "default": "page.created, page.updated, comment.created",
+      "help": "Kommagetrennt. `*` für alle, `page.*` für alle Seitenereignisse."
+    },
+    {
+      "key": "spaces",
+      "label": "Nur diese Bereiche",
+      "type": "text",
+      "default": "",
+      "help": "Kommagetrennte Bereichsschlüssel, z. B. HANDBUCH, TEAM. Leer = alle Bereiche."
+    },
+    {
+      "key": "includeExcerpt",
+      "label": "Kurzfassung des Inhalts mitsenden",
+      "type": "boolean",
+      "default": true
+    }
+  ]
+}

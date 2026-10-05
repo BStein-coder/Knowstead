@@ -1,0 +1,9 @@
+node_modules
+web/dist
+data
+.git
+.env
+*.log
+.vscode
+.idea
+e2e

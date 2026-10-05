@@ -1,0 +1,743 @@
+/* ------------------------------------------------------------------
+ * Moderne Oberflächenschicht.
+ *
+ * Wird als letztes Stylesheet geladen und verfeinert die Grundgestaltung:
+ * Glas-Ebenen für Navigation und Dialoge, weiche Radien, ein dezenter
+ * Farbschleier im Hintergrund, Verlaufsakzente und ruhige Bewegung.
+ * Alles hängt an den Token aus tokens.css – Farbwechsel wirken sofort.
+ * ------------------------------------------------------------------ */
+
+/* ------------------------------ Grundfläche ------------------------------ */
+
+body {
+  background: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.app {
+  background: var(--bg-app);
+  position: relative;
+  isolation: isolate;
+}
+
+/* Farbschleier: zwei weiche Lichtflecken hinter der gesamten Anwendung. */
+.app::before {
+  content: '';
+  position: fixed;
+  inset: -20vh -10vw auto;
+  height: 70vh;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 55% at 18% 0%, var(--aura-1), transparent 70%),
+    radial-gradient(40% 50% at 82% 6%, var(--aura-2), transparent 72%),
+    radial-gradient(36% 44% at 50% 28%, var(--aura-3), transparent 78%);
+  filter: blur(6px);
+  opacity: 0.9;
+}
+
+/* Kopfleiste, Seitenleiste und Seitenbaum: siehe shell.css (Navigation als schwebende Glasebenen). */
+
+.space-icon,
+.space-icon-lg {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ------------------------------ Schaltflächen ------------------------------ */
+
+.btn {
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+.btn-primary {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  box-shadow: var(--accent-glow);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  background: var(--accent-gradient);
+}
+
+.btn-danger {
+  border-radius: var(--radius-pill);
+}
+
+.icon-btn {
+  border-radius: var(--radius);
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.icon-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* ------------------------------ Eingaben ------------------------------ */
+
+.input,
+.textarea,
+.select,
+.tag-input {
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    background var(--dur-fast) var(--ease);
+}
+
+.chip {
+  border-radius: var(--radius-pill);
+}
+
+/* ------------------------------ Flächen ------------------------------ */
+
+.card,
+.panel,
+.modal,
+.popover,
+.menu {
+  border-radius: var(--radius-lg);
+}
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
+  transition:
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.card.interactive:hover,
+a.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--accent-border);
+}
+
+.menu,
+.popover {
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.menu-item {
+  border-radius: var(--radius-sm);
+}
+
+.modal {
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+  animation: modal-in var(--dur-slow) var(--ease-spring);
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(3px);
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------ Typografie ------------------------------ */
+
+h1,
+h2,
+h3,
+.page-header-title,
+.doc h1,
+.doc h2,
+.doc h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.018em;
+}
+
+.page-header-title {
+  font-weight: 700;
+}
+
+.doc h1 {
+  letter-spacing: -0.025em;
+}
+
+/* ------------------------------ Seiteninhalt ------------------------------ */
+
+.page-title-input,
+.doc h1:first-child {
+  letter-spacing: -0.025em;
+}
+
+.badge {
+  border-radius: var(--radius-pill);
+}
+
+.avatar {
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+/* Tabellen und Codeblöcke bekommen weichere Kanten. */
+.doc table,
+.doc pre,
+.macro,
+.callout {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.doc pre {
+  box-shadow: var(--shadow-sm);
+}
+
+/* ------------------------------ Galerie ------------------------------ */
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(var(--gallery-columns, 3), minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0.5em 0;
+}
+
+.gallery-masonry {
+  display: block;
+  column-count: var(--gallery-columns, 3);
+  column-gap: 0.6rem;
+}
+
+.gallery-masonry .gallery-item {
+  break-inside: avoid;
+  margin-bottom: 0.6rem;
+}
+
+.gallery-strip {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.35rem;
+}
+
+.gallery-strip .gallery-item {
+  flex: 0 0 clamp(180px, 32%, 320px);
+  scroll-snap-align: start;
+}
+
+.gallery-item {
+  margin: 0;
+}
+
+.gallery-thumb {
+  display: block;
+  width: 100%;
+  position: relative;
+  padding: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-soft);
+  cursor: zoom-in;
+  transition:
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.gallery-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.gallery-masonry .gallery-thumb img {
+  aspect-ratio: auto;
+}
+
+.gallery-thumb:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--accent-border);
+}
+
+.gallery-zoom {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.gallery-thumb:hover .gallery-zoom {
+  opacity: 1;
+}
+
+.gallery-item figcaption {
+  margin-top: 0.3rem;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: rgba(6, 8, 14, 0.86);
+  backdrop-filter: blur(8px);
+  animation: fade-in var(--dur) var(--ease);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  color: #fff;
+}
+
+.lightbox-bar .icon-btn {
+  color: #fff;
+}
+
+.lightbox-bar .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.lightbox-count {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.lightbox-figure {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  gap: 0.75rem;
+  padding: 0 3.5rem 2rem;
+  min-height: 0;
+}
+
+.lightbox-figure img {
+  max-width: min(94vw, 1400px);
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9);
+}
+
+.lightbox-figure figcaption {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13.5px;
+  text-align: center;
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    background var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: translateY(-1px);
+}
+
+.lightbox-nav.prev {
+  left: 1rem;
+}
+
+.lightbox-nav.next {
+  right: 1rem;
+}
+
+/* Galerie-Editor */
+.gallery-editor-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.gallery-editor-row {
+  display: grid;
+  grid-template-columns: auto 56px 1fr auto auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+}
+
+.gallery-editor-row.dragging {
+  opacity: 0.5;
+}
+
+.gallery-editor-row img {
+  width: 56px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.gallery-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 0.5rem;
+}
+
+.gallery-picker-item {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: none;
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.gallery-picker-item:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.gallery-picker-item.used {
+  opacity: 0.45;
+}
+
+.gallery-picker-item img {
+  display: block;
+  width: 100%;
+  height: 70px;
+  object-fit: cover;
+}
+
+/* ------------------------------ Prüfung (Review) ------------------------------ */
+
+.review-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg);
+  background: var(--accent-softer);
+  font-size: 13.5px;
+}
+
+.review-banner[data-status='rejected'] {
+  border-color: var(--danger-border);
+  background: var(--danger-soft);
+}
+
+.review-banner[data-status='approved'] {
+  border-color: var(--success-border);
+  background: var(--success-soft);
+}
+
+.review-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+}
+
+.review-card + .review-card {
+  margin-top: 0.6rem;
+}
+
+.review-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.review-card-title {
+  font-weight: 650;
+  color: var(--text-strong);
+}
+
+/* ------------------------------ Onboarding ------------------------------ */
+
+.onboarding-card {
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(180deg, var(--accent-softer), transparent 60%),
+    var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem 1.1rem;
+}
+
+.onboarding-tasks {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.onboarding-task {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.onboarding-task:hover {
+  background: var(--bg-hover);
+}
+
+.onboarding-task .check {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border-strong);
+  color: transparent;
+}
+
+.onboarding-task.done .check {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  color: #fff;
+}
+
+.onboarding-task.done .task-label {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.onboarding-progress {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-muted);
+  overflow: hidden;
+}
+
+.onboarding-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-gradient);
+  transition: width var(--dur-slow) var(--ease);
+}
+
+/* Rundgang */
+.tour-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  background: rgba(6, 8, 14, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.tour-pop {
+  position: fixed;
+  z-index: 181;
+  width: min(360px, calc(100vw - 2rem));
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-lg);
+  animation: modal-in var(--dur-slow) var(--ease-spring);
+}
+
+.tour-spot {
+  position: fixed;
+  z-index: 180;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 0 0 3px var(--accent),
+    0 0 0 9999px rgba(6, 8, 14, 0.55);
+  pointer-events: none;
+  transition: all var(--dur-slow) var(--ease);
+}
+
+.tour-steps {
+  display: flex;
+  gap: 4px;
+}
+
+.tour-steps span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+
+.tour-steps span.active {
+  width: 18px;
+  background: var(--accent);
+}
+
+/* ------------------------------ Kategorien in der Navigation ------------------------------ */
+
+.space-group-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1.2rem 0 0.5rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.space-group-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-soft);
+}
+
+/* Hinweise auf der Abschlussseite der Einrichtung */
+.setup-hints {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.setup-hints li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 0.6rem;
+  align-items: start;
+  font-size: 13.5px;
+  color: var(--text-soft);
+}
+
+.setup-hints svg {
+  margin-top: 2px;
+  color: var(--accent-fg);
+}
+
+/* Einstiegsliste: Aufgabentext als Knopf */
+.onboarding-task .task-label {
+  display: grid;
+  gap: 0.1rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.onboarding-task .task-label:hover strong {
+  color: var(--accent-fg);
+}
+
+/* ------------------------------ Editor-Menüband ------------------------------ */
+
+.editor-topbar {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.toolbar {
+  gap: 3px;
+  padding-inline: 1rem;
+}
+
+.toolbar-sep {
+  height: 18px;
+  background: var(--border-soft);
+}
+
+/* „Einfügen“ ist der Einstieg zu allen Makros – deshalb hervorgehoben. */
+.toolbar-btn-text {
+  border-radius: var(--radius-pill);
+  padding-inline: 0.7rem;
+  color: var(--accent-fg);
+  font-weight: 600;
+  background: var(--accent-softer);
+}
+
+.toolbar-btn-text:hover {
+  background: var(--accent-soft);
+}
+
+.toolbar-select {
+  border-radius: var(--radius-pill);
+}

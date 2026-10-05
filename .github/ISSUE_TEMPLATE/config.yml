@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Sicherheitslücke melden
+    url: https://github.com/BStein-coder/Knowstead/security/advisories/new
+    about: Bitte vertraulich über „Security Advisories“ melden – nicht als öffentliches Issue.
+  - name: Installationsanleitung
+    url: https://github.com/BStein-coder/Knowstead/blob/main/docs/INSTALLATION.md
+    about: Viele Fragen zu Dienst, HTTPS, Proxy, E-Mail und Active Directory beantwortet die Anleitung.

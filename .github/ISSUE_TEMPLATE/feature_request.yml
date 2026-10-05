@@ -1,0 +1,26 @@
+name: Idee oder Wunsch
+description: Eine neue Funktion oder Verbesserung vorschlagen.
+labels: [wunsch]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem soll gelöst werden?
+      description: Beschreibe die Situation aus Sicht der Personen, die Knowstead nutzen.
+    validations:
+      required: true
+  - type: textarea
+    id: vorschlag
+    attributes:
+      label: Vorschlag
+      description: Wie könnte es aussehen? Gibt es Vorbilder in anderen Systemen?
+  - type: textarea
+    id: alternativen
+    attributes:
+      label: Alternativen und Umgehungen
+  - type: checkboxes
+    id: mitarbeit
+    attributes:
+      label: Mitarbeit
+      options:
+        - label: Ich würde bei der Umsetzung helfen (Pull Request, Tests oder Dokumentation).

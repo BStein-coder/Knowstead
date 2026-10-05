@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Knowstead</title>
+    <style>
+      /* Startanzeige bis zum ersten Rendern (React ersetzt den Inhalt von #root). Sie erscheint verzögert, damit
+         sie beim normalen Laden nicht aufblitzt, und hilft, wenn Programmdateien nicht laden (Proxy, Filter, alter Browser). */
+      .boot { min-height: 100vh; box-sizing: border-box; display: grid; place-content: center; gap: 0.75rem; padding: 1.5rem; text-align: center; font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: CanvasText; background: Canvas; }
+      .boot > p { margin: 0 auto; max-width: 36rem; opacity: 0; animation: boot-show 0s 1.5s forwards; }
+      .boot > .boot-slow { animation-delay: 8s; }
+      @keyframes boot-show { to { opacity: 1; } }
+    </style>
+    <noscript><style>.boot { display: none; }</style></noscript>
+  </head>
+  <body>
+    <div id="root">
+      <div class="boot" role="status">
+        <p>Knowstead wird geladen …</p>
+        <p class="boot-slow">
+          Das dauert ungewöhnlich lange. Bitte die Seite <a href="">neu laden</a>. Bleibt sie leer, blockiert eventuell ein Proxy oder Filter die Programmdateien
+          oder der Browser ist veraltet – dann bitte die Administration informieren.
+          <span lang="en">Loading takes unusually long – please reload the page.</span>
+        </p>
+      </div>
+      <noscript>
+        <p style="padding: 1.5rem; font-family: system-ui, sans-serif">Knowstead benötigt JavaScript. Bitte JavaScript im Browser erlauben. · Knowstead requires JavaScript.</p>
+      </noscript>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

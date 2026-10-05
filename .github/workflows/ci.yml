@@ -1,0 +1,105 @@
+# Prüfungen für jeden Push und Pull Request: Lint, Typen, Server-Tests, Build und Oberflächentests.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, Typen, Tests, Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Sicherheitshinweise der Abhängigkeiten
+        run: npm audit --omit=dev --audit-level=high
+
+  installers:
+    name: Installationsassistenten (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: Windows – Syntax, Oberfläche im Selbsttest, Probelauf
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          foreach ($file in 'scripts/install/windows/Install-Knowstead.ps1', 'scripts/install/windows/Knowstead-Dienst.ps1') {
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$null, [ref]$errors)
+            if ($errors) { $errors | Out-String | Write-Error; exit 1 }
+          }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install/windows/Install-Knowstead.ps1 -SelfTest "$env:RUNNER_TEMP/assistent"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if ((Get-ChildItem "$env:RUNNER_TEMP/assistent/*.png").Count -ne 8) { Write-Error 'Nicht alle Seiten des Assistenten gerendert'; exit 1 }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install/windows/Install-Knowstead.ps1 -Unattended -WhatIf -NoElevate -SkipPrepare -NoBrowser -DataDir "$env:RUNNER_TEMP\KnowsteadDaten" -EnvPath "$env:RUNNER_TEMP\.env"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Linux – Syntax, shellcheck, Probelauf
+        if: runner.os == 'Linux'
+        run: |
+          bash -n install.sh update.sh start.sh
+          shellcheck -S error install.sh update.sh start.sh
+          bash install.sh --unattended --dry-run --skip-prepare --data-dir /var/lib/knowstead --base-url https://knowstead.example.com
+      - name: Linux – update.sh mit Root-Rechten an einer nachgestellten Installation
+        if: runner.os == 'Linux'
+        run: sudo bash server/test/linux/update-root-check.sh
+
+  e2e:
+    name: Oberflächentests (Playwright)
+    runs-on: ubuntu-latest
+    needs: check
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            e2e/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
+        working-directory: e2e
+      - run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - run: npm run test:e2e
+        env:
+          CI: 'true'
+      - name: Bericht aufbewahren
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/reports/html
+            e2e/reports/results.json
+          retention-days: 14

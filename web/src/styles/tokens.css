@@ -1,0 +1,329 @@
+/* ------------------------------------------------------------------
+ * Design-Token (Farben, Abstände, Schriften, Bewegung) – hell & dunkel.
+ *
+ * Gestaltungsidee: ruhige, flächige Oberflächen mit weichen Radien,
+ * Glas-Ebenen (Backdrop-Blur) für Navigation und Dialoge, ein Farbverlauf
+ * als Akzent und sehr zurückhaltende Schatten. Eigene Themes: einfach diese
+ * Variablen überschreiben (z. B. in einem Plugin-Stylesheet).
+ * ------------------------------------------------------------------ */
+:root {
+  --accent: #2563eb;
+  --accent-hover: color-mix(in srgb, var(--accent) 86%, #000);
+  --accent-soft: color-mix(in srgb, var(--accent) 11%, transparent);
+  --accent-softer: color-mix(in srgb, var(--accent) 6%, transparent);
+  --accent-border: color-mix(in srgb, var(--accent) 35%, transparent);
+  --accent-text: #ffffff;
+  /* Zweite Farbe des Verlaufs: leicht gedreht, ergibt den „KI“-Schimmer. */
+  --accent-2: color-mix(in srgb, var(--accent) 62%, #8b5cf6);
+  --accent-3: color-mix(in srgb, var(--accent) 55%, #06b6d4);
+  --accent-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 55%, var(--accent-3) 100%);
+  --accent-glow: 0 8px 24px -8px color-mix(in srgb, var(--accent) 55%, transparent);
+
+  --bg: #ffffff;
+  --bg-app: #f4f6fa;
+  --bg-sidebar: rgba(255, 255, 255, 0.72);
+  --bg-soft: #f2f4f8;
+  --bg-muted: #e6eaf1;
+  --bg-hover: rgba(15, 23, 42, 0.05);
+  --bg-active: color-mix(in srgb, var(--accent) 10%, transparent);
+  --bg-elevated: #ffffff;
+  --bg-code: #f1f3f8;
+  --bg-code-block: #f8f9fc;
+  --bg-input: #ffffff;
+  --bg-overlay: rgba(15, 23, 42, 0.38);
+
+  /* Glas-Ebenen (Kopfleiste, Seitenleiste, Menüs, Dialoge). In den Stylesheets nur `backdrop-filter`
+     schreiben: Die Schreibweise mit -webkit- ergänzt der Build selbst – steht sie zusätzlich im Quelltext,
+     wirft er die Standard-Eigenschaft weg, und außerhalb von Safari bleibt das Glas klar. */
+  --glass-bg: rgba(255, 255, 255, 0.74);
+  --glass-bg-strong: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-blur: saturate(180%) blur(20px);
+  /* Farbschleier im Hintergrund der App */
+  --aura-1: color-mix(in srgb, var(--accent) 16%, transparent);
+  --aura-2: color-mix(in srgb, var(--accent-2) 13%, transparent);
+  --aura-3: color-mix(in srgb, var(--accent-3) 10%, transparent);
+
+  --text: #232936;
+  --text-strong: #0b1220;
+  --text-soft: #4a5365;
+  /* Text auf hellen Flächen: mindestens 4,5 : 1 (WCAG AA), auch auf --bg-soft */
+  --text-muted: #5a6379;
+  --text-faint: #646d84;
+  --text-link: var(--accent);
+  /* Akzentfarbe als Schrift (die Akzentfarbe selbst ist oft zu hell für kleinen Text) */
+  --accent-fg: color-mix(in srgb, var(--accent) 84%, #000);
+
+  --border: #e3e7ef;
+  --border-soft: #edf0f6;
+  --border-strong: #ccd3e0;
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 26%, transparent);
+
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --danger-soft: #fef2f2;
+  --danger-border: #fecaca;
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+  --warning-border: #fde68a;
+  --success: #16a34a;
+  --success-soft: #f0fdf4;
+  --success-border: #bbf7d0;
+  /* Statusfarben als Schrift auf den weichen Flächen, gefüllte Gefahr-Schaltflächen */
+  --success-fg: #15803d;
+  --warning-fg: #b45309;
+  --danger-fg: #b91c1c;
+  --danger-solid: #dc2626;
+  --danger-solid-hover: #b91c1c;
+  --info: #2563eb;
+  --info-soft: #eff6ff;
+  --info-border: #bfdbfe;
+  --note: #7c3aed;
+  --note-soft: #f5f3ff;
+  --note-border: #ddd6fe;
+
+  --ins-bg: #dcfce7;
+  --ins-text: #14532d;
+  --del-bg: #fee2e2;
+  --del-text: #7f1d1d;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow: 0 4px 14px -6px rgba(15, 23, 42, 0.16), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 24px 60px -18px rgba(15, 23, 42, 0.28), 0 4px 14px -6px rgba(15, 23, 42, 0.1);
+  --shadow-ring: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+
+  --radius-sm: 7px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+
+  --font:
+    ui-sans-serif, -apple-system, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', Inter, system-ui, 'Helvetica Neue', Arial, sans-serif;
+  --font-display:
+    ui-sans-serif, -apple-system, 'SF Pro Display', 'Segoe UI Variable Display', 'Segoe UI', Inter, system-ui, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas, Menlo, monospace;
+
+  --topbar-h: 56px;
+  --sidebar-w: 284px;
+  --content-w: 880px;
+  --content-wide: 1240px;
+
+  /* Navigation als schwebende Glasebenen (shell.css): Abstand zum Fensterrand und Radius der Ebenen.
+     --shell-gap: 0px und --shell-radius: 0px docken Kopf- und Seitenleiste wieder an den Rand. */
+  --shell-gap: 10px;
+  --shell-radius: 18px;
+  /* Glaskante: Lichtsaum oben links, Akzentschimmer unten rechts – wie die Mittelseite der 3D-Szene */
+  --glass-edge: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.55) 34%,
+    color-mix(in srgb, var(--accent) 12%, rgba(15, 23, 42, 0.07)) 62%,
+    color-mix(in srgb, var(--accent) 34%, transparent) 100%
+  );
+  --panel-shadow: 0 20px 44px -26px rgba(30, 48, 96, 0.42), 0 2px 8px -3px rgba(15, 23, 42, 0.07);
+  --panel-shadow-lift: 0 26px 50px -24px rgba(30, 48, 96, 0.5), 0 3px 10px -3px rgba(15, 23, 42, 0.09);
+  /* Aktiver Eintrag der Navigation: Fläche im Akzentverlauf, die nach rechts ausläuft */
+  --nav-active-bg: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--accent) 15%, transparent) 0%,
+    color-mix(in srgb, var(--accent-2) 8%, transparent) 62%,
+    transparent 100%
+  );
+  --nav-active-ring: color-mix(in srgb, var(--accent) 20%, transparent);
+  --nav-mark-glow: 0 0 10px 0 color-mix(in srgb, var(--accent) 60%, transparent);
+
+  /* Bewegung: Bedienelemente reagieren kurz und weich; Auftritte (Seitenwechsel, Einblenden, 3D-Szenen)
+     dürfen länger ausschwingen. Animiert werden nur transform und opacity. */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  /* schneller Antritt, langes Ausrollen – für alles, was erscheint */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 0.12s;
+  --dur: 0.2s;
+  --dur-slow: 0.34s;
+  --dur-enter: 0.42s;
+  --dur-reveal: 0.7s;
+
+  /* Syntaxhervorhebung */
+  --hl-keyword: #7c3aed;
+  --hl-string: #15803d;
+  --hl-number: #b45309;
+  --hl-comment: #6b7280;
+  --hl-function: #1d4ed8;
+  --hl-title: #0f766e;
+  --hl-attr: #b45309;
+  --hl-variable: #be123c;
+  --hl-type: #0369a1;
+  --hl-meta: #64748b;
+  --hl-tag: #be123c;
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --accent-soft: color-mix(in srgb, var(--accent) 24%, transparent);
+  --accent-softer: color-mix(in srgb, var(--accent) 13%, transparent);
+  --accent-hover: color-mix(in srgb, var(--accent) 82%, #fff);
+  --accent-2: color-mix(in srgb, var(--accent) 55%, #a78bfa);
+  --accent-3: color-mix(in srgb, var(--accent) 50%, #22d3ee);
+  --accent-glow: 0 10px 30px -10px color-mix(in srgb, var(--accent) 70%, transparent);
+
+  --bg: #14161d;
+  --bg-app: #0c0e14;
+  --bg-sidebar: rgba(20, 23, 31, 0.72);
+  --bg-soft: #1a1d26;
+  --bg-muted: #262a35;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: color-mix(in srgb, var(--accent) 24%, transparent);
+  --bg-elevated: #1b1f28;
+  --bg-code: #22262f;
+  --bg-code-block: #181b22;
+  --bg-input: #181b22;
+  --bg-overlay: rgba(3, 5, 10, 0.66);
+
+  --glass-bg: rgba(24, 27, 35, 0.72);
+  --glass-bg-strong: rgba(26, 30, 39, 0.92);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --aura-1: color-mix(in srgb, var(--accent) 26%, transparent);
+  --aura-2: color-mix(in srgb, var(--accent-2) 20%, transparent);
+  --aura-3: color-mix(in srgb, var(--accent-3) 16%, transparent);
+
+  --text: #e4e8f0;
+  --text-strong: #f7f9fc;
+  --text-soft: #c3cad6;
+  --text-muted: #949daf;
+  --text-faint: #8a93a8;
+  --text-link: color-mix(in srgb, var(--accent) 70%, #fff);
+  --accent-fg: color-mix(in srgb, var(--accent) 60%, #fff);
+
+  --border: #2b303c;
+  --border-soft: #23273180;
+  --border-strong: #3b4150;
+
+  --danger: #f87171;
+  --danger-hover: #fca5a5;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --danger-border: rgba(248, 113, 113, 0.35);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.1);
+  --warning-border: rgba(251, 191, 36, 0.32);
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.1);
+  --success-fg: var(--success);
+  --warning-fg: var(--warning);
+  --danger-fg: var(--danger);
+  --danger-solid: #dc2626;
+  --danger-solid-hover: #b91c1c;
+  --success-border: rgba(74, 222, 128, 0.3);
+  --info: #60a5fa;
+  --info-soft: rgba(96, 165, 250, 0.1);
+  --info-border: rgba(96, 165, 250, 0.32);
+  --note: #a78bfa;
+  --note-soft: rgba(167, 139, 250, 0.1);
+  --note-border: rgba(167, 139, 250, 0.32);
+
+  --ins-bg: rgba(74, 222, 128, 0.2);
+  --ins-text: #bbf7d0;
+  --del-bg: rgba(248, 113, 113, 0.2);
+  --del-text: #fecaca;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow: 0 6px 20px -8px rgba(0, 0, 0, 0.7), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.8), 0 6px 18px -8px rgba(0, 0, 0, 0.5);
+  --shadow-ring: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  --glass-edge: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.07) 36%,
+    rgba(255, 255, 255, 0.04) 60%,
+    color-mix(in srgb, var(--accent) 52%, transparent) 100%
+  );
+  --panel-shadow: 0 24px 50px -26px rgba(0, 0, 0, 0.9), 0 2px 10px -4px rgba(0, 0, 0, 0.55);
+  --panel-shadow-lift: 0 30px 60px -24px rgba(0, 0, 0, 0.95), 0 4px 14px -4px rgba(0, 0, 0, 0.6);
+  --nav-active-bg: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--accent) 30%, transparent) 0%,
+    color-mix(in srgb, var(--accent-2) 14%, transparent) 62%,
+    transparent 100%
+  );
+  --nav-active-ring: color-mix(in srgb, var(--accent) 38%, transparent);
+  --nav-mark-glow: 0 0 12px 0 color-mix(in srgb, var(--accent) 85%, transparent);
+
+  --hl-keyword: #c4a7ff;
+  --hl-string: #86efac;
+  --hl-number: #fdba74;
+  --hl-comment: #7b8594;
+  --hl-function: #93c5fd;
+  --hl-title: #5eead4;
+  --hl-attr: #fcd34d;
+  --hl-variable: #fda4af;
+  --hl-type: #7dd3fc;
+  --hl-meta: #94a3b8;
+  --hl-tag: #fda4af;
+
+  color-scheme: dark;
+}
+
+/* Wer im Betriebssystem „Transparenz reduzieren“ gewählt hat, bekommt deckende Flächen statt Glas. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: var(--bg-elevated);
+    --glass-bg-strong: var(--bg-elevated);
+    --bg-sidebar: var(--bg-elevated);
+    --glass-blur: none;
+  }
+}
+
+/* Wer Bewegung reduziert haben möchte, bekommt sie nicht – über das Betriebssystem … */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0.01ms;
+    --dur: 0.01ms;
+    --dur-slow: 0.01ms;
+    --dur-enter: 0.01ms;
+    --dur-reveal: 0.01ms;
+  }
+
+  /* Auch Animationen mit fester Dauer (Einblenden, Pulsieren, Drehen, 3D-Szenen) laufen in einem Schritt durch.
+     Übergänge entfallen ganz (0 s, nicht „fast null“): Eine winzige Dauer würde JEDE Stiländerung an JEDEM
+     Element um ein Bild verzögern – beim Wechsel des Farbschemas stand der Text dann kurz in der alten Farbe
+     auf dem neuen Grund. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* … oder über die Einstellung in Knowstead (Benutzermenü, Profil, Vorgabe der Administration). */
+:root[data-motion='reduced'] {
+  --dur-fast: 0.01ms;
+  --dur: 0.01ms;
+  --dur-slow: 0.01ms;
+  --dur-enter: 0.01ms;
+  --dur-reveal: 0.01ms;
+  /* „Reduziert“ ist auch die Einstellung für Terminalserver und Fernzugriff: Dort kostet die Unschärfe hinter
+     Glasflächen bei jedem Bild Rechenzeit. Sie entfällt, die Flächen decken stattdessen stärker. */
+  --glass-blur: none;
+  --glass-bg: var(--glass-bg-strong);
+  --bg-sidebar: var(--glass-bg-strong);
+}
+
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}

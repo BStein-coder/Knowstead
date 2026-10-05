@@ -1,0 +1,700 @@
+/* ------------------------------ App-Rahmen ------------------------------ */
+
+/* Kopf- und Seitenleiste schweben mit Abstand zum Fensterrand (--shell-gap); ihr Aussehen steht in shell.css.
+   Der Hauptbereich beginnt bündig unter der Kopfleiste – Inhalt verschwindet beim Scrollen an ihrer Kante. */
+.app {
+  display: grid;
+  grid-template-rows: calc(var(--topbar-h) + var(--shell-gap)) 1fr;
+  grid-template-columns: calc(var(--sidebar-w) + var(--shell-gap)) minmax(0, 1fr);
+  grid-template-areas:
+    'top top'
+    'side main';
+  height: 100vh;
+  background: var(--bg);
+}
+
+.app.sidebar-collapsed {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+
+.app.sidebar-collapsed .sidebar {
+  visibility: hidden;
+}
+
+.topbar {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: var(--shell-gap) var(--shell-gap) 0;
+  padding: 0 0.75rem 0 0.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  z-index: 50;
+  min-width: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-weight: 700;
+  font-size: 15px;
+  min-width: 0;
+}
+
+.brand:hover {
+  text-decoration: none;
+  background: var(--bg-hover);
+}
+
+.brand-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.brand-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.topbar-search {
+  flex: 1;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 34px;
+  padding: 0 0.7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text-faint);
+  cursor: text;
+  text-align: left;
+}
+
+.topbar-search:hover {
+  border-color: var(--border-strong);
+}
+
+.topbar-search span {
+  flex: 1;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.notif-button {
+  position: relative;
+}
+
+.notif-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px var(--bg);
+  /* Der Zähler liegt über der Glocke: Klicks sollen die Schaltfläche darunter treffen */
+  pointer-events: none;
+}
+
+.user-button {
+  border: none;
+  background: none;
+  padding: 2px;
+  border-radius: 50%;
+  display: inline-flex;
+}
+
+.user-button:hover {
+  box-shadow: 0 0 0 3px var(--bg-hover);
+}
+
+/* ------------------------------ Seitenleiste ------------------------------ */
+
+.sidebar {
+  grid-area: side;
+  margin: var(--shell-gap) 0 var(--shell-gap) var(--shell-gap);
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.6rem 0.5rem 1rem;
+}
+
+.sidebar-section {
+  margin-bottom: 1rem;
+}
+
+.sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.55rem 0.3rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.sidebar-heading .icon-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.38rem 0.6rem;
+  border-radius: var(--radius);
+  color: var(--text-soft);
+  font-weight: 500;
+  min-width: 0;
+}
+
+.nav-link:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-link.active {
+  background: var(--bg-active);
+  color: var(--accent-fg);
+}
+
+.nav-link svg {
+  flex: none;
+}
+
+.nav-link .nav-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.nav-emoji {
+  width: 18px;
+  text-align: center;
+  flex: none;
+  font-size: 15px;
+}
+
+.space-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.55rem 0.75rem;
+}
+
+.space-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--bg-muted);
+  flex: none;
+}
+
+.space-icon-lg {
+  width: 52px;
+  height: 52px;
+  font-size: 26px;
+  border-radius: 12px;
+}
+
+.space-title {
+  font-weight: 700;
+  color: var(--text-strong);
+  line-height: 1.2;
+}
+
+.space-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ------------------------------ Seitenbaum ------------------------------ */
+
+.tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tree .tree {
+  padding-left: 0.85rem;
+}
+
+.tree-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  height: 30px;
+  padding: 0 0.25rem 0 0.1rem;
+  border-radius: var(--radius);
+  color: var(--text-soft);
+  cursor: pointer;
+  user-select: none;
+}
+
+.tree-row:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.tree-row.active {
+  background: var(--bg-active);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.tree-row.drop-inside {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.tree-row.drop-before::before,
+.tree-row.drop-after::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 4px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.tree-row.drop-before::before {
+  top: -1px;
+}
+
+.tree-row.drop-after::after {
+  bottom: -1px;
+}
+
+.tree-row.dragging {
+  opacity: 0.45;
+}
+
+.tree-toggle {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  border-radius: 4px;
+  padding: 0;
+}
+
+.tree-toggle:hover {
+  background: var(--bg-muted);
+  color: var(--text);
+}
+
+.tree-toggle svg {
+  transition: transform 0.12s;
+}
+
+.tree-toggle.open svg {
+  transform: rotate(90deg);
+}
+
+.tree-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: inherit;
+  height: 100%;
+}
+
+.tree-link:hover {
+  text-decoration: none;
+}
+
+.tree-icon {
+  width: 18px;
+  flex: none;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-faint);
+  display: inline-flex;
+  justify-content: center;
+}
+
+.tree-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-lock {
+  color: var(--warning-fg);
+  flex: none;
+}
+
+.tree-actions {
+  display: none;
+  align-items: center;
+  gap: 1px;
+}
+
+.tree-row:hover .tree-actions,
+.tree-row:focus-within .tree-actions {
+  display: flex;
+}
+
+.tree-actions .icon-btn {
+  width: 22px;
+  height: 22px;
+}
+
+.tree-filter {
+  margin: 0 0.25rem 0.4rem;
+}
+
+.tree-filter .input {
+  height: 30px;
+  font-size: 13px;
+}
+
+.tree-mark {
+  background: color-mix(in srgb, var(--warning) 30%, transparent);
+  color: inherit;
+  border-radius: 2px;
+}
+
+/* ------------------------------ Hauptbereich ------------------------------ */
+
+.main {
+  grid-area: main;
+  overflow-y: auto;
+  min-width: 0;
+  position: relative;
+  scroll-padding-top: 1rem;
+}
+
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 1.75rem 2rem 4rem;
+}
+
+.container-narrow {
+  max-width: 760px;
+}
+
+.container-wide {
+  max-width: 1400px;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.page-header-title {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.page-header-icon {
+  color: var(--text-muted);
+}
+
+.page-header-subtitle {
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+  max-width: 720px;
+}
+
+.page-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  font-size: 13px;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+.breadcrumbs a {
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: var(--radius-sm);
+  max-width: min(220px, 100%);
+  /* Flex-Kinder schrumpfen sonst nicht unter ihre Textbreite – auf dem Handy lag der Bereichsname
+     dann unter dem Knopf „Bearbeiten“. */
+  min-width: 0;
+}
+
+.breadcrumbs > span {
+  min-width: 0;
+}
+
+.breadcrumbs a span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.breadcrumbs a:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.breadcrumbs .sep {
+  color: var(--text-faint);
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.55rem 1rem;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--border);
+  background: var(--warning-soft);
+  color: var(--text);
+}
+
+.banner-info {
+  background: var(--info-soft);
+}
+
+.banner-danger {
+  background: var(--danger-soft);
+}
+
+.banner .spacer {
+  flex: 1;
+}
+
+/* Betriebswarnungen in der Administration: mehrzeiliger Text neben dem Zeichen */
+.banner.admin-alert {
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  border-bottom: 0;
+  border-radius: var(--radius);
+}
+
+.banner.admin-alert > svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.admin-alert-hint {
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.admin-alert-since {
+  display: block;
+  font-size: 12px;
+  margin-top: 0.15rem;
+}
+
+/* Zweispaltiges Layout (z. B. Einstellungen, Admin) */
+.split {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 2rem;
+}
+
+.subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+}
+
+.subnav-heading {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--text-faint);
+  padding: 0.75rem 0.6rem 0.3rem;
+}
+
+@media (max-width: 960px) {
+  :root {
+    --sidebar-w: 250px;
+  }
+  .container {
+    padding: 1.25rem 1rem 3rem;
+  }
+  .split {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .subnav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .subnav-heading {
+    display: none;
+  }
+}
+
+/* Schleier hinter der Schublade der Seitenleiste – nur auf schmalen Fenstern */
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  /* Kopfleiste angedockt (jeder Pixel zählt), Seitenleiste als schwebende Schublade über einem Schleier */
+  .app {
+    grid-template-rows: var(--topbar-h) 1fr;
+    grid-template-columns: 0 minmax(0, 1fr);
+  }
+  .topbar {
+    margin: 0;
+  }
+  .app .sidebar {
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--shell-gap));
+    bottom: var(--shell-gap);
+    left: var(--shell-gap);
+    width: min(300px, calc(100vw - 2 * var(--shell-gap) - 44px));
+    margin: 0;
+    z-index: 60;
+    transform: translate3d(calc(-100% - var(--shell-gap) - 16px), 0, 0);
+    /* Geschlossen ist die Schublade auch für Tastatur und Vorleseprogramme nicht erreichbar */
+    visibility: hidden;
+    transition:
+      transform var(--dur-slow) var(--ease-out),
+      visibility 0s linear var(--dur-slow);
+  }
+  .app.sidebar-open-mobile .sidebar {
+    transform: none;
+    visibility: visible;
+    transition:
+      transform var(--dur-slow) var(--ease-out),
+      visibility 0s;
+  }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: var(--topbar-h) 0 0 0;
+    z-index: 55;
+    border: 0;
+    padding: 0;
+    background: var(--bg-overlay);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-slow) var(--ease);
+  }
+  .app.sidebar-open-mobile .sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .brand-name {
+    display: none;
+  }
+  /* Auf schmalen Fenstern bleibt vom Suchfeld nur die Lupe – das Tastenkürzel lag sonst über ihr. */
+  .topbar-search span,
+  .topbar-search kbd {
+    display: none;
+  }
+}
+
+@media print {
+  .topbar,
+  .sidebar,
+  .sidebar-backdrop,
+  .no-print,
+  .page-toolbar,
+  .page-footer-panels,
+  .toc-float,
+  .banner {
+    display: none !important;
+  }
+  .app {
+    display: block;
+    height: auto;
+  }
+  .main {
+    overflow: visible;
+  }
+  .container {
+    max-width: none;
+    padding: 0;
+  }
+}

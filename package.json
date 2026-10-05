@@ -1,0 +1,41 @@
+{
+  "name": "knowstead",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Knowstead – webbasiertes Dokumentations- und Wissensmanagementsystem",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build -w web",
+    "start": "node --disable-warning=ExperimentalWarning server/src/index.ts",
+    "cli": "node --disable-warning=ExperimentalWarning server/src/cli.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 \"server/test/**/*.test.ts\"",
+    "test:e2e": "npm run build && npm --prefix e2e test",
+    "test:sweep": "npm run build && npm --prefix e2e run sweep",
+    "lint": "eslint . && node --disable-warning=ExperimentalWarning scripts/check-i18n.mjs && node scripts/check-docs.mjs",
+    "typecheck": "tsc -p server/tsconfig.json && tsc -p web/tsconfig.json"
+  },
+  "overrides": {
+    "lodash-es": "4.18.1",
+    "@excalidraw/excalidraw": {
+      "nanoid": "3.3.19"
+    },
+    "@excalidraw/mermaid-to-excalidraw": {
+      "nanoid": "5.1.16"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "typescript-eslint": "^8.70.0"
+  }
+}

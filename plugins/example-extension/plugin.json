@@ -1,0 +1,45 @@
+{
+  "id": "example-extension",
+  "name": "Beispiel-Erweiterung",
+  "version": "1.0.0",
+  "description": "Vorlage für eigene Plugins: Lesezeit im Seitenkopf, Aktion „Wörter zählen“, Makro „Countdown“, Seiten-Panel und eine eigene API-Route.",
+  "author": "Knowstead",
+  "homepage": "https://example.com/knowstead-plugins",
+  "server": "server.ts",
+  "client": "client.js",
+  "translations": {
+    "en": {
+      "name": "Example extension",
+      "description": "Template for your own plugins: reading time in the page header, action “Count words”, macro “Countdown”, page panel and a custom API route.",
+      "settings": {
+        "wpm": { "label": "Reading speed (words per minute)", "help": "Basis for the reading time in the page header." },
+        "showPanel": { "label": "Show the “Page statistics” panel below the content" },
+        "countdownDefaultLabel": { "label": "Default label of the countdown macro" }
+      }
+    }
+  },
+  "settings": [
+    {
+      "key": "wpm",
+      "label": "Lesegeschwindigkeit (Wörter pro Minute)",
+      "type": "number",
+      "default": 220,
+      "public": true,
+      "help": "Grundlage für die Lesezeit im Seitenkopf."
+    },
+    {
+      "key": "showPanel",
+      "label": "Panel „Seitenstatistik“ unter dem Inhalt anzeigen",
+      "type": "boolean",
+      "default": true,
+      "public": true
+    },
+    {
+      "key": "countdownDefaultLabel",
+      "label": "Standardbeschriftung des Countdown-Makros",
+      "type": "text",
+      "default": "Noch",
+      "public": true
+    }
+  ]
+}

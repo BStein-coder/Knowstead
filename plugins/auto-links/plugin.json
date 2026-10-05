@@ -1,0 +1,47 @@
+{
+  "id": "auto-links",
+  "name": "Automatische Verlinkung",
+  "version": "1.0.0",
+  "description": "Wandelt wiederkehrende Muster (Ticketnummern, Normen, Kürzel) beim Anzeigen automatisch in Links um.",
+  "author": "Knowstead",
+  "server": "server.ts",
+  "translations": {
+    "en": {
+      "name": "Automatic links",
+      "description": "Turns recurring patterns (ticket numbers, standards, abbreviations) into links when a page is displayed.",
+      "settings": {
+        "rules": {
+          "label": "Rules",
+          "help": "List of { pattern, url, title?, flags? }. “pattern” is a regular expression; in “url”, $1, $2 … stand for the capture groups and $& for the whole match."
+        },
+        "openInNewTab": { "label": "Open links in a new tab" },
+        "applyToExport": { "label": "Also apply to exports (HTML/PDF/Markdown)" }
+      }
+    }
+  },
+  "settings": [
+    {
+      "key": "rules",
+      "label": "Regeln",
+      "type": "json",
+      "required": true,
+      "help": "Liste aus { pattern, url, title?, flags? }. „pattern“ ist ein regulärer Ausdruck, in „url“ stehen $1, $2 … für die Klammergruppen und $& für den gesamten Treffer.",
+      "default": [
+        { "pattern": "\\b([A-Z][A-Z0-9]{1,9}-\\d+)\\b", "url": "https://jira.example.com/browse/$1", "title": "Ticket $1" },
+        { "pattern": "\\bRFC\\s?(\\d{3,5})\\b", "url": "https://www.rfc-editor.org/rfc/rfc$1.html", "title": "RFC $1" }
+      ]
+    },
+    {
+      "key": "openInNewTab",
+      "label": "Links in neuem Tab öffnen",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "key": "applyToExport",
+      "label": "Auch bei Export (HTML/PDF/Markdown) anwenden",
+      "type": "boolean",
+      "default": false
+    }
+  ]
+}

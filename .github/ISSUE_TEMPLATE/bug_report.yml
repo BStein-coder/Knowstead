@@ -1,0 +1,55 @@
+name: Fehler melden
+description: Etwas funktioniert nicht wie beschrieben.
+labels: [fehler]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für die Meldung! **Sicherheitslücken bitte nicht hier melden**, sondern wie in [SECURITY.md](../SECURITY.md) beschrieben.
+  - type: textarea
+    id: beschreibung
+    attributes:
+      label: Was ist passiert?
+      description: Was hast du erwartet, und was ist stattdessen passiert?
+    validations:
+      required: true
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Schritte zum Nachvollziehen
+      placeholder: |
+        1. Bereich „…“ öffnen
+        2. Auf „…“ klicken
+        3. Fehlermeldung „…“ erscheint
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Knowstead-Version
+      description: Administration → Über oder `npm run cli -- status`
+      placeholder: 2.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: betrieb
+    attributes:
+      label: Betrieb
+      options:
+        - Windows (Dienst oder start.cmd)
+        - Linux (systemd)
+        - Docker
+        - Entwicklungsmodus
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser und Version
+      placeholder: Edge 140, Firefox 143 …
+  - type: textarea
+    id: protokoll
+    attributes:
+      label: Serverprotokoll oder Browserkonsole
+      description: Passende Zeilen – bitte Zugangsdaten, Namen und interne Adressen entfernen.
+      render: text

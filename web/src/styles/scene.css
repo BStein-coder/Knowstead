@@ -1,0 +1,630 @@
+/* ------------------------------------------------------------------
+ * Filmische 3D-Szene „Wissensraum“ (Komponente Scene3D).
+ *
+ * Aufbau von außen nach innen:
+ *   .scene        Rahmen, schneidet ab, liefert die Containergröße
+ *   .scene-sky    weiche Lichtvolumen im Hintergrund
+ *   .scene-stage  Perspektive (Brennweite) – hier entsteht der 3D-Raum
+ *   .scene-rig    Kamera folgt dem Zeiger          (--px / --py)
+ *   .scene-scroll Kamera fährt beim Scrollen hinein (Scroll-Zeitleiste)
+ *   .scene-dolly  Einstiegsfahrt beim Erscheinen
+ *   .scene-world  langsames Gleiten
+ *   .scene-node   Seite an ihrem Platz, .scene-card schwebt darin
+ *
+ * Alle Maße hängen an --u (eine Welt-Einheit), das mit der Fläche wächst – die Szene ist damit in
+ * jedem Format dieselbe Komposition. Animiert werden nur transform und opacity. Ohne Animation
+ * (reduzierte Bewegung) zeigt jedes Element seine Ruhestellung: das gestaltete Standbild.
+ * ------------------------------------------------------------------ */
+
+/* Nicht vererbte Zahlen: Zeigerbewegung berechnet nur das Kamera-Element neu, nicht die ganze Szene */
+@property --px {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --py {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+.scene {
+  /* Farben der Szene – abgeleitet aus den Token, folgen also Akzentfarbe und Farbschema */
+  --sc-base: #eef2f9;
+  --sc-card: #ffffff;
+  --sc-card-2: #f3f6fb;
+  --sc-line: rgba(15, 23, 42, 0.09);
+  --sc-ink: rgba(15, 23, 42, 0.1);
+  --sc-ink-strong: rgba(15, 23, 42, 0.24);
+  --sc-code: #eef1f7;
+  --sc-shadow: rgba(38, 58, 110, 0.3);
+  --sc-link: color-mix(in srgb, var(--accent) 52%, transparent);
+  --sc-pulse: color-mix(in srgb, var(--accent) 88%, #fff);
+  --sc-mote: color-mix(in srgb, var(--accent) 55%, #fff);
+  --sc-dot: color-mix(in srgb, var(--accent) 34%, transparent);
+  --sc-sky-a: color-mix(in srgb, var(--accent) 26%, transparent);
+  --sc-sky-b: color-mix(in srgb, var(--accent-2) 24%, transparent);
+  --sc-sky-c: color-mix(in srgb, var(--accent-3) 22%, transparent);
+  --sc-beam: rgba(255, 255, 255, 0.55);
+  --sc-grain: 0.035;
+
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  overflow: clip;
+  pointer-events: none;
+  user-select: none;
+  container-type: size;
+  isolation: isolate;
+  background: var(--sc-base);
+  animation: scene-fade 1.5s ease both;
+}
+
+:root[data-theme='dark'] .scene {
+  --sc-base: #070910;
+  --sc-card: #1e2434;
+  --sc-card-2: #151a27;
+  --sc-line: rgba(255, 255, 255, 0.1);
+  --sc-ink: rgba(255, 255, 255, 0.13);
+  --sc-ink-strong: rgba(255, 255, 255, 0.34);
+  --sc-code: rgba(0, 0, 0, 0.32);
+  --sc-shadow: rgba(0, 0, 0, 0.72);
+  --sc-link: color-mix(in srgb, var(--accent) 72%, transparent);
+  --sc-pulse: color-mix(in srgb, var(--accent-3) 70%, #fff);
+  --sc-mote: color-mix(in srgb, var(--accent-3) 62%, #fff);
+  --sc-dot: color-mix(in srgb, var(--accent) 46%, transparent);
+  --sc-sky-a: color-mix(in srgb, var(--accent) 38%, transparent);
+  --sc-sky-b: color-mix(in srgb, var(--accent-2) 30%, transparent);
+  --sc-sky-c: color-mix(in srgb, var(--accent-3) 22%, transparent);
+  --sc-beam: rgba(255, 255, 255, 0.07);
+  --sc-grain: 0.06;
+}
+
+@keyframes scene-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ------------------------------ Hintergrund: Lichtvolumen ------------------------------ */
+
+.scene-sky {
+  position: absolute;
+  inset: 0;
+}
+
+.scene-sky i {
+  position: absolute;
+  width: 78cqmax;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.scene-sky i:nth-child(1) {
+  left: -22cqmax;
+  top: -44cqmax;
+  background: radial-gradient(circle, var(--sc-sky-a) 0%, transparent 66%);
+  animation: scene-sky-a 41s ease-in-out infinite alternate;
+}
+
+.scene-sky i:nth-child(2) {
+  right: -30cqmax;
+  top: -28cqmax;
+  background: radial-gradient(circle, var(--sc-sky-b) 0%, transparent 64%);
+  animation: scene-sky-b 53s ease-in-out infinite alternate;
+}
+
+.scene-sky i:nth-child(3) {
+  left: 12cqmax;
+  bottom: -52cqmax;
+  background: radial-gradient(circle, var(--sc-sky-c) 0%, transparent 62%);
+  animation: scene-sky-c 47s ease-in-out infinite alternate;
+}
+
+@keyframes scene-sky-a {
+  to {
+    transform: translate3d(9cqmax, 6cqmax, 0) scale(1.12);
+  }
+}
+
+@keyframes scene-sky-b {
+  to {
+    transform: translate3d(-11cqmax, 8cqmax, 0) scale(0.9);
+  }
+}
+
+@keyframes scene-sky-c {
+  to {
+    transform: translate3d(7cqmax, -9cqmax, 0) scale(1.15);
+  }
+}
+
+/* ------------------------------ Raum und Kamera ------------------------------ */
+
+.scene-stage {
+  position: absolute;
+  inset: 0;
+  /* Eine Welt-Einheit: wächst mit Breite und Höhe, bleibt aber in lesbaren Grenzen.
+     Die erste Zeile gilt für Browser ohne Container-Einheiten (vor 2023) – dort bleibt die Szene fest. */
+  --u: 0.9px;
+  --u: clamp(0.5px, calc(0.045cqw + 0.045cqh), 1.3px);
+  perspective: calc(1100 * var(--u));
+  perspective-origin: var(--cx, 50%) 46%;
+}
+
+.scene-rig,
+.scene-scroll,
+.scene-dolly,
+.scene-world,
+.scene-node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+
+.scene-rig {
+  left: var(--cx, 50%);
+  top: var(--cy, 50%);
+  transform: rotateX(calc(var(--py) * -2.4deg)) rotateY(calc(var(--px) * 3.6deg)) translate3d(calc(var(--px) * -16 * var(--u)), calc(var(--py) * -10 * var(--u)), 0);
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scene-dolly {
+  animation: scene-intro 2.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes scene-intro {
+  from {
+    transform: translate3d(0, calc(46 * var(--u)), calc(-560 * var(--u))) rotateX(9deg);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.scene-world {
+  animation: scene-drift 48s ease-in-out infinite alternate;
+}
+
+@keyframes scene-drift {
+  from {
+    transform: translate3d(calc(-16 * var(--u)), calc(7 * var(--u)), 0) rotateY(-3.4deg) rotateX(1.2deg);
+  }
+  50% {
+    transform: translate3d(calc(8 * var(--u)), calc(-9 * var(--u)), calc(46 * var(--u))) rotateY(2.2deg) rotateX(-1.1deg);
+  }
+  to {
+    transform: translate3d(calc(22 * var(--u)), calc(5 * var(--u)), 0) rotateY(4.2deg) rotateX(0.7deg);
+  }
+}
+
+/* Kamerafahrt beim Scrollen: an die Scroll-Zeitleiste des Hauptbereichs gekoppelt (ohne JavaScript) */
+@supports (animation-timeline: scroll()) {
+  .scene[data-scroll] .scene-scroll {
+    animation: scene-scroll linear both;
+    animation-timeline: --knowstead-main;
+    animation-range: 0 560px;
+  }
+}
+
+@keyframes scene-scroll {
+  to {
+    transform: translate3d(0, calc(-70 * var(--u)), calc(300 * var(--u))) rotateX(-7deg);
+  }
+}
+
+/* ------------------------------ Boden: Punktraster bis zum Horizont ------------------------------ */
+
+.scene-floor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(4200 * var(--u));
+  height: calc(4200 * var(--u));
+  margin: calc(-2100 * var(--u)) 0 0 calc(-2100 * var(--u));
+  transform: translate3d(0, calc(470 * var(--u)), calc(-900 * var(--u))) rotateX(90deg);
+  background-image: radial-gradient(circle, var(--sc-dot) calc(2.2 * var(--u)), transparent calc(3.4 * var(--u)));
+  background-size: calc(110 * var(--u)) calc(110 * var(--u));
+  -webkit-mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.55) 34%, transparent 74%);
+  mask-image: radial-gradient(closest-side, #000 0%, rgba(0, 0, 0, 0.55) 34%, transparent 74%);
+}
+
+/* ------------------------------ Seiten ------------------------------ */
+
+.scene-node {
+  transform: translate3d(calc(var(--x) * var(--u)), calc(var(--y) * var(--u)), calc(var(--z) * var(--u))) rotateY(var(--ry)) rotateX(var(--rx)) rotateZ(var(--rz));
+}
+
+.scene-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* 1em = 10 Welt-Einheiten × Größenfaktor: alles in der Karte skaliert mit */
+  font-size: calc(var(--s, 1) * 10 * var(--u));
+  width: 16.8em;
+  height: 21.4em;
+  margin: -10.7em 0 0 -8.4em;
+  padding: 1.5em 1.5em 0;
+  overflow: hidden;
+  border-radius: 1.25em;
+  border: max(1px, 0.09em) solid var(--sc-line);
+  background: linear-gradient(158deg, var(--sc-card) 0%, var(--sc-card-2) 100%);
+  box-shadow:
+    0 2.6em 5em -2.4em var(--sc-shadow),
+    inset 0 max(1px, 0.08em) 0 rgba(255, 255, 255, 0.07);
+  opacity: var(--o, 1);
+  animation: scene-float var(--fd, 12s) ease-in-out var(--fl, 0s) infinite alternate;
+  will-change: transform;
+}
+
+@keyframes scene-float {
+  from {
+    transform: translate3d(0, calc(var(--fy) * -1), 0) rotateZ(calc(var(--fr) * -1)) rotateX(calc(var(--fr) * 1.5));
+  }
+  to {
+    transform: translate3d(0, var(--fy), calc(var(--fy) * 1.6)) rotateZ(var(--fr)) rotateX(calc(var(--fr) * -1.5));
+  }
+}
+
+/* Die Startseite des Bereichs: Mittelpunkt der Szene, mit Akzentrand und Lichthof */
+.scene-card.is-hub {
+  border-color: transparent;
+  background:
+    linear-gradient(158deg, var(--sc-card) 0%, var(--sc-card-2) 100%) padding-box,
+    var(--accent-gradient) border-box;
+  border-width: max(1.5px, 0.14em);
+  box-shadow:
+    0 0 7em -1.6em color-mix(in srgb, var(--accent) 75%, transparent),
+    0 2.8em 5.6em -2.4em var(--sc-shadow);
+}
+
+.sc-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85em;
+  margin-bottom: 1.45em;
+}
+
+.sc-ico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5em;
+  height: 2.5em;
+  border-radius: 0.72em;
+  background: color-mix(in srgb, var(--accent) 22%, var(--sc-card-2));
+  color: #fff;
+}
+
+.is-hub .sc-ico {
+  background: var(--accent-gradient);
+}
+
+.sc-ico svg {
+  width: 58%;
+  height: 58%;
+}
+
+.sc-title {
+  height: 0.95em;
+  width: 56%;
+  border-radius: 1em;
+  background: var(--sc-ink-strong);
+}
+
+.sc-lines {
+  display: grid;
+  gap: 0.82em;
+}
+
+.sc-lines i,
+.sc-tasks i,
+.sc-code i {
+  display: block;
+  height: 0.58em;
+  width: var(--w, 100%);
+  border-radius: 1em;
+  background: var(--sc-ink);
+}
+
+.sc-table {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  gap: 0.5em;
+}
+
+.sc-table i {
+  height: 1.7em;
+  border-radius: 0.38em;
+  background: var(--sc-ink);
+}
+
+.sc-table i:nth-child(-n + 3) {
+  background: color-mix(in srgb, var(--accent) 34%, transparent);
+}
+
+.sc-tasks {
+  display: grid;
+  gap: 1.05em;
+}
+
+.sc-tasks span {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+}
+
+.sc-tasks b {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  border-radius: 0.36em;
+  border: 0.15em solid var(--sc-ink-strong);
+}
+
+.sc-tasks .done b {
+  border-color: transparent;
+  background: var(--accent);
+}
+
+.sc-code {
+  display: grid;
+  gap: 0.78em;
+  padding: 1.1em;
+  border-radius: 0.8em;
+  background: var(--sc-code);
+}
+
+.sc-code i {
+  margin-left: var(--ind, 0);
+  opacity: 0.8;
+}
+
+.sc-code i[data-c='k'] {
+  background: var(--hl-keyword);
+}
+
+.sc-code i[data-c='s'] {
+  background: var(--hl-string);
+}
+
+.sc-code i[data-c='f'] {
+  background: var(--hl-function);
+}
+
+.sc-code i[data-c='n'] {
+  background: var(--hl-number);
+}
+
+.sc-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75em;
+  height: 8.6em;
+  margin-bottom: 1.2em;
+  padding: 0 0.3em;
+  border-bottom: 0.13em solid var(--sc-ink);
+}
+
+.sc-chart i {
+  flex: 1;
+  height: var(--h);
+  border-radius: 0.4em 0.4em 0 0;
+  background: linear-gradient(180deg, var(--accent-3), var(--accent));
+  opacity: 0.86;
+}
+
+.sc-image {
+  height: 8.6em;
+  margin-bottom: 1.2em;
+  border-radius: 0.8em;
+  background:
+    radial-gradient(circle at 74% 30%, rgba(255, 255, 255, 0.7) 0, rgba(255, 255, 255, 0.7) 0.9em, transparent 1em),
+    linear-gradient(140deg, color-mix(in srgb, var(--accent) 62%, transparent), color-mix(in srgb, var(--accent-3) 58%, transparent));
+}
+
+/* ------------------------------ Verbindungen ------------------------------ */
+
+.scene-link {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(var(--l) * var(--u));
+  height: max(1px, calc(1.6 * var(--u)));
+  border-radius: 1em;
+  transform-origin: 0 50%;
+  transform: translate3d(calc(var(--x) * var(--u)), calc(var(--y) * var(--u)), calc(var(--z) * var(--u))) rotateY(var(--yaw)) rotateZ(var(--roll));
+  background: linear-gradient(90deg, var(--sc-link), color-mix(in srgb, var(--sc-link) 30%, transparent));
+  opacity: var(--o, 1);
+}
+
+/* Lichtpunkt, der die Verbindung entlangläuft – von der übergeordneten Seite zur Unterseite */
+.scene-link i {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: calc(46 * var(--u));
+  height: max(2px, calc(3.4 * var(--u)));
+  margin-top: calc(max(2px, calc(3.4 * var(--u))) / -2);
+  border-radius: 1em;
+  background: linear-gradient(90deg, transparent, var(--sc-pulse));
+  opacity: 0;
+  animation: scene-pulse var(--pd, 7s) cubic-bezier(0.5, 0, 0.5, 1) var(--pl, 0s) infinite;
+}
+
+@keyframes scene-pulse {
+  0% {
+    transform: translateX(calc(-46 * var(--u)));
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  52% {
+    opacity: 1;
+  }
+  64%,
+  100% {
+    transform: translateX(calc(var(--l) * var(--u)));
+    opacity: 0;
+  }
+}
+
+/* ------------------------------ Schwebeteilchen ------------------------------ */
+
+.scene-mote {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(var(--d) * var(--u));
+  height: calc(var(--d) * var(--u));
+  margin: calc(var(--d) * var(--u) / -2);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--sc-mote) 0%, color-mix(in srgb, var(--sc-mote) 38%, transparent) 36%, transparent 70%);
+  translate: calc(var(--x) * var(--u)) calc(var(--y) * var(--u)) calc(var(--z) * var(--u));
+  opacity: var(--o, 0.5);
+  animation: scene-mote var(--fd, 16s) ease-in-out var(--fl, 0s) infinite alternate;
+  will-change: transform;
+}
+
+@keyframes scene-mote {
+  to {
+    transform: translate3d(calc(var(--dx) * var(--u)), calc(var(--dy) * var(--u)), calc(var(--dz) * var(--u)));
+  }
+}
+
+/* ------------------------------ Licht, Vignette, Korn ------------------------------ */
+
+.scene-beam {
+  position: absolute;
+  inset: -20% -60%;
+  background: linear-gradient(104deg, transparent 44%, var(--sc-beam) 50%, transparent 56%);
+  transform: translate3d(-58%, 0, 0);
+  animation: scene-beam 19s cubic-bezier(0.45, 0, 0.55, 1) 3s infinite;
+}
+
+@keyframes scene-beam {
+  0%,
+  52% {
+    transform: translate3d(-58%, 0, 0);
+  }
+  100% {
+    transform: translate3d(58%, 0, 0);
+  }
+}
+
+.scene-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(118% 92% at var(--cx, 50%) 46%, transparent 36%, color-mix(in srgb, var(--sc-base) 58%, transparent) 76%, var(--sc-base) 100%);
+}
+
+.scene-grain {
+  position: absolute;
+  inset: 0;
+  opacity: var(--sc-grain);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.62' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ------------------------------ Formate ------------------------------ */
+
+/* Anmeldung: links der Name, rechts die Karte – die Szene spielt dazwischen */
+.scene-stage {
+  --cx: 50%;
+  --cy: 50%;
+}
+
+.scene[data-scene='stage'] .scene-stage,
+.scene[data-scene='stage'] .scene-vignette {
+  --cx: 48%;
+}
+
+/* Breite Karte (Ersteinrichtung): der Mittelpunkt rückt nach links, damit er nicht hinter der Karte steht */
+.scene.is-wide[data-scene='stage'] .scene-stage,
+.scene.is-wide[data-scene='stage'] .scene-vignette {
+  --cx: 41%;
+}
+
+/* Startseite: Szene rechts im Band, links steht die Begrüßung */
+.scene[data-scene='hero'] .scene-stage,
+.scene[data-scene='hero'] .scene-vignette {
+  --cx: 71%;
+  --cy: 52%;
+}
+
+.scene[data-scene='hero'] .scene-stage {
+  --u: clamp(0.5px, calc(0.034cqw + 0.11cqh), 1.05px);
+}
+
+.scene[data-scene='lost'] .scene-stage {
+  --u: clamp(0.5px, calc(0.034cqw + 0.09cqh), 1px);
+}
+
+/* Schmale Flächen: Komposition in die Mitte, Details weglassen */
+@container (max-width: 900px) {
+  .scene[data-scene='stage'] .scene-stage,
+  .scene[data-scene='stage'] .scene-vignette,
+  .scene.is-wide[data-scene='stage'] .scene-stage,
+  .scene.is-wide[data-scene='stage'] .scene-vignette {
+    --cx: 50%;
+  }
+}
+
+@container (max-width: 640px) {
+  .scene .lod-2 {
+    display: none;
+  }
+
+  .scene[data-scene='hero'] .scene-stage,
+  .scene[data-scene='hero'] .scene-vignette {
+    --cx: 90%;
+  }
+}
+
+/* Schwache Geräte: weniger Elemente, keine Unschärfe */
+.scene[data-lite] .lod-2,
+.scene[data-lite] .scene-grain,
+.scene[data-lite] .scene-beam {
+  display: none;
+}
+
+.scene[data-lite] .scene-card {
+  filter: none !important;
+}
+
+/* Außerhalb des Bildes oder im Leerlauf: alles anhalten */
+.scene[data-paused],
+.scene[data-paused] * {
+  animation-play-state: paused !important;
+}
+
+/* Reduzierte Bewegung: keine Kamerafahrt beim Scrollen, kein Nachlauf – das Standbild bleibt */
+@media (prefers-reduced-motion: reduce) {
+  .scene[data-scroll] .scene-scroll {
+    animation: none;
+  }
+
+  .scene-rig {
+    transform: none;
+  }
+}
+
+:root[data-motion='reduced'] .scene[data-scroll] .scene-scroll {
+  animation: none;
+}
+
+:root[data-motion='reduced'] .scene-rig {
+  transform: none;
+}
+
+@media print {
+  .scene {
+    display: none;
+  }
+}

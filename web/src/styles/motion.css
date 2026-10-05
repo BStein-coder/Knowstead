@@ -1,0 +1,355 @@
+/* ------------------------------------------------------------------
+ * Bewegung und Interaktion.
+ *
+ * Drei Ebenen, von leise nach laut:
+ *   1. Rückmeldung – Bedienelemente reagieren kurz auf Zeiger und Druck.
+ *   2. Auftritt    – Inhalte erscheinen beim Seitenwechsel und beim Scrollen mit kurzer Fahrt.
+ *   3. Bühne       – die 3D-Szene (scene.css) auf Anmeldung, Startseite und Fehlerseite.
+ *
+ * Regeln: nur transform und opacity; nichts bewegt sich dauerhaft, was man anklicken soll; bei
+ * reduzierter Bewegung (Betriebssystem oder Einstellung, siehe tokens.css) steht alles sofort an
+ * seinem Platz. Effekte, die Inhalte zunächst verbergen, greifen nur mit der Klasse `motion-ok`.
+ * ------------------------------------------------------------------ */
+
+/* Scroll-Zeitleiste des Hauptbereichs: Szenen und Lesefortschritt hängen sich daran (ohne JavaScript) */
+.main {
+  scroll-timeline: --knowstead-main block;
+}
+
+/* ------------------------------ Auftritt beim Seitenwechsel ------------------------------ */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+.main > .container,
+.page-view > .page-layout {
+  animation: rise-in var(--dur-enter) var(--ease-out);
+}
+
+/* Gestaffelt: Kinder erscheinen nacheinander (höchstens acht Stufen, damit nichts lange fehlt) */
+.stagger > * {
+  animation: rise-in var(--dur-reveal) var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 38ms);
+}
+
+.stagger > :nth-child(2) {
+  --i: 1;
+}
+
+.stagger > :nth-child(3) {
+  --i: 2;
+}
+
+.stagger > :nth-child(4) {
+  --i: 3;
+}
+
+.stagger > :nth-child(5) {
+  --i: 4;
+}
+
+.stagger > :nth-child(6) {
+  --i: 5;
+}
+
+.stagger > :nth-child(7) {
+  --i: 6;
+}
+
+.stagger > :nth-child(n + 8) {
+  --i: 7;
+}
+
+/* ------------------------------ Einblenden beim Scrollen ------------------------------ */
+
+[data-reveal] {
+  transition:
+    opacity var(--dur-reveal) var(--ease-out),
+    transform var(--dur-reveal) var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+
+.motion-ok [data-reveal]:not([data-revealed]) {
+  opacity: 0;
+  transform: translate3d(0, 20px, 0);
+}
+
+/* ------------------------------ Neigung und Lichtkegel ------------------------------ */
+
+/* Kacheln neigen sich zum Zeiger (lib/motion.ts setzt --rx/--ry und --mx/--my) */
+[data-tilt],
+[data-tilt]:hover {
+  position: relative;
+  transform: perspective(900px) translate3d(0, var(--lift, 0px), 0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition:
+    transform 0.55s var(--ease-spring),
+    box-shadow var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+[data-tilt]:hover {
+  --lift: -3px;
+}
+
+/* Solange der Zeiger darüber läuft, folgt die Neigung ohne Verzögerung */
+[data-tilt][data-pointer],
+[data-tilt][data-pointer]:hover {
+  transition:
+    transform 0.14s linear,
+    box-shadow var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+[data-spot] {
+  position: relative;
+}
+
+[data-tilt]::after,
+[data-spot]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 15%, transparent), transparent 68%);
+  transition: opacity var(--dur-slow) var(--ease);
+}
+
+[data-tilt][data-pointer]::after,
+[data-spot][data-pointer]::after {
+  opacity: 1;
+}
+
+:root[data-theme='dark'] [data-tilt]::after,
+:root[data-theme='dark'] [data-spot]::after {
+  background: radial-gradient(280px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 24%, transparent), transparent 68%);
+}
+
+/* ------------------------------ Rückmeldung der Bedienelemente ------------------------------ */
+
+/* Lichtstreif auf der Hauptschaltfläche */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(108deg, transparent 32%, rgba(255, 255, 255, 0.3) 50%, transparent 68%);
+  transform: translate3d(-110%, 0, 0);
+  transition: transform 0.75s var(--ease-out);
+}
+
+.btn-primary:hover:not(:disabled)::after {
+  transform: translate3d(110%, 0, 0);
+}
+
+/* Symbole in der Navigation federn leicht mit */
+.quick-action-icon svg {
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+
+.nav-link:hover > svg {
+  transform: scale(1.12);
+}
+
+/* Das Logo neigt sich wie eine Seite der Szene */
+.brand-logo {
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+
+.brand:hover .brand-logo {
+  transform: perspective(240px) rotateY(-16deg) rotateX(8deg) scale(1.04);
+}
+
+/* Lichtmarke des aktiven Eintrags: wächst aus der Mitte, wenn ein Eintrag aktiv wird */
+@keyframes mark-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.2);
+  }
+}
+
+.nav-link.active::before {
+  animation: mark-in var(--dur-slow) var(--ease-spring) backwards;
+}
+
+@keyframes tab-mark-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.3);
+  }
+}
+
+.tab.active::after {
+  animation: tab-mark-in var(--dur-slow) var(--ease-spring) backwards;
+}
+
+/* Listenzeilen: der Titel rückt beim Überfahren ein Stück vor */
+.list-item .list-item-body {
+  transition: transform var(--dur) var(--ease);
+}
+
+.list-item:hover .list-item-body {
+  transform: translate3d(3px, 0, 0);
+}
+
+/* Kopfleiste hebt sich weiter ab, sobald der Inhalt darunter gescrollt ist */
+.topbar {
+  transition: box-shadow var(--dur-slow) var(--ease);
+}
+
+.app[data-scrolled] .topbar {
+  box-shadow: var(--panel-shadow-lift);
+}
+
+/* Die Navigationsebenen erscheinen beim Laden mit kurzer Fahrt. Nur auf breiten Fenstern: Auf dem Handy
+   ist die Seitenleiste eine Schublade, deren Lage über transform gesteuert wird. */
+@keyframes panel-in-top {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes panel-in-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-14px, 0, 0);
+  }
+}
+
+@media (min-width: 761px) {
+  .topbar {
+    animation: panel-in-top var(--dur-reveal) var(--ease-out) backwards;
+  }
+
+  .sidebar {
+    animation: panel-in-left var(--dur-reveal) var(--ease-out) 60ms backwards;
+  }
+}
+
+/* Seitenleiste: Inhalt gleitet herein, wenn er wechselt (Übersicht, Bereich, Administration) */
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-10px, 0, 0);
+  }
+}
+
+.sidebar > * {
+  animation: slide-in-left var(--dur-enter) var(--ease-out);
+}
+
+/* Seitenbaum: aufgeklappte Zweige erscheinen mit kurzer Fahrt */
+@keyframes tree-open {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+.tree .tree {
+  animation: tree-open var(--dur) var(--ease-out);
+}
+
+/* Benachrichtigungspunkt: einmaliges Aufpoppen */
+@keyframes dot-pop {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+
+.notif-dot {
+  animation: dot-pop 0.45s var(--ease-spring);
+}
+
+/* Hinweise unten rechts gleiten herein */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.97);
+  }
+}
+
+.toast {
+  animation: toast-in var(--dur-enter) var(--ease-spring);
+}
+
+/* ------------------------------ Lesefortschritt ------------------------------ */
+
+/* Dünne Linie an der Unterkante der Leiste mit den Brotkrumen: wächst mit dem Scrollen.
+   Reine CSS-Scroll-Animation – wo der Browser sie nicht kennt, fehlt die Linie einfach. */
+@supports (animation-timeline: scroll()) {
+  .page-view > .page-toolbar::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+    background: var(--accent-gradient);
+    pointer-events: none;
+    animation: read-progress linear both;
+    animation-timeline: --knowstead-main;
+  }
+}
+
+@keyframes read-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ------------------------------ Reduziert und Druck ------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .page-view > .page-toolbar::after {
+    display: none;
+  }
+
+  .brand:hover .brand-logo {
+    transform: none;
+  }
+
+  [data-tilt],
+  [data-tilt]:hover {
+    transform: none;
+  }
+}
+
+:root[data-motion='reduced'] .page-view > .page-toolbar::after {
+  display: none;
+}
+
+:root[data-motion='reduced'] .brand:hover .brand-logo {
+  transform: none;
+}
+
+:root[data-motion='reduced'] [data-tilt],
+:root[data-motion='reduced'] [data-tilt]:hover {
+  transform: none;
+}
+
+@media print {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .page-view > .page-toolbar::after {
+    display: none;
+  }
+}
