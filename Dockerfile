@@ -4,7 +4,7 @@
 #  Zwei Stufen: Die Oberfläche wird gebaut, der Server läuft direkt aus dem
 #  TypeScript-Quelltext (Node 24 entfernt die Typen beim Laden).
 # ---------------------------------------------------------------------------
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 
 # Abhängigkeiten zuerst – bessere Schichtnutzung beim Neubauen
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 
-FROM node:24-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000 \
