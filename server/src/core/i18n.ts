@@ -40,6 +40,32 @@ function compile(): Map<string, string> {
   return exact;
 }
 
+const WEEKDAYS_EN: Record<string, string> = {
+  Montag: 'Monday',
+  Dienstag: 'Tuesday',
+  Mittwoch: 'Wednesday',
+  Donnerstag: 'Thursday',
+  Freitag: 'Friday',
+  Samstag: 'Saturday',
+  Sonntag: 'Sunday',
+};
+
+/**
+ * Eingesetzte Werte, die ALS GANZES eine Datums- oder Zahlenangabe in deutscher Schreibweise sind, in die
+ * englische bringen: „5.10.2026“ → “05/10/2026” (auch mit Uhrzeit), „Montag, 05.10.“ → “Monday, 05/10”,
+ * „100.000“ → “100,000”. Benachrichtigungen und Warnungen werden auf Deutsch gespeichert und erst beim Lesen
+ * übersetzt – das Datum darin entsteht also, bevor feststeht, in welcher Sprache es gelesen wird.
+ * Nur ganze Werte: Ein Datum mitten in einem Seitentitel bleibt, wie es geschrieben wurde.
+ */
+export function localizeValue(value: string): string {
+  const date = /^(\d{1,2})\.(\d{1,2})\.(\d{4})(, \d{2}:\d{2}(?::\d{2})?)?$/.exec(value);
+  if (date) return `${date[1].padStart(2, '0')}/${date[2].padStart(2, '0')}/${date[3]}${date[4] ?? ''}`;
+  const day = /^(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag), (\d{2})\.(\d{2})\.$/.exec(value);
+  if (day) return `${WEEKDAYS_EN[day[1]]}, ${day[2]}/${day[3]}`;
+  if (/^\d{1,3}(\.\d{3})+$/.test(value)) return value.replaceAll('.', ',');
+  return value;
+}
+
 export function isLocale(value: unknown): value is Locale {
   return value === 'de' || value === 'en';
 }
@@ -62,10 +88,11 @@ export function translate(text: string, locale: Locale, minFixed = 0): string {
     const match = pattern.re.exec(text);
     if (!match) continue;
     let next = 0;
-    // Eingesetzte Werte nur übersetzen, wenn sie selbst ein fester Katalogtext sind (z. B. „morgen“)
+    // Eingesetzte Werte nur übersetzen, wenn sie selbst ein fester Katalogtext sind (z. B. „morgen“) –
+    // oder als Ganzes eine Datums- bzw. Zahlenangabe
     return pattern.en.replace(/\{(\d*)\}/g, (_, index: string) => {
       const value = match[index ? Number(index) : ++next] ?? '';
-      return table.get(value) ?? value;
+      return table.get(value) ?? localizeValue(value);
     });
   }
   return text;

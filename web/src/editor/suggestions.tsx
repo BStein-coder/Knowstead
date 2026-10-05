@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 import { api } from '../api/client';
 import type { PageSummary } from '../api/types';
-import type { TFn } from '../i18n';
+import { activeLocale, localeTag, type TFn } from '../i18n';
 import type { PluginMacro } from '../lib/plugins';
 import { SuggestionList, type SuggestionEntry, type SuggestionListProps, type SuggestionListRef } from './SuggestionList';
 
@@ -126,7 +126,8 @@ export function slashItems(ctx: SlashContext): SlashItem[] {
     block(editor, range)
       .insertContent({ type: 'callout', attrs: { variant }, content: [{ type: 'paragraph' }] })
       .run();
-  const pad = (n: number) => String(n).padStart(2, '0');
+  // Heutiges Datum in der Schreibweise der Oberfläche: 05.10.2026 bzw. 05/10/2026
+  const today = () => new Intl.DateTimeFormat(localeTag(activeLocale()), { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date());
   const items: SlashItem[] = [
     { id: 'p', title: t('editor.paragraph'), group: g('basic'), icon: icon(Pilcrow), keywords: 'text absatz paragraph', run: (e, r) => block(e, r).setParagraph().run() },
     { id: 'h1', title: t('editor.heading', { n: 1 }), group: g('basic'), icon: icon(Heading1), keywords: 'h1 titel überschrift heading', run: (e, r) => block(e, r).setHeading({ level: 1 }).run() },
@@ -138,14 +139,11 @@ export function slashItems(ctx: SlashContext): SlashItem[] {
     {
       id: 'date',
       title: t('common.today'),
-      description: new Date().toLocaleDateString('de-DE'),
+      description: today(),
       group: g('basic'),
       icon: icon(CalendarDays),
       keywords: 'datum date heute today',
-      run: (e, r) => {
-        const d = new Date();
-        block(e, r).insertContent(`${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}`).run();
-      },
+      run: (e, r) => block(e, r).insertContent(today()).run(),
     },
     { id: 'ul', title: t('editor.bulletList'), group: g('lists'), icon: icon(List), keywords: 'liste aufzählung bullet', run: (e, r) => block(e, r).toggleBulletList().run() },
     { id: 'ol', title: t('editor.orderedList'), group: g('lists'), icon: icon(ListOrdered), keywords: 'nummeriert ordered liste', run: (e, r) => block(e, r).toggleOrderedList().run() },

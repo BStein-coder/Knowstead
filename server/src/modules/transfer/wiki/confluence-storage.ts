@@ -19,6 +19,8 @@ export interface StorageContext {
   userName: (key: string) => string | null;
   /** Makros, die nicht übernommen werden konnten (für den Bericht) */
   unsupported: Set<string>;
+  /** Sprache der Installation – bestimmt die Schreibweise eines Datums, das als Text übernommen wird */
+  locale?: 'de' | 'en';
 }
 
 const EMOTICONS: Record<string, string> = {
@@ -168,7 +170,7 @@ function convertNode(node: Node, ctx: StorageContext): string {
       return '';
     case 'time': {
       const value = el.getAttribute('datetime');
-      return value ? escapeHtml(new Date(value).toLocaleDateString('de-DE')) : '';
+      return value ? escapeHtml(new Date(value).toLocaleDateString(ctx.locale === 'en' ? 'en-GB' : 'de-DE')) : '';
     }
     case 'ac:structured-macro':
     case 'ac:macro':

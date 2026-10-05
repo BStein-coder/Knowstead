@@ -33,6 +33,19 @@ export function createT(locale: Locale): TFn {
   };
 }
 
+/** Kennung für Datums- und Zahlenformate: Englisch folgt der britischen Schreibweise (Tag vor Monat). */
+export function localeTag(locale: Locale): string {
+  return locale === 'de' ? 'de-DE' : 'en-GB';
+}
+
+/**
+ * Sprache, in der die Oberfläche gerade angezeigt wird – für Stellen außerhalb von React (Befehle des
+ * Editors), die keinen Zugriff auf den Kontext haben. Der Anbieter hält sie am Dokument fest.
+ */
+export function activeLocale(): Locale {
+  return document.documentElement.lang === 'en' ? 'en' : 'de';
+}
+
 export interface Formatters {
   date: (iso: string | null | undefined) => string;
   dateTime: (iso: string | null | undefined) => string;
@@ -43,7 +56,7 @@ export interface Formatters {
 }
 
 function makeFormatters(locale: Locale, t: TFn): Formatters {
-  const tag = locale === 'de' ? 'de-DE' : 'en-GB';
+  const tag = localeTag(locale);
   const dateFmt = new Intl.DateTimeFormat(tag, { day: '2-digit', month: '2-digit', year: 'numeric' });
   const dateTimeFmt = new Intl.DateTimeFormat(tag, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const timeFmt = new Intl.DateTimeFormat(tag, { hour: '2-digit', minute: '2-digit' });

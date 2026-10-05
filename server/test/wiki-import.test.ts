@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
 import { strToU8, zipSync } from 'fflate';
 import { Client, createTestApp } from './helpers.ts';
+import { localizeImportNotes } from '../src/modules/transfer/wiki/importer.ts';
+import { dokuWikiToHtml } from '../src/modules/transfer/wiki/dokuwiki.ts';
+import { storageToHtml } from '../src/modules/transfer/wiki/confluence-storage.ts';
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 const xml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -195,4 +198,112 @@ ${extra}<content>${xml(content)}</content></xwikidoc>`;
     await ctx.s.imports.idle();
     await ctx.close();
   }
+});
+
+test('Englische Installation: Was der Import in die Seiten schreibt, steht auf Englisch', async (t) => {
+  await t.test('Hinweise der Konverter', () => {
+    const german =
+      '<div data-type="callout"><p>Confluence-Makro „jira-chart“ wurde nicht übernommen.</p></div>' +
+      '<div data-type="callout"><p>Confluence-Makro „unbekannt“ wurde nicht übernommen.</p></div>' +
+      '<p><em>Eingebunden aus Confluence: <a href="#">Seite</a></em></p>' +
+      '<p><em>Eingebunden: <a href="/__wiki/Main.Other">Main.Other</a></em></p>' +
+      '<em>[Plugin gallery nicht übernommen]</em> [Vorlage „Infobox Server“ nicht übernommen] <p><em>[Makro „velocity“ nicht übernommen]</em></p>';
+    assert.equal(localizeImportNotes(german, 'de'), german, 'deutsche Installation: unverändert');
+    const english = localizeImportNotes(german, 'en');
+    assert.match(english, /Confluence macro “jira-chart” was not imported\./);
+    assert.match(english, /Confluence macro “unknown” was not imported\./);
+    assert.match(english, /<em>Included from Confluence: <a href="#">Seite<\/a><\/em>/);
+    assert.match(english, /<em>Included: <a href="\/__wiki\/Main\.Other">Main\.Other<\/a><\/em>/);
+    assert.match(english, /\[plugin gallery not imported\]/);
+    assert.match(english, /\[template “Infobox Server” not imported\]/);
+    assert.match(english, /\[macro “velocity” not imported\]/);
+    assert.doesNotMatch(english, /nicht übernommen|Eingebunden/);
+    // Was die Konverter wirklich schreiben, wird erkannt
+    const fromDokuWiki = dokuWikiToHtml('Bilder: {{gallery>:fotos}}', { ns: '', page: (id) => id, media: (id) => id }).html;
+    assert.match(fromDokuWiki, /\[Plugin gallery nicht übernommen\]/);
+    assert.match(localizeImportNotes(fromDokuWiki, 'en'), /\[plugin gallery not imported\]/);
+    const storage = { pageKey: 'p1', spaceKey: 'IT', resolvePage: () => null, userName: () => null, unsupported: new Set<string>() };
+    const fromConfluence = storageToHtml('<ac:structured-macro ac:name="roadmap"></ac:structured-macro><p>Termin: <time datetime="2026-10-05"></time></p>', storage);
+    assert.match(fromConfluence, /Confluence-Makro „roadmap“ wurde nicht übernommen\./);
+    assert.match(fromConfluence, /Termin: 5\.10\.2026/);
+    assert.match(localizeImportNotes(fromConfluence, 'en'), /Confluence macro “roadmap” was not imported\./);
+    // Ein Datum aus Confluence in der Schreibweise der Installation
+    assert.match(storageToHtml('<p><time datetime="2026-10-05"></time></p>', { ...storage, locale: 'en' }), /05\/10\/2026/);
+  });
+
+  await t.test('Import in eine englisch eingerichtete Installation: Seiten, Bericht, Änderungsnotizen', async () => {
+    const ctx = await createTestApp();
+    const admin = new Client(ctx.app);
+    const run = async (files: Record<string, string | Buffer>, fields: Record<string, string> = {}) => {
+      const form = multipart(fields, { name: 'wiki.zip', data: zip(files) });
+      const started = await admin.request('POST', '/api/v1/spaces/MW/import/wiki', form.body, { 'content-type': form.type });
+      assert.equal(started.status, 202, started.raw);
+      await ctx.s.imports.idle();
+      return started.body.id as string;
+    };
+    const german = { 'x-knowstead-locale': 'de' };
+    try {
+      assert.equal((await admin.post('/api/v1/setup', { siteName: 'Wiki', username: 'admin', displayName: 'Ada', password: 'secret-secret', locale: 'en', sampleContent: false })).status, 200);
+      assert.equal((await admin.post('/api/v1/spaces', { key: 'MW', name: 'Imported' })).status, 200);
+      // „Archive“ ist größer als eine Seite sein darf und verweist zurück – der zweite Durchlauf fasst sie also an
+      const dump = `<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" version="0.11" xml:lang="en">
+<siteinfo><namespaces><namespace key="6" case="first-letter">File</namespace><namespace key="10" case="first-letter">Template</namespace></namespaces></siteinfo>
+<page><title>Operations</title><ns>0</ns>
+<revision><timestamp>2021-03-01T08:00:00Z</timestamp><contributor><username>olduser</username></contributor><text xml:space="preserve">Draft</text></revision>
+<revision><timestamp>2021-04-01T08:00:00Z</timestamp><contributor><username>olduser</username></contributor><comment>Typo fixed</comment><text xml:space="preserve">Second draft</text></revision>
+<revision><timestamp>2022-05-01T08:00:00Z</timestamp><contributor><username>admin</username></contributor><text xml:space="preserve">${xml(`{{Infobox Server|name=db01}}
+See [[Missing page]] and [[Archive]].
+
+[[File:Diagram.png]]`)}</text></revision></page>
+<page><title>Archive</title><ns>0</ns><revision><timestamp>2022-01-01T08:00:00Z</timestamp><text xml:space="preserve">${xml(`Back to [[Operations]].\n\n${'Lorem ipsum dolor sit amet. '.repeat(190000)}`)}</text></revision></page>
+<page><title>Template:Infobox Server</title><ns>10</ns><revision><timestamp>2022-01-01T08:00:00Z</timestamp><text xml:space="preserve">x</text></revision></page>
+</mediawiki>`;
+      const id = await run({ 'dump.xml': dump }, { history: 'true' });
+      const job = (await admin.get(`/api/v1/imports/${id}`)).body;
+      assert.equal(job.state, 'done', job.error ?? '');
+      assert.equal(job.report.pages, 2);
+
+      // Seiten: Hinweise der Konverter und des Imports auf Englisch – auch dort, wo Verweise aufgelöst wurden
+      const tree = (await admin.get('/api/v1/spaces/MW/tree')).body as { id: number; title: string }[];
+      const idOf = (title: string) => tree.find((p) => p.title === title)!.id;
+      const page = (await admin.get(`/api/v1/pages/${idOf('Operations')}`)).body;
+      assert.match(page.content, /\[template “Infobox Server” not imported\]/);
+      assert.match(page.content, /class="knowstead-missing-link" title="Page not included in the import">Missing page/);
+      assert.match(page.content, /\[Image missing: Diagram\.png\]/);
+      assert.match(page.content, new RegExp(`href="/s/MW/p/${idOf('Archive')}[^"]*">Archive</a>`), 'vorhandene Verweise sind aufgelöst');
+      assert.doesNotMatch(page.content, /nicht übernommen|nicht im Import|Bild fehlt|__wiki|__media/);
+      // Eine zu große Seite bleibt beim Hinweis, statt im zweiten Durchlauf doch wieder ganz geschrieben zu werden
+      const archive = (await admin.get(`/api/v1/pages/${idOf('Archive')}`)).body;
+      assert.match(archive.content, /^<p><em>The content of this page was too large for the import \(MediaWiki\)\.<\/em><\/p>$/);
+
+      // Bericht: in der Sprache der Person, die ihn liest
+      assert.deepEqual(job.report.skipped, [{ title: 'Template:Infobox Server', reason: 'Namespace Template is not imported' }]);
+      assert.deepEqual(job.report.warnings, ['Archive: content too large – only a note was imported']);
+      assert.deepEqual(job.report.missingMedia, ['Diagram.png']);
+      const inGerman = (await admin.request('GET', `/api/v1/imports/${id}`, undefined, german)).body;
+      assert.deepEqual(inGerman.report.skipped, [{ title: 'Template:Infobox Server', reason: 'Namensraum Template wird nicht übernommen' }]);
+      assert.deepEqual(inGerman.report.warnings, ['Archive: Inhalt zu groß – nur ein Hinweis übernommen']);
+
+      // Änderungsnotizen der übernommenen Versionen
+      const notes = async (headers: Record<string, string> = {}) =>
+        ((await admin.request('GET', `/api/v1/pages/${idOf('Operations')}/revisions`, undefined, headers)).body.items as { changeNote: string }[]).map((r) => r.changeNote);
+      const english = await notes();
+      assert.ok(english.includes('Imported from MediaWiki (author in MediaWiki: olduser)'), english.join(' | '));
+      assert.ok(english.includes('Typo fixed (author in MediaWiki: olduser)'), english.join(' | '));
+      assert.ok(!english.some((note) => /Importiert|Autor in/.test(note)), english.join(' | '));
+      const germanNotes = await notes(german);
+      assert.ok(germanNotes.includes('Importiert aus MediaWiki (Autor in MediaWiki: olduser)'), germanNotes.join(' | '));
+      assert.ok(germanNotes.includes('Typo fixed (Autor in MediaWiki: olduser)'), germanNotes.join(' | '));
+
+      // Ein Import, der scheitert, nennt den Grund ebenfalls in der Sprache der Person
+      const failed = await run({ 'notes.txt': 'nothing a wiki would export' });
+      const failure = (await admin.get(`/api/v1/imports/${failed}`)).body;
+      assert.equal(failure.state, 'failed');
+      assert.match(failure.error, /^The format was not recognised\./);
+      assert.match((await admin.request('GET', `/api/v1/imports/${failed}`, undefined, german)).body.error, /^Das Format wurde nicht erkannt\./);
+    } finally {
+      await ctx.s.imports.idle();
+      await ctx.close();
+    }
+  });
 });

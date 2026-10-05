@@ -4,6 +4,7 @@ import { FileDown, FileOutput, ImagePlus, Save, Trash2 } from 'lucide-react';
 import { api, saveFile } from '../../api/client';
 import { useI18n, type TFn } from '../../i18n';
 import { useToast } from '../../lib/toast';
+import { exportFooterText } from '../../lib/built-in-texts';
 import { Alert, Button, Card, Field, Input, Loading, PageHeader, Select, Switch } from '../../components/ui';
 import { ColorPicker } from '../../components/Pickers';
 
@@ -62,9 +63,13 @@ export function AdminExportTemplate() {
   const fileInput = useRef<HTMLInputElement>(null);
   const focused = useRef<'headerText' | 'footerText'>('headerText');
 
+  // Die unveränderte Vorgabe der Fußzeile steht im Formular in der Sprache der Oberfläche
+  const localized = (template: ExportTemplate): ExportTemplate => ({ ...structuredClone(template), footerText: exportFooterText(template.footerText, t) });
+
   useEffect(() => {
-    if (settings.data && !dirty) setTpl(structuredClone(settings.data.exportTemplate));
-  }, [settings.data, dirty]);
+    if (settings.data && !dirty) setTpl(localized(settings.data.exportTemplate));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `localized` hängt nur an der Sprache
+  }, [settings.data, dirty, locale]);
 
   if (settings.isLoading || !tpl) return <Loading />;
   const set = (patch: Partial<ExportTemplate>) => {
@@ -76,7 +81,7 @@ export function AdminExportTemplate() {
     setSaving(true);
     try {
       const saved = await api.put<{ exportTemplate: ExportTemplate }>('/api/v1/admin/settings', { exportTemplate: tpl });
-      setTpl(structuredClone(saved.exportTemplate));
+      setTpl(localized(saved.exportTemplate));
       setDirty(false);
       void qc.invalidateQueries({ queryKey: ['admin-settings'] });
       void qc.invalidateQueries({ queryKey: ['export-template-defaults'] });

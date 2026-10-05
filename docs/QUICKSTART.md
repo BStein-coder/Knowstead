@@ -49,11 +49,11 @@ file next to it from the [Releases](https://github.com/BStein-coder/Knowstead/re
 the checksum:
 
 ```bash
-sha256sum -c knowstead-2.0.0-linux-x64.tar.gz.sha256
+sha256sum -c knowstead-2.0.1-linux-x64.tar.gz.sha256
 ```
 
 ```powershell
-Get-FileHash .\knowstead-2.0.0-windows-x64.zip -Algorithm SHA256
+Get-FileHash .\knowstead-2.0.1-windows-x64.zip -Algorithm SHA256
 ```
 
 The packages contain the built user interface and all runtime dependencies. To build one yourself from
@@ -65,7 +65,7 @@ is in `release/`; this also works on Windows for a Linux server).
 ### Linux
 
 ```bash
-sudo tar -xzf knowstead-2.0.0-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.0.0-linux-x64 /opt/knowstead
+sudo tar -xzf knowstead-2.0.1-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.0.1-linux-x64 /opt/knowstead
 ```
 
 Run the installer without questions – replace the address with yours:

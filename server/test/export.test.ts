@@ -200,6 +200,12 @@ test('Export nach PDF und Word mit Firmenvorlage', async (t) => {
       const footers = Object.entries(docx).filter(([name]) => /word\/footer\d\.xml/.test(name)).map(([, xml]) => xml).join('');
       assert.match(footers, /Betrieb · Date \d{2}\/\d{2}\/\d{4} · Version 1/);
 
+      // Dieselbe Vorgabe, auf Englisch gespeichert (so steht sie in der englischen Administration im Feld):
+      // Der Export richtet sich weiter nach der Sprache des Dokuments
+      assert.equal((await admin.put('/api/v1/admin/settings', { exportTemplate: { footerText: '{space} · Date {date} · {version}' } })).status, 200);
+      assert.match((await pdfText((await admin.request('GET', url)).bytes)).join(' '), /Betrieb · Stand \d{2}\.\d{2}\.\d{4} · Version 1/);
+      assert.match((await pdfText((await admin.request('GET', url, undefined, { 'x-knowstead-locale': 'en' })).bytes)).join(' '), /Betrieb · Date \d{2}\/\d{2}\/\d{4} · Version 1/);
+
       // Eigene Texte der Firmenvorlage bleiben unverändert
       assert.equal((await admin.put('/api/v1/admin/settings', { exportTemplate: { footerText: '{space} · Stand {date}' } })).status, 200);
       const custom = (await pdfText((await admin.request('GET', url, undefined, { 'x-knowstead-locale': 'en' })).bytes)).join(' ');
@@ -214,6 +220,17 @@ test('Export nach PDF und Word mit Firmenvorlage', async (t) => {
       assert.doesNotMatch(parts['word/document.xml'], /<w:titlePg\/>/, 'ohne Deckblatt');
       assert.match(Object.entries(parts).filter(([n]) => n.includes('header')).map(([, x]) => x).join(''), /Probe AG/);
       assert.equal((await admin.get('/api/v1/export/template')).body.company, 'Muster GmbH', 'Muster speichert nichts');
+
+      // Das Muster folgt der Sprache der Person: Text und Dateiname
+      assert.match(parts['word/document.xml'], /Musterdokument/);
+      assert.match(decodeURIComponent(String(sample.headers['content-disposition'])), /Musterdokument\.docx/);
+      const english = await admin.request('POST', '/api/v1/admin/export-template/sample', { format: 'docx', template: { company: 'Probe AG' } }, { 'x-knowstead-locale': 'en' });
+      assert.equal(english.status, 200);
+      const englishText = docxParts(english.bytes)['word/document.xml'];
+      assert.match(englishText, /Sample document/);
+      assert.match(englishText, /Child pages follow as chapters of their own\./);
+      assert.doesNotMatch(englishText, /Musterdokument|Unterseite|Aufzählungspunkt|Verantwortlich/);
+      assert.match(decodeURIComponent(String(english.headers['content-disposition'])), /Sample document\.docx/);
       assert.equal((await tom.post('/api/v1/admin/export-template/sample', { format: 'pdf' })).status, 403);
       assert.equal((await admin.post('/api/v1/admin/export-template/sample', { format: 'pdf', template: { primaryColor: 'blau' } })).status, 400);
 

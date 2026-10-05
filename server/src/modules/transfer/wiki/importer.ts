@@ -9,6 +9,7 @@ import type { Services } from '../../../services.ts';
 import type { AuthContext } from '../../../core/permissions.ts';
 import type { SpaceRow } from '../../../core/types.ts';
 import { badRequest } from '../../../core/errors.ts';
+import { translate, type Locale } from '../../../core/i18n.ts';
 import type { ArchiveEntries } from '../../../core/archive-entries.ts';
 import { pageUrl } from '../../pages/service.ts';
 import { escapeHtml, type WikiDocument, type WikiParseResult } from './common.ts';
@@ -23,6 +24,8 @@ export interface WikiImportOptions {
   format: WikiFormat | 'auto';
   parentId: number | null;
   history: boolean;
+  /** Sprache für Datumsangaben, die ein Konverter als Text in den Inhalt schreibt (Standard: Deutsch) */
+  locale?: Locale;
 }
 
 export interface WikiImportReport {
@@ -47,6 +50,28 @@ const TEXT = new TextDecoder('utf-8');
 const FORMAT_NAMES: Record<WikiFormat, string> = { mediawiki: 'MediaWiki', dokuwiki: 'DokuWiki', xwiki: 'XWiki', confluence: 'Confluence' };
 
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
+
+/**
+ * Hinweise, die die Konverter in den Inhalt schreiben („… wurde nicht übernommen“). In einer englischsprachigen
+ * Installation stünden sie sonst auf Deutsch mitten in den importierten Seiten.
+ */
+const IMPORT_NOTES_EN: [RegExp, string][] = [
+  [/Confluence-Makro „unbekannt“ wurde nicht übernommen\./g, 'Confluence macro “unknown” was not imported.'],
+  [/Confluence-Makro „([^“<]*)“ wurde nicht übernommen\./g, 'Confluence macro “$1” was not imported.'],
+  [/Jira-Abfrage aus Confluence \(nicht übernommen\)/g, 'Jira query from Confluence (not imported)'],
+  [/<em>Eingebunden aus Confluence: /g, '<em>Included from Confluence: '],
+  [/<em>Eingebunden: <a /g, '<em>Included: <a '],
+  [/\[Plugin ([^\]<]*) nicht übernommen\]/g, '[plugin $1 not imported]'],
+  [/\[Vorlage „([^“<\]]*)“ nicht übernommen\]/g, '[template “$1” not imported]'],
+  [/\[Makro „([^“<\]]*)“ nicht übernommen\]/g, '[macro “$1” not imported]'],
+];
+
+export function localizeImportNotes(html: string, locale: Locale): string {
+  if (locale !== 'en') return html;
+  let out = html;
+  for (const [pattern, replacement] of IMPORT_NOTES_EN) out = out.replace(pattern, replacement);
+  return out;
+}
 
 /** Welche hochgeladenen Dateien Archive sind, deren Einträge einzeln zählen */
 export const WIKI_ARCHIVES = /\.(zip|xar)$/i;
@@ -83,7 +108,7 @@ export async function parseWikiEntries(entries: ArchiveEntries, options: WikiImp
       return result;
     }
     if (format === 'dokuwiki') return parseDokuWiki(entries, { history: options.history, maxRevisions: MAX_REVISIONS });
-    if (format === 'confluence') return parseConfluence(entries, { history: options.history, maxRevisions: MAX_REVISIONS });
+    if (format === 'confluence') return parseConfluence(entries, { history: options.history, maxRevisions: MAX_REVISIONS, locale: options.locale });
     return parseXWiki(entries);
   } catch (err) {
     if (err instanceof Error && !('status' in err)) throw badRequest(err.message);
@@ -108,6 +133,9 @@ export class WikiImporter {
     const { s, auth, space } = this;
     s.perms.requireSpace(auth, space, 'create');
     const user = s.perms.requireUser(auth);
+    // Was der Import selbst in die Seiten schreibt, folgt der Sprache der Installation
+    const locale = s.settings.get('defaultLocale');
+    const text = (german: string) => translate(german, locale);
     if (parsed.documents.length > MAX_DOCUMENTS) throw badRequest(`Zu viele Seiten für einen Import (höchstens ${MAX_DOCUMENTS})`);
     if (!parsed.documents.length) throw badRequest('Das Archiv enthält keine übernehmbaren Seiten');
     if (options.parentId) {
@@ -131,6 +159,8 @@ export class WikiImporter {
     const source = FORMAT_NAMES[parsed.format];
     const docs = new Map<string, WikiDocument>(parsed.documents.map((d) => [d.key, d]));
     const created = new Map<string, { id: number; title: string }>();
+    // Was als Inhalt gespeichert wurde – darauf setzt das Auflösen der Verweise auf, nicht auf dem Original
+    const stored = new Map<string, string>();
     const users = new Map<string, number | null>();
     const userId = (name: string | null) => {
       if (!name) return null;
@@ -158,12 +188,13 @@ export class WikiImporter {
       creating.add(key);
       const parentKey = doc ? doc.parentKey : folder!.parentKey;
       const parentId = parentKey && parentKey !== key ? await ensure(parentKey) : options.parentId;
-      const title = (doc ? doc.title : folder!.title).slice(0, 255) || 'Importierte Seite';
-      let content = doc ? doc.html : '<div data-type="children" data-depth="1"></div>';
+      const title = (doc ? doc.title : folder!.title).slice(0, 255) || text('Importierte Seite');
+      let content = doc ? localizeImportNotes(doc.html, locale) : '<div data-type="children" data-depth="1"></div>';
       if (Buffer.byteLength(content, 'utf8') > 4.5 * 1024 * 1024) {
         report.warnings.push(`${title}: Inhalt zu groß – nur ein Hinweis übernommen`);
-        content = `<p><em>Der Inhalt dieser Seite war für den Import zu groß (${source}).</em></p>`;
+        content = `<p><em>${escapeHtml(text(`Der Inhalt dieser Seite war für den Import zu groß (${source}).`))}</em></p>`;
       }
+      if (doc) stored.set(key, content);
       const page = await s.pages.create(auth, {
         spaceId: space.id,
         parentId,
@@ -178,7 +209,7 @@ export class WikiImporter {
       if (parentId === options.parentId && report.root.length < 20) report.root.push({ id: page.id, title: page.title, url: pageUrl(space.key, page.id, page.title) });
       if (doc) {
         report.pages++;
-        const history = doc.revisions.map((r) => ({ title: r.title || title, content: r.html, authorId: userId(r.author) ?? user.id, changeNote: note(r.comment, r.author), createdAt: r.timestamp }));
+        const history = doc.revisions.map((r) => ({ title: r.title || title, content: localizeImportNotes(r.html, locale), authorId: userId(r.author) ?? user.id, changeNote: note(r.comment, r.author), createdAt: r.timestamp }));
         report.revisions += history.length;
         s.pages.importHistory(page.id, history, {
           authorId: userId(doc.author) ?? user.id,
@@ -268,7 +299,7 @@ export class WikiImporter {
           if (target) a.setAttribute('href', `${pageUrl(space.key, target.id, target.title)}${wiki[2] ? `#${safeDecode(wiki[2])}` : ''}`);
           else {
             report.unresolvedLinks++;
-            a.replaceWith(`<span class="knowstead-missing-link" title="Seite nicht im Import enthalten">${a.innerHTML}</span>`);
+            a.replaceWith(`<span class="knowstead-missing-link" title="${escapeHtml(text('Seite nicht im Import enthalten'))}">${a.innerHTML}</span>`);
           }
           continue;
         }
@@ -278,7 +309,7 @@ export class WikiImporter {
           if (id) a.setAttribute('href', `/api/v1/attachments/${id}/raw?download=1`);
           else {
             missing.add(safeDecode(media[1]));
-            a.replaceWith(`<span class="knowstead-missing-link" title="Datei nicht im Import enthalten">${a.innerHTML}</span>`);
+            a.replaceWith(`<span class="knowstead-missing-link" title="${escapeHtml(text('Datei nicht im Import enthalten'))}">${a.innerHTML}</span>`);
           }
         }
       }
@@ -289,7 +320,7 @@ export class WikiImporter {
         if (id) img.setAttribute('src', `/api/v1/attachments/${id}/raw`);
         else {
           missing.add(safeDecode(media[1]));
-          img.replaceWith(`<em>[Bild fehlt: ${escapeHtml(safeDecode(media[1]))}]</em>`);
+          img.replaceWith(`<em>${escapeHtml(text(`[Bild fehlt: ${safeDecode(media[1])}]`))}</em>`);
         }
       }
       for (const gallery of root.querySelectorAll('div[data-type="gallery"]') as HTMLElement[]) {
@@ -317,8 +348,12 @@ export class WikiImporter {
     for (const doc of order) {
       const page = created.get(doc.key);
       if (!page) continue;
-      const html = resolveHtml(doc.html);
-      if (html !== doc.html) s.pages.replaceContentInPlace(page.id, html);
+      // Ausgangspunkt ist, was Schritt 1 gespeichert hat: mit übersetzten Hinweisen – und bei einer zu großen
+      // Seite nur der Hinweis darauf, nicht doch wieder der ganze Inhalt
+      const original = stored.get(doc.key) ?? doc.html;
+      stored.delete(doc.key);
+      const html = resolveHtml(original);
+      if (html !== original) s.pages.replaceContentInPlace(page.id, html);
       if (doc.revisions.length) {
         for (const r of s.db.all<{ version: number; content: string }>("SELECT version, content FROM page_revisions WHERE page_id = ? AND (content LIKE '%/\\_\\_wiki/%' ESCAPE '\\' OR content LIKE '%/\\_\\_media/%' ESCAPE '\\')", page.id)) {
           s.db.run('UPDATE page_revisions SET content = ? WHERE page_id = ? AND version = ?', resolveHtml(r.content), page.id, r.version);

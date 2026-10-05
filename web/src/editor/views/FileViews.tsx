@@ -50,18 +50,6 @@ export function iconFor(name: string, mime = '') {
   return File;
 }
 
-export function formatBytes(bytes: number): string {
-  if (!bytes) return '';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  return `${value.toLocaleString('de-DE', { maximumFractionDigits: unit ? 1 : 0 })} ${units[unit]}`;
-}
-
 function useAttachments(pageId: number | null) {
   return useQuery({
     queryKey: ['attachments', pageId, false],
@@ -88,7 +76,7 @@ function mediaKind(mime: string, name: string): 'video' | 'audio' | null {
 
 /** Datei im Fließtext: Symbol, Name, Größe, Download und – wenn möglich – Vorschau. */
 export function FileCardView(props: NodeViewProps) {
-  const { t } = useI18n();
+  const { t, fmt } = useI18n();
   const { pageId } = useDoc();
   const [preview, setPreview] = useState(false);
   const id = Number(props.node.attrs.attachmentId) || null;
@@ -125,7 +113,7 @@ export function FileCardView(props: NodeViewProps) {
           </div>
           <div className="file-card-meta">
             {extOf(name).toUpperCase() || t('files.file')}
-            {size ? ` · ${formatBytes(size)}` : ''}
+            {size ? ` · ${fmt.bytes(size)}` : ''}
             {attachment === null && attachments && id ? ` · ${t('files.missing')}` : ''}
           </div>
         </div>

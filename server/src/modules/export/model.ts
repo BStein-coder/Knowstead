@@ -440,14 +440,21 @@ export interface ExportDocument {
 
 export type ExportTemplate = ExportTemplateSettings;
 
-/** Unveränderte Vorgaben der Firmenvorlage in englischen Dokumenten (eigene Texte bleiben, wie sie sind). */
-const DEFAULT_TEMPLATE_TEXTS_EN: Record<string, string> = {
-  '{space} · Stand {date} · {version}': '{space} · Date {date} · {version}',
-};
+/**
+ * Unveränderte Vorgaben der Firmenvorlage folgen der Sprache des Dokuments – gleich, in welcher Sprache die
+ * Vorlage gespeichert wurde (die Administration zeigt die Vorgabe in der Sprache der Oberfläche). Eigene Texte
+ * bleiben, wie sie sind.
+ */
+const DEFAULT_TEMPLATE_TEXTS: Record<Locale, string>[] = [{ de: '{space} · Stand {date} · {version}', en: '{space} · Date {date} · {version}' }];
+
+function templateText(template: string, locale: Locale): string {
+  const builtIn = DEFAULT_TEMPLATE_TEXTS.find((text) => text.de === template || text.en === template);
+  return builtIn ? builtIn[locale] : template;
+}
 
 /** Platzhalter in Kopf-/Fußzeilen ersetzen; Trennzeichen leerer Werte entfallen. */
 export function fillPlaceholders(template: string, doc: ExportDocument, tpl: ExportTemplate): string {
-  const text = doc.locale === 'en' ? (DEFAULT_TEMPLATE_TEXTS_EN[template] ?? template) : template;
+  const text = templateText(template, doc.locale ?? 'de');
   const values: Record<string, string> = {
     company: tpl.company,
     title: doc.title,

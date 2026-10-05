@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BellRing, Mail, Save, Send, Settings as SettingsIcon } from 'lucide-react';
 import { api } from '../../api/client';
 import { useI18n } from '../../i18n';
+import { taglineText } from '../../lib/built-in-texts';
 import { useToast } from '../../lib/toast';
 import { Button, Card, Field, Input, Loading, PageHeader, Select, Switch, Textarea } from '../../components/ui';
 import { ColorPicker } from '../../components/Pickers';
@@ -120,7 +121,8 @@ export function AdminSettings() {
               <Input value={s.siteName} onChange={(e) => set('siteName', e.target.value)} />
             </Field>
             <Field label={t('adminSettings.tagline')}>
-              <Input value={s.siteTagline} onChange={(e) => set('siteTagline', e.target.value)} />
+              {/* Die mitgelieferte Vorgabe erscheint wie auf der Start- und Anmeldeseite in der Sprache der Oberfläche */}
+              <Input value={taglineText(s.siteTagline, t)} onChange={(e) => set('siteTagline', e.target.value)} />
             </Field>
             <Field label={t('adminSettings.defaultLocale')}>
               <Select value={s.defaultLocale} onChange={(e) => set('defaultLocale', e.target.value as 'de' | 'en')}>

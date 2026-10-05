@@ -163,7 +163,7 @@ Under **Administration → AI & files** four optional building blocks are set up
 2. Enter the **model** and, if needed, the **base URL** and **API key** (the key is stored encrypted and never displayed again).
 3. Set the **daily limit per person**, **maximum response length** and the **enabled features**; optionally an **additional instruction** for tone and terminology.
 4. **Test connection**, then **Enable AI features** and save.
-5. Under **Groups** grant the permission **Use AI features**. New installations give it to the group "Benutzer"; existing installations need to add it once.
+5. Under **Groups** grant the permission **Use AI features**. New installations give it to the group "Users"; existing installations need to add it once.
 
 Usage (requests, tokens, errors, most active people) is shown on the same page; every request is also recorded in the audit log.
 

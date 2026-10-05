@@ -49,6 +49,7 @@ Testkonten und -inhalte an (`tests/global.setup.ts`). Die eigene Installation bl
 | `npx playwright test --headed` | Browser sichtbar |
 | `npx playwright test --project=mobile` | nur Smartphone-Ansicht |
 | `npm run sweep` | Layout-Messung über alle Seiten (einige Minuten); einzelne Seiten mit `npm run sweep -- -g "Startseite"` |
+| `npm run scan:english` | Englische Oberfläche nach deutschen Resten absuchen (siehe unten); einzelne Ansichten mit `npm run scan:english -- admin` |
 | `npm run report` | HTML-Bericht mit Bildschirmfotos und Aufzeichnungen fehlgeschlagener Tests |
 | `npm run typecheck` | TypeScript der Tests prüfen |
 
@@ -60,6 +61,16 @@ Netzwerk-Sockets des Betriebssystems) – die Seite bleibt dann leer. Ein fehlge
 einmal wiederholt; besteht er beim zweiten Mal, steht er im Ergebnis als **flaky**. Solche Tests im Bericht
 ansehen (Anhang `browser-fehler.txt`): Nur der genannte Netzwerkfehler ist harmlos, alles andere ist ein
 echter Befund. Ohne Wiederholung: `E2E_RETRIES=0`.
+
+**Englische Oberfläche.** `english-scan.mjs` sucht in der englischen Oberfläche nach deutschen Resten:
+deutsche Wörter und Umlaute, deutsche Datums- und Zahlenschreibweise („14. Okt.“, „05.10.2026“, „100.000“) –
+in sichtbarem Text, in Beschriftungen (`title`, `aria-label`, `placeholder`) und in dem, was in Feldern steht.
+Der Browser läuft dabei auf Deutsch, die Oberfläche auf Englisch; so fällt auch auf, was der Sprache des
+Browsers folgt. Das Skript startet einen eigenen Server (Port 3898, `E2E_SCAN_PORT`) mit frischer, englisch
+eingerichteter Datenbank in einem Wegwerf-Ordner, geht rund 65 Ansichten durch und schreibt Auffälligkeiten
+nach `reports/english-scan.txt`. Es gehört nicht zum normalen Lauf: Die Wortliste ist eine Heuristik, ein
+Befund braucht einen Blick. Bewusst Deutsches (Schlüssel `HANDBUCH`, „Deutsch“ in der Sprachwahl) steht im
+Skript unter `ERLAUBT`. Seiteninhalte und die Versionshinweise werden nicht durchsucht.
 
 ## Tests erweitern
 

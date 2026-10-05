@@ -155,3 +155,27 @@ test('Wiedervorlage: Verantwortliche, Intervalle, Erinnerungen, Aufgaben', async
     await ctx.close();
   }
 });
+
+test('Wiedervorlage in einer englisch eingerichteten Installation: Aufgabe auf Englisch', async () => {
+  const ctx = await createTestApp();
+  const admin = new Client(ctx.app);
+  try {
+    assert.equal((await admin.post('/api/v1/setup', { siteName: 'Wiki', username: 'admin', displayName: 'Ada', password: 'secret-secret', locale: 'en', sampleContent: false })).status, 200);
+    assert.equal((await admin.post('/api/v1/spaces', { key: 'OPS', name: 'Operations' })).status, 200);
+    const page = await admin.post('/api/v1/pages', { spaceKey: 'OPS', title: 'Notfallhandbuch', content: '<p>2026</p>' });
+    const board = await admin.post('/api/v1/spaces/OPS/boards', { name: 'Editorial' });
+    assert.equal((await admin.put('/api/v1/spaces/OPS/review-cycle', { intervalMonths: 12, boardId: board.body.id })).status, 200);
+    const me = await admin.get('/api/v1/auth/me');
+    assert.equal((await admin.put(`/api/v1/pages/${page.body.id}/review-cycle`, { ownerId: me.body.user.id, intervalMonths: 6 })).status, 200);
+    const due = new Date((await admin.get(`/api/v1/pages/${page.body.id}`)).body.reviewCycle.dueAt);
+    assert.deepEqual(((r) => [r.overdue, r.tasks])(ctx.s.reviewCycle.runReminders(new Date(due.getTime() + DAY))), [1, 1]);
+
+    const task = (await admin.get(`/api/v1/tasks?board=${board.body.id}`)).body.items[0];
+    assert.equal(task.title, 'Review page: Notfallhandbuch', 'fester Teil englisch, der Seitentitel bleibt');
+    const day = due.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    assert.equal(task.notes, `Review due since ${day}. Check the content and choose “Confirm as up to date” on the page – the task is then completed automatically.`);
+    assert.deepEqual(task.labels, ['review']);
+  } finally {
+    await ctx.close();
+  }
+});

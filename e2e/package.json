@@ -7,6 +7,7 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "sweep": "node sweep.mjs",
+    "scan:english": "node english-scan.mjs",
     "report": "playwright show-report reports/html",
     "typecheck": "node ../node_modules/typescript/bin/tsc -p tsconfig.json",
     "install-browser": "playwright install chromium"

@@ -22,6 +22,8 @@ const TEXT = new TextDecoder('utf-8');
 export interface ConfluenceOptions {
   history: boolean;
   maxRevisions: number;
+  /** Sprache für Datumsangaben im Text (Makro „Datum“) */
+  locale?: 'de' | 'en';
 }
 
 export function isConfluenceArchive(entries: ArchiveEntries): boolean {
@@ -219,6 +221,7 @@ export function parseConfluenceXml(entries: ArchiveEntries, options: ConfluenceO
       resolvePage: (title, space) => titleIndex.get(`${space.toLowerCase()}:${title.toLowerCase()}`) ?? null,
       userName: (key) => userName(key),
       unsupported,
+      locale: options.locale,
     });
 
   // Ältere Versionen je Seite

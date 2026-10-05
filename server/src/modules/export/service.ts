@@ -92,34 +92,25 @@ export class ExportService {
   async sample(auth: AuthContext, format: DocumentFormat, tpl: ExportTemplate): Promise<{ filename: string; contentType: string; body: Buffer }> {
     this.s.perms.requireGlobal(auth, 'admin');
     const ctx: ModelContext = { baseUrl: this.s.config.baseUrl, attachmentImage: () => null };
-    const html = `
-      <p>Dieses Musterdokument zeigt, wie Exporte mit der aktuellen Vorlage aussehen: Deckblatt, Inhaltsverzeichnis sowie Kopf- und Fußzeile.</p>
-      <h2>Überschriften und Text</h2>
-      <p>Absätze mit <strong>fetter</strong>, <em>kursiver</em> und <a href="https://example.org">verlinkter</a> Schrift sowie <code>Inline-Code</code>.</p>
-      <ul><li><p>Aufzählungspunkt</p></li><li><p>Noch ein Punkt</p><ul><li><p>Unterpunkt</p></li></ul></li></ul>
-      <ol><li><p>Erster Schritt</p></li><li><p>Zweiter Schritt</p></li></ol>
-      <div data-type="callout" data-variant="info"><p>Hinweisboxen bleiben als farbige Kästen erhalten.</p></div>
-      <h2>Tabellen</h2>
-      <table><tbody><tr><th><p>System</p></th><th><p>Verantwortlich</p></th><th><p>Nächste Prüfung</p></th></tr>
-      <tr><td><p>Ticketsystem</p></td><td><p>IT-Service</p></td><td><p>03/2027</p></td></tr>
-      <tr><td><p>Intranet</p></td><td><p>Kommunikation</p></td><td><p>06/2027</p></td></tr></tbody></table>
-      <h3>Codebeispiel</h3>
-      <pre><code class="language-bash">systemctl status knowstead</code></pre>`;
-    const blocks = htmlToBlocks(html, ctx);
+    // In der Sprache, in der die Administration gerade arbeitet
+    const locale: Locale = auth.locale ?? this.s.settings.get('defaultLocale');
+    const text = SAMPLE_TEXT[locale];
+    const blocks = htmlToBlocks(text.html, ctx);
     const doc: ExportDocument = {
-      title: 'Musterdokument',
-      subtitle: 'Bereich „Beispiel“',
+      locale,
+      title: text.title,
+      subtitle: text.subtitle,
       author: auth.user?.displayName ?? '',
       owner: auth.user?.displayName ?? '',
-      date: formatDate(new Date().toISOString()),
+      date: formatDay(new Date(), locale),
       version: 'Version 1',
       chapters: [
-        { title: 'Musterdokument', level: 1, blocks },
-        { title: 'Unterseite', level: 2, blocks: htmlToBlocks('<p>Unterseiten folgen als eigene Kapitel.</p>', ctx) },
+        { title: text.title, level: 1, blocks },
+        { title: text.child, level: 2, blocks: htmlToBlocks(text.childHtml, ctx) },
       ],
     };
     const body = await this.render(format, doc, tpl);
-    return { filename: `Musterdokument.${format}`, contentType: DOCUMENT_TYPES[format], body };
+    return { filename: `${text.title}.${format}`, contentType: DOCUMENT_TYPES[format], body };
   }
 
   stop(): void {
@@ -240,6 +231,44 @@ export class ExportService {
   }
 }
 
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
+/** Musterdokument für die Vorschau der Export-Vorlage – je Sprache der Oberfläche. */
+const SAMPLE_TEXT: Record<Locale, { title: string; subtitle: string; child: string; childHtml: string; html: string }> = {
+  de: {
+    title: 'Musterdokument',
+    subtitle: 'Bereich „Beispiel“',
+    child: 'Unterseite',
+    childHtml: '<p>Unterseiten folgen als eigene Kapitel.</p>',
+    html: `
+      <p>Dieses Musterdokument zeigt, wie Exporte mit der aktuellen Vorlage aussehen: Deckblatt, Inhaltsverzeichnis sowie Kopf- und Fußzeile.</p>
+      <h2>Überschriften und Text</h2>
+      <p>Absätze mit <strong>fetter</strong>, <em>kursiver</em> und <a href="https://example.org">verlinkter</a> Schrift sowie <code>Inline-Code</code>.</p>
+      <ul><li><p>Aufzählungspunkt</p></li><li><p>Noch ein Punkt</p><ul><li><p>Unterpunkt</p></li></ul></li></ul>
+      <ol><li><p>Erster Schritt</p></li><li><p>Zweiter Schritt</p></li></ol>
+      <div data-type="callout" data-variant="info"><p>Hinweisboxen bleiben als farbige Kästen erhalten.</p></div>
+      <h2>Tabellen</h2>
+      <table><tbody><tr><th><p>System</p></th><th><p>Verantwortlich</p></th><th><p>Nächste Prüfung</p></th></tr>
+      <tr><td><p>Ticketsystem</p></td><td><p>IT-Service</p></td><td><p>03/2027</p></td></tr>
+      <tr><td><p>Intranet</p></td><td><p>Kommunikation</p></td><td><p>06/2027</p></td></tr></tbody></table>
+      <h3>Codebeispiel</h3>
+      <pre><code class="language-bash">systemctl status knowstead</code></pre>`,
+  },
+  en: {
+    title: 'Sample document',
+    subtitle: 'Space “Example”',
+    child: 'Child page',
+    childHtml: '<p>Child pages follow as chapters of their own.</p>',
+    html: `
+      <p>This sample document shows what exports look like with the current template: cover page, table of contents, header and footer.</p>
+      <h2>Headings and text</h2>
+      <p>Paragraphs with <strong>bold</strong>, <em>italic</em> and <a href="https://example.org">linked</a> text and <code>inline code</code>.</p>
+      <ul><li><p>Bullet point</p></li><li><p>Another point</p><ul><li><p>Sub-item</p></li></ul></li></ul>
+      <ol><li><p>First step</p></li><li><p>Second step</p></li></ol>
+      <div data-type="callout" data-variant="info"><p>Callouts are kept as coloured boxes.</p></div>
+      <h2>Tables</h2>
+      <table><tbody><tr><th><p>System</p></th><th><p>Owner</p></th><th><p>Next review</p></th></tr>
+      <tr><td><p>Ticket system</p></td><td><p>IT service</p></td><td><p>03/2027</p></td></tr>
+      <tr><td><p>Intranet</p></td><td><p>Communications</p></td><td><p>06/2027</p></td></tr></tbody></table>
+      <h3>Code example</h3>
+      <pre><code class="language-bash">systemctl status knowstead</code></pre>`,
+  },
+};

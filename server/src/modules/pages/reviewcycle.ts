@@ -15,6 +15,7 @@ import type { PageRow, SpaceRow, UserRef } from '../../core/types.ts';
 import type { DomainEvent } from '../../core/events.ts';
 import { Db, nowIso } from '../../db/database.ts';
 import { badRequest, forbidden } from '../../core/errors.ts';
+import { translate } from '../../core/i18n.ts';
 import { pageUrl } from './service.ts';
 
 export const REVIEW_INTERVALS = [0, 1, 3, 6, 12, 24, 36];
@@ -466,14 +467,17 @@ export class ReviewCycleService {
       }
       if (kind === 'overdue' && space.review_board_id) {
         try {
+          // Die Aufgabe legt das System an, niemand Bestimmtes – Titel, Notiz und Stichwort stehen deshalb in der
+          // Sprache der Installation. Der Seitentitel bleibt, wie er ist.
+          const locale = this.s.settings.get('defaultLocale');
           const task = this.s.tasks.create(this.s.perms.system(), space.review_board_id, {
-            title: `Seite prüfen: ${page.title}`.slice(0, 300),
-            notes: `Wiedervorlage fällig seit ${dueText}. Inhalt prüfen und auf der Seite „Als aktuell bestätigen“ – die Aufgabe wird dann automatisch erledigt.`,
+            title: `${translate('Seite prüfen', locale)}: ${page.title}`.slice(0, 300),
+            notes: translate(`Wiedervorlage fällig seit ${dueText}. Inhalt prüfen und auf der Seite „Als aktuell bestätigen“ – die Aufgabe wird dann automatisch erledigt.`, locale),
             assigneeId: responsible,
             dueDate: page.review_due_at!.slice(0, 10),
             priority: 'high',
             pageId: page.id,
-            labels: ['wiedervorlage'],
+            labels: [locale === 'en' ? 'review' : 'wiedervorlage'],
           });
           taskId = task.id;
           result.tasks++;

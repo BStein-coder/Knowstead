@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { CalendarRange, GitBranch, Repeat } from 'lucide-react';
 import { api } from '../../api/client';
 import type { Board, Task } from '../../api/types';
-import { useI18n } from '../../i18n';
+import { localeTag, useI18n } from '../../i18n';
 import { useToast } from '../../lib/toast';
 import { Avatar, Tabs, cx } from '../../components/ui';
 import { TimelineDependencies } from './TaskDependencies';
@@ -188,7 +188,7 @@ export function TaskTimeline({ board, tasks, onOpen }: { board: Board; tasks: Ta
   const months: { label: string; from: number; count: number }[] = [];
   for (const d of days) {
     const date = new Date(d * 86400_000);
-    const label = date.toLocaleDateString(locale === 'en' ? 'en-GB' : 'de-DE', { month: zoom === 'quarter' ? 'short' : 'long', year: 'numeric', timeZone: 'UTC' });
+    const label = date.toLocaleDateString(localeTag(locale), { month: zoom === 'quarter' ? 'short' : 'long', year: 'numeric', timeZone: 'UTC' });
     const last = months[months.length - 1];
     if (last && last.label === label) last.count++;
     else months.push({ label, from: d, count: 1 });
@@ -243,7 +243,7 @@ export function TaskTimeline({ board, tasks, onOpen }: { board: Board; tasks: Ta
                         className={cx(d === today && 'today', weekday >= 5 && 'weekend')}
                         style={{ left: (d - range.start) * dayWidth, width: zoom === 'week' ? dayWidth : dayWidth * 7 }}
                       >
-                        {zoom === 'week' ? date.getUTCDate() : zoom === 'month' ? `KW ${isoWeek(d)}` : isoWeek(d) % 2 ? isoWeek(d) : ''}
+                        {zoom === 'week' ? date.getUTCDate() : zoom === 'month' ? t('tasks.weekShort', { n: isoWeek(d) }) : isoWeek(d) % 2 ? isoWeek(d) : ''}
                       </span>
                     );
                   })}

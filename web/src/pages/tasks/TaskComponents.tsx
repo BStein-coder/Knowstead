@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Repeat, AlertTriangle, CalendarClock, CheckSquare, Flag, Link2, MessageSquare, Plus, Square, Trash2, UserRound, X } from 'lucide-react';
 import { api } from '../../api/client';
 import type { TaskRecurrence, Board, ChecklistItem, Task, TaskDependencyInput, TaskPriority, TaskStatus, UserRef } from '../../api/types';
-import { useI18n } from '../../i18n';
+import { localeTag, useI18n, type Locale } from '../../i18n';
 import { useToast } from '../../lib/toast';
 import { useDialogs } from '../../lib/dialogs';
 import { Avatar, Badge, Button, Field, IconButton, Input, Modal, Popover, Select, Switch, Textarea, cx } from '../../components/ui';
@@ -14,22 +14,23 @@ import { TaskChat } from './TaskChat';
 
 export const PRIORITY_COLORS: Record<TaskPriority, string> = { low: 'gray', normal: 'blue', high: 'yellow', urgent: 'red' };
 
-export function formatDue(date: string | null): string {
+/** Fälligkeit in Kurzform – „14. Okt.“ bzw. “14 Oct”, je nach Sprache der Oberfläche */
+export function formatDue(date: string | null, locale: Locale): string {
   if (!date) return '';
   const d = new Date(`${date}T00:00:00`);
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
+  return d.toLocaleDateString(localeTag(locale), { day: '2-digit', month: 'short' });
 }
 
 /** Fälligkeitsangabe: rot bei Überfälligkeit, gelb bei „heute/morgen“. */
 export function DueBadge({ task }: { task: Pick<Task, 'dueDate' | 'status' | 'overdue'> }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   if (!task.dueDate) return null;
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
   const color = task.status === 'done' ? 'gray' : task.overdue ? 'red' : task.dueDate === today || task.dueDate === tomorrow ? 'yellow' : 'gray';
   return (
     <Badge color={color} title={t('tasks.due')}>
-      {task.overdue && task.status !== 'done' ? <AlertTriangle size={11} /> : <CalendarClock size={11} />} {formatDue(task.dueDate)}
+      {task.overdue && task.status !== 'done' ? <AlertTriangle size={11} /> : <CalendarClock size={11} />} {formatDue(task.dueDate, locale)}
     </Badge>
   );
 }

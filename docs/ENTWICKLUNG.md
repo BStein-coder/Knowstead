@@ -20,13 +20,14 @@ führt der Einrichtungsassistent durch die Kontoanlage.
 | `npm run lint` | ESLint (TypeScript, React Hooks) und Vollständigkeit der Übersetzungen |
 | `npm run typecheck` | TypeScript für Server, Plugins und Oberfläche |
 | `npm run test:e2e` | Oberfläche bauen und die Browsertests ausführen ([e2e/README.md](../e2e/README.md)) |
+| `npm run test:english` | Oberfläche bauen und die englische Oberfläche nach deutschen Resten absuchen – Wörter, Datums- und Zahlenschreibweise, Feldinhalte ([e2e/README.md](../e2e/README.md)) |
 | `npm run build` | Oberfläche nach `web/dist` bauen |
 | `npm start` | Produktivstart aus dem Quelltext |
 | `npm run cli -- help` | Verwaltungswerkzeug (`status`, `backup`, `backup:list`, `restore`, Konten) |
 | `node scripts/prepare.mjs` | Abhängigkeiten und Oberfläche nur bei Änderungen installieren bzw. bauen (nutzen `start.cmd`/`start.sh`) |
 | `node scripts/install.mjs --help` | Installationskern der Assistenten (`.env`, Verzeichnisse, Probestart, Prüfung) |
 | `node scripts/package.mjs` | Installationspaket nach `release/` bauen (vorher `npm run build`); `--target linux-x64` bzw. `windows-x64`/`linux-arm64` für ein anderes System – npm lädt dann die nativen Module des Zielsystems |
-| `node scripts/release-notes.mjs 2.0.0` | Versionshinweise einer Version aus `CHANGELOG.md` (nutzt der Release-Workflow) |
+| `node scripts/release-notes.mjs 2.0.1` | Versionshinweise einer Version aus `CHANGELOG.md` (nutzt der Release-Workflow) |
 | `node scripts/loadtest.mjs` | Lasttest mit Testdaten in einem temporären Verzeichnis |
 
 Ein einzelner Test:

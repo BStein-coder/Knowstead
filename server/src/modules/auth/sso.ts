@@ -206,14 +206,17 @@ export class SsoService {
     return sa.enabled && !!sa.entryPoint.trim() && pemBlocks(sa.idpCert).length > 0;
   }
 
-  /** Anmeldewege für die Anmeldeseite; unveränderte Standardbeschriftungen erscheinen in der Sprache der Anfrage. */
+  /**
+   * Anmeldewege für die Anmeldeseite; unveränderte Standardbeschriftungen erscheinen in der Sprache der Anfrage –
+   * auch wenn sie aus einer englischen Administration heraus auf Englisch gespeichert wurden.
+   */
   publicInfo(locale: Locale = 'de'): SsoPublicInfo {
     const all = this.s.settings.all();
     const providers: SsoPublicInfo['providers'] = [];
-    const tr = (label: string) => translate(label, locale);
-    if (this.oidcReady(all.oidc)) providers.push({ id: 'oidc', label: tr(all.oidc.label), kind: all.oidc.provider });
-    if (this.samlReady(all.saml)) providers.push({ id: 'saml', label: tr(all.saml.label) });
-    if (all.kerberos.enabled) providers.push({ id: 'kerberos', label: tr(all.kerberos.label) });
+    const tr = (label: string, builtIn: string) => translate(label === translate(builtIn, 'en') ? builtIn : label, locale);
+    if (this.oidcReady(all.oidc)) providers.push({ id: 'oidc', label: tr(all.oidc.label, DEFAULT_SETTINGS.oidc.label), kind: all.oidc.provider });
+    if (this.samlReady(all.saml)) providers.push({ id: 'saml', label: tr(all.saml.label, DEFAULT_SETTINGS.saml.label) });
+    if (all.kerberos.enabled) providers.push({ id: 'kerberos', label: tr(all.kerberos.label, DEFAULT_SETTINGS.kerberos.label) });
     return {
       providers,
       showLocalLogin: all.showLocalLogin || providers.length === 0,

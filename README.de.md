@@ -378,7 +378,7 @@ gestopptem Server zu kopieren.
   API-Tokens mit Umfängen, HTML-Bereinigung (sanitize-html), Content-Security-Policy und weitere
   Sicherheits-Header, AES-256-GCM für gespeicherte Zugangsdaten (auch KI-Schlüssel), Ratenbegrenzung an
   Anmelde- und KI-Routen
-- **Qualität:** 440 Server-Tests (node:test), 297 Browsertests mit Barrierefreiheitsprüfung (hell, dunkel, mobil)
+- **Qualität:** 445 Server-Tests (node:test), 298 Browsertests mit Barrierefreiheitsprüfung (hell, dunkel, mobil)
   (Playwright, axe-core), dazu eine Layout-Messung über alle Seiten in fünf Fensterbreiten, ESLint,
   TypeScript im strikten Modus
 - **Lizenz:** MIT

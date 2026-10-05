@@ -8,6 +8,7 @@ import type { Services } from '../../services.ts';
 import type { AuthContext } from '../../core/permissions.ts';
 import type { SpaceRow } from '../../core/types.ts';
 import { HttpError, notFound } from '../../core/errors.ts';
+import { translate } from '../../core/i18n.ts';
 import { nowIso } from '../../db/database.ts';
 import { openUploads, type ReceivedUpload } from '../../core/archive-entries.ts';
 import { WIKI_ARCHIVES, WikiImporter, parseWikiEntries, type WikiImportOptions, type WikiImportReport } from './wiki/importer.ts';
@@ -78,7 +79,15 @@ export class ImportJobService {
     const user = this.s.perms.requireUser(auth);
     const job = this.jobs.get(id);
     if (!job || (job.userId !== user.id && !auth.isAdmin)) throw notFound('Import nicht gefunden');
-    return this.dto(job);
+    // Fehler, Warnungen und Gründe stehen im Auftrag auf Deutsch – übersetzt wird für die Person, die den Bericht liest
+    const locale = auth.locale ?? this.s.settings.get('defaultLocale');
+    const dto = this.dto(job);
+    if (dto.error) dto.error = translate(dto.error, locale);
+    if (dto.report) {
+      dto.report.warnings = dto.report.warnings.map((warning) => translate(warning, locale));
+      dto.report.skipped = dto.report.skipped.map((entry) => ({ ...entry, reason: translate(entry.reason, locale) }));
+    }
+    return dto;
   }
 
   private async execute(job: ImportJob, auth: AuthContext, space: SpaceRow, upload: ReceivedUpload, options: WikiImportOptions): Promise<void> {
@@ -88,7 +97,7 @@ export class ImportJobService {
       await new Promise<void>((resolve) => setImmediate(resolve));
       // Die Einträge bleiben bis zum Schluss offen: Mediendateien liest der Importer erst beim Anhängen
       entries = openUploads(upload.files, { archives: WIKI_ARCHIVES });
-      const parsed = await parseWikiEntries(entries, options, upload.dir);
+      const parsed = await parseWikiEntries(entries, { ...options, locale: this.s.settings.get('defaultLocale') }, upload.dir);
       job.format = parsed.format;
       job.total = parsed.documents.length;
       const importer = new WikiImporter(this.s, auth, space, (phase, done, total) => {

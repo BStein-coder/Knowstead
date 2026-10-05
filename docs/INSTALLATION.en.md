@@ -73,11 +73,11 @@ existing values and the server key are kept.
 The checksum is in the `.sha256` file next to each package:
 
 ```powershell
-Get-FileHash .\knowstead-2.0.0-windows-x64.zip -Algorithm SHA256
+Get-FileHash .\knowstead-2.0.1-windows-x64.zip -Algorithm SHA256
 ```
 
 ```bash
-sha256sum -c knowstead-2.0.0-linux-x64.tar.gz.sha256
+sha256sum -c knowstead-2.0.1-linux-x64.tar.gz.sha256
 ```
 
 A package is made for the operating system it was built for. If it is extracted on a different system
@@ -143,7 +143,7 @@ open. If the setup fails after the wizard has stopped a running Knowstead, it st
 ### Linux
 
 ```bash
-sudo tar -xzf knowstead-2.0.0-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.0.0-linux-x64 /opt/knowstead
+sudo tar -xzf knowstead-2.0.1-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.0.1-linux-x64 /opt/knowstead
 ```
 
 ```bash
@@ -240,7 +240,7 @@ apt update && apt install -y curl
 ```
 
 ```bash
-cd /opt && curl -fLO https://github.com/BStein-coder/Knowstead/releases/download/v2.0.0/knowstead-2.0.0-linux-x64.tar.gz
+cd /opt && curl -fLO https://github.com/BStein-coder/Knowstead/releases/download/v2.0.1/knowstead-2.0.1-linux-x64.tar.gz
 ```
 
 No release on GitHub yet? Then build the package on the Windows machine that has the program folder and
@@ -250,18 +250,18 @@ copy it into the container via the Proxmox host:
 cd D:\Knowstead
 npm run build
 node scripts/package.mjs --target linux-x64
-scp release\knowstead-2.0.0-linux-x64.tar.gz root@proxmox:/tmp/
+scp release\knowstead-2.0.1-linux-x64.tar.gz root@proxmox:/tmp/
 ```
 
 ```bash
-pct push <CT-ID> /tmp/knowstead-2.0.0-linux-x64.tar.gz /opt/knowstead-2.0.0-linux-x64.tar.gz
+pct push <CT-ID> /tmp/knowstead-2.0.1-linux-x64.tar.gz /opt/knowstead-2.0.1-linux-x64.tar.gz
 ```
 
 The package contains the user interface and the runtime parts for Linux; owner and permissions are
 correct even if it was built on Windows. Then extract it in the container:
 
 ```bash
-cd /opt && tar -xzf knowstead-2.0.0-linux-x64.tar.gz && mv knowstead-2.0.0-linux-x64 knowstead
+cd /opt && tar -xzf knowstead-2.0.1-linux-x64.tar.gz && mv knowstead-2.0.1-linux-x64 knowstead
 ```
 
 **3. Install:**
@@ -476,7 +476,7 @@ node scripts\prepare.mjs     # installs the dependencies and builds the user int
 npm start                    # trial start in the foreground
 ```
 
-The log shows `Knowstead 2.0.0 läuft auf https://knowstead.firma.de` ("… is running at …") and – as long
+The log shows `Knowstead 2.0.1 läuft auf https://knowstead.firma.de` ("… is running at …") and – as long
 as there is no account yet – the **setup code** (*Einrichtungscode*). End the trial start with
 `Ctrl`+`C`. The first setup follows after the proxy has been set up
 ([section 8](#8-first-setup-in-the-browser)).
@@ -893,7 +893,7 @@ For the redirect from HTTP to HTTPS the website additionally needs an HTTP bindi
 ### 7.5 Checking the proxy
 
 ```bash
-curl https://knowstead.firma.de/api/v1/health                   # {"status":"ok","version":"2.0.0",…}
+curl https://knowstead.firma.de/api/v1/health                   # {"status":"ok","version":"2.0.1",…}
 curl -s -o /dev/null -D - https://knowstead.firma.de/login      # 200, among others content-security-policy, strict-transport-security
 ```
 
@@ -1099,7 +1099,7 @@ one transaction, and an older version never starts on a newer database.
 package and its `.sha256` file to the server, then:
 
 ```bash
-sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.0.0-linux-x64.tar.gz
+sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.0.1-linux-x64.tar.gz
 ```
 
 | Step | What happens |
@@ -1121,8 +1121,8 @@ Stand läuft` (check that the new version runs) and finally `Fertig` (done).
   `--target /opt/knowstead`):
 
   ```bash
-  cd /tmp && tar -xzf knowstead-2.0.0-linux-x64.tar.gz
-  sudo bash /tmp/knowstead-2.0.0-linux-x64/update.sh
+  cd /tmp && tar -xzf knowstead-2.0.1-linux-x64.tar.gz
+  sudo bash /tmp/knowstead-2.0.1-linux-x64/update.sh
   ```
 
 - **Installation from the time when Knowstead was still called "Doku" (up to 1.9):** service, account,
@@ -1130,7 +1130,7 @@ Stand läuft` (check that the new version runs) and finally `Fertig` (done).
   new package and finds the service `doku` by itself:
 
   ```bash
-  sudo bash /opt/doku/update.sh /tmp/knowstead-2.0.0-linux-x64.tar.gz
+  sudo bash /opt/doku/update.sh /tmp/knowstead-2.0.1-linux-x64.tar.gz
   ```
 
   Wherever this guide mentions `/opt/knowstead`, `/var/lib/knowstead` or the service `knowstead`, such an

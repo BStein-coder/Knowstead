@@ -76,7 +76,7 @@ Light and dark design are both shown; each user chooses their own.
 
 The interface comes with light and dark design, keyboard shortcuts, a command palette (`Ctrl`+`K`), a
 responsive layout for phones and tablets and is checked automatically against **WCAG 2.1 AA** on every
-page. Quality assurance: 440 server tests, 297 browser tests and a layout sweep over every page in five
+page. Quality assurance: 445 server tests, 298 browser tests and a layout sweep over every page in five
 window widths.
 
 ---
@@ -208,8 +208,7 @@ Knowstead was first built for German-speaking organisations and is bilingual:
   messages, templates and the handbook. Each user chooses their language; the administrator sets the
   default.
 - **German only for now:** the installer (`install.sh`, the Windows wizard), `update.sh`, the command-line
-  tool, the server log and the release notes, plus the technical guides marked "(German)" above. A few
-  date formats in the task planner still follow the German convention.
+  tool, the server log and the release notes, plus the technical guides marked "(German)" above.
 
 Source code comments and commit messages are in German; identifiers are in English.
 

@@ -40,7 +40,7 @@ Global permissions are assigned to **groups** (Administration → Groups or Perm
 | Create API tokens | Personal access tokens for the REST API |
 | Use AI features | AI assistant in the editor and on pages (if the AI is set up) |
 
-The group **Benutzer** (users) is the default group: new accounts become members automatically.
+The group **Users** is the default group: new accounts become members automatically.
 
 ## 2. Roles in the space
 

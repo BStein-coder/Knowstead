@@ -15,6 +15,7 @@ import { ActivityList } from '../components/ActivityList';
 import { ChooseSpaceDialog } from '../components/ChooseSpaceDialog';
 import { Reveal } from '../components/Reveal';
 import { Scene3D } from '../components/Scene3D';
+import { taglineText } from '../lib/built-in-texts';
 
 function PageRows({ pages, empty, timeKey = 'updatedAt' }: { pages: PageSummary[] | undefined; empty: string; timeKey?: 'updatedAt' | 'viewedAt' | 'draftUpdatedAt' }) {
   if (!pages) return <Loading inline />;
@@ -83,7 +84,7 @@ export function Dashboard() {
         <div className="hero-content">
           <p className="hero-eyebrow">{today}</p>
           <h1 className="hero-title">{user ? t(greeting, { name: user.displayName.split(' ')[0] }) : settings.siteName}</h1>
-          <p className="hero-sub">{user ? settings.siteTagline : t('dashboard.welcomeAnon')}</p>
+          <p className="hero-sub">{user ? taglineText(settings.siteTagline, t) : t('dashboard.welcomeAnon')}</p>
           <div className="hero-stats">
             <HeroStat to="/spaces" value={spaces ? allTeam.length : undefined} one={t('dashboard.statSpace')} many={t('dashboard.statSpaces')} />
             <HeroStat to="/search" value={pageTotal} one={t('dashboard.statPage')} many={t('dashboard.statPages')} />

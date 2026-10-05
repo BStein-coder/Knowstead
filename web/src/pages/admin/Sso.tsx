@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Fingerprint, KeyRound, MonitorSmartphone, Save, ShieldCheck, TestTube2, XCircle } from 'lucide-react';
 import { api } from '../../api/client';
 import { useI18n } from '../../i18n';
+import { ssoLabelText } from '../../lib/built-in-texts';
 import { useToast } from '../../lib/toast';
 import { Alert, Button, Card, CopyField, Field, Input, Loading, PageHeader, Select, Switch, Textarea } from '../../components/ui';
 
@@ -212,7 +213,7 @@ export function AdminSso() {
               </Select>
             </Field>
             <Field label={t('sso.buttonLabel')}>
-              <Input value={oidc.label} onChange={(e) => setOidc({ ...oidc, label: e.target.value })} maxLength={60} />
+              <Input value={ssoLabelText('oidc', oidc.label, t)} onChange={(e) => setOidc({ ...oidc, label: e.target.value })} maxLength={60} />
             </Field>
             {oidc.provider === 'entra' ? (
               <Field label={t('sso.tenantId')} help={t('sso.tenantIdHelp')}>
@@ -270,7 +271,7 @@ export function AdminSso() {
               <CopyField value={urls.metadataUrl} onCopied={copied} />
             </Field>
             <Field label={t('sso.buttonLabel')}>
-              <Input value={saml.label} onChange={(e) => setSaml({ ...saml, label: e.target.value })} maxLength={60} />
+              <Input value={ssoLabelText('saml', saml.label, t)} onChange={(e) => setSaml({ ...saml, label: e.target.value })} maxLength={60} />
             </Field>
             <Field label={t('sso.entryPoint')} help={t('sso.entryPointHelp')}>
               <Input value={saml.entryPoint} onChange={(e) => setSaml({ ...saml, entryPoint: e.target.value })} placeholder="https://login.microsoftonline.com/…/saml2" className="mono" />
@@ -318,7 +319,7 @@ export function AdminSso() {
           </Field>
           <div className="form-grid">
             <Field label={t('sso.buttonLabel')}>
-              <Input value={kerberos.label} onChange={(e) => setKerberos({ ...kerberos, label: e.target.value })} maxLength={60} />
+              <Input value={ssoLabelText('kerberos', kerberos.label, t)} onChange={(e) => setKerberos({ ...kerberos, label: e.target.value })} maxLength={60} />
             </Field>
             <Field label={t('sso.header')} help={t('sso.headerHelp')}>
               <Input value={kerberos.header} onChange={(e) => setKerberos({ ...kerberos, header: e.target.value })} className="mono" />

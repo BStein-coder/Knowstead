@@ -5,6 +5,7 @@ import { BookOpen, KeyRound, LogIn, MailCheck, UserPlus } from 'lucide-react';
 import { api } from '../../api/client';
 import { useAuth } from '../../lib/auth';
 import { useI18n } from '../../i18n';
+import { taglineText } from '../../lib/built-in-texts';
 import { Alert, Button, Checkbox, Field, Input, Loading, cx } from '../../components/ui';
 import { Scene3D } from '../../components/Scene3D';
 import { SSO_ERROR_CODES, SsoButtons } from './SsoButtons';
@@ -15,6 +16,8 @@ import { SSO_ERROR_CODES, SsoButtons } from './SsoButtons';
  */
 export function AuthCard({ title, subtitle, children, wide }: { title: string; subtitle?: string; children: ReactNode; wide?: boolean }) {
   const { settings } = useAuth();
+  const { t } = useI18n();
+  const tagline = taglineText(settings.siteTagline, t);
   return (
     <div className="auth-page">
       <Scene3D variant="stage" className={wide ? 'is-wide' : undefined} />
@@ -24,7 +27,7 @@ export function AuthCard({ title, subtitle, children, wide }: { title: string; s
             <BookOpen size={22} />
           </span>
           <p className="auth-intro-title">{settings.siteName}</p>
-          {settings.siteTagline && <p className="auth-intro-text">{settings.siteTagline}</p>}
+          {tagline && <p className="auth-intro-text">{tagline}</p>}
           {settings.footerText && <p className="auth-intro-foot">{settings.footerText}</p>}
         </div>
         <div className={cx('auth-card', wide && 'wide')}>

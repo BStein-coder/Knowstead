@@ -9,6 +9,75 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [2.0.1] – 2026-10-05
+
+Die englische Oberfläche ist jetzt durchgehend englisch: Stellen, die bisher fest in deutscher Schreibweise
+standen, richten sich nach der gewählten Sprache. Dazu eine Korrektur am Wiki-Import.
+
+### Englische Oberfläche
+
+- **Aufgabenplan**: Fälligkeiten auf den Karten erscheinen als „14 Oct“ statt „14. Okt.“, die Kalenderwochen
+  der Zeitachse als „Wk 42“ statt „KW 42“.
+- **Editor**: Der Befehl „Heute“ („Today“) im Schrägstrich-Menü fügt das Datum in der Schreibweise der
+  Sprache ein (05/10/2026 statt 05.10.2026); Dateikarten zeigen die Größe mit Dezimalpunkt.
+- **Untertitel der Installation**: Solange niemand einen eigenen eingetragen hat, steht auf der Anmelde- und
+  der Startseite „Documentation & knowledge“ statt „Dokumentation & Wissen“. Ein selbst gewählter Untertitel
+  bleibt, wie er ist.
+- **Mitgelieferte Vorgaben in der Administration**: Der Untertitel (Einstellungen), die Fußzeile der
+  Export-Vorlage („… · Date {date} · …“ statt „… · Stand {date} · …“, im Feld und in der Vorschau) und die
+  Beschriftungen der Anmeldeknöpfe (Single Sign-on) stehen in den Feldern in der Sprache der Oberfläche.
+  Export und Anmeldeseite richten sich weiter nach der Sprache der Person – gleich, in welcher Sprache die
+  Vorgabe gespeichert wurde.
+- **Aufgabe zur Wiedervorlage**: In einer englisch eingerichteten Installation legt das System die Aufgabe
+  auf Englisch an („Review page: …“, Notiz, Stichwort „review“).
+- **Benachrichtigungen und Warnungen**: Datums- und Zahlenangaben in übersetzten Texten folgen der Sprache –
+  „The deadline expired on 01/10/2026“ statt „… on 1.10.2026“, „100,000“ statt „100.000“.
+- **Wiki-Import** (MediaWiki, DokuWiki, XWiki, Confluence): In einer englisch eingerichteten Installation
+  schreibt der Import seine Hinweise auf Englisch in die Seiten – nicht übernommene Vorlagen, Makros und
+  Plugins, fehlende Seiten, Dateien und Bilder, den Hinweis auf eine zu große Seite – und Datumsangaben aus
+  Confluence in englischer Schreibweise. Der Bericht nach dem Import (Warnungen, übersprungene Seiten,
+  Fehlermeldung) und die Änderungsnotizen der übernommenen Versionen erscheinen in der Sprache der Person,
+  die sie liest.
+- **Musterdokument der Exportvorlage**: Text, Dateiname und Datum folgen der Sprache der Person.
+- **Handbuch (englisch)**: Die mitgelieferte Gruppe heißt dort wie in der Oberfläche „Users“.
+
+### Behoben
+
+- **Wiki-Import scheitert nicht mehr an einer zu großen Seite mit Verweisen**: Eine Seite über 4,5 MB wird
+  beim Import durch einen Hinweis ersetzt. Enthielt sie Verweise oder Bilder, schrieb der zweite Durchlauf
+  (Verweise auflösen) doch wieder den ganzen Inhalt – ab 5 MB endete der Import damit als „fehlgeschlagen“,
+  obwohl alle Seiten schon angelegt waren, und der Bericht ging verloren.
+
+### Dokumentation
+
+- Der Vergleich mit anderen Systemen (`docs/VERGLEICH.md`, `docs/COMPARISON.md`) gehört nicht mehr zum
+  Repository und zu den Installationspaketen.
+
+### Tests
+
+- Oberfläche auf Englisch: Fälligkeit auf Aufgabenkarten, Kalenderwochen der Zeitachse, Untertitel,
+  mitgelieferte Vorgaben in den Feldern der Administration (deutsch und englisch).
+- Beschriftung der Anmeldeknöpfe und Fußzeile der Export-Vorlage, wenn die Vorgabe auf Englisch gespeichert
+  ist; Aufgabe zur Wiedervorlage in einer englisch eingerichteten Installation.
+- Wiki-Import in eine englisch eingerichtete Installation: Hinweise in den Seiten, Bericht und
+  Änderungsnotizen in beiden Sprachen, Fehlermeldung eines gescheiterten Imports, zu große Seite mit
+  Verweisen.
+- Musterdokument der Exportvorlage auf Englisch; Datums- und Zahlenangaben in übersetzten Texten.
+- Neues Werkzeug `npm run test:english` (`e2e/english-scan.mjs`): startet einen Server mit englisch
+  eingerichteter Datenbank und durchsucht 64 Ansichten der englischen Oberfläche nach deutschen Wörtern,
+  Umlauten und deutscher Datums- und Zahlenschreibweise – in Text, Beschriftungen und Feldinhalten, bei
+  deutsch eingestelltem Browser. Mit Gegenprobe (`E2E_SCAN_UI=de`), die fündig werden muss.
+
+### Update-Hinweise
+
+- Keine Migration, keine neuen Einstellungen. Update wie gewohnt mit dem installierten Skript:
+  `sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.0.1-linux-x64.tar.gz` – bei Installationen, die als
+  Doku eingerichtet wurden, `/opt/doku/update.sh` (in Containern als root ohne `sudo`).
+- Bereits importierte Seiten bleiben, wie sie sind: Hinweise, die ein früherer Import auf Deutsch
+  hineingeschrieben hat, werden nicht nachträglich übersetzt.
+- Weiterhin deutsch sind der Installer (`install.sh`, Assistent unter Windows), `update.sh`, die
+  Kommandozeile und das Serverprotokoll. Die englischen Anleitungen erklären die Rückfragen.
+
 ## [2.0.0] – 2026-10-04
 
 Aus Doku wird **Knowstead**. Am Funktionsumfang ändert sich nichts – neu ist der Name, und zwar überall: im

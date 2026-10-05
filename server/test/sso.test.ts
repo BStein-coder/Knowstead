@@ -194,6 +194,19 @@ test('Single Sign-on: Entra ID/OIDC, SAML und Windows-Anmeldung', async (t) => {
       const anonymous = await ctx.app.inject({ method: 'GET', url: '/api/v1/auth/me' });
       assert.deepEqual(anonymous.json().sso.providers, [{ id: 'oidc', label: 'Mit Microsoft anmelden', kind: 'generic' }]);
       assert.equal(anonymous.json().sso.showLocalLogin, true);
+
+      // Die vorgegebene Beschriftung folgt der Sprache der Anfrage – auch wenn sie aus einer englischen
+      // Administration heraus auf Englisch gespeichert wurde. Eine eigene Beschriftung bleibt, wie sie ist.
+      const labelFor = async (locale: string) => (await ctx.app.inject({ method: 'GET', url: '/api/v1/auth/me', headers: { 'x-knowstead-locale': locale } })).json().sso.providers[0].label;
+      assert.equal(await labelFor('en'), 'Sign in with Microsoft');
+      assert.equal((await admin.put('/api/v1/admin/settings', { oidc: { ...saved.body.oidc, label: 'Sign in with Microsoft' } })).status, 200);
+      assert.equal(await labelFor('de'), 'Mit Microsoft anmelden');
+      assert.equal(await labelFor('en'), 'Sign in with Microsoft');
+      assert.equal((await admin.put('/api/v1/admin/settings', { oidc: { ...saved.body.oidc, label: 'Firmenanmeldung' } })).status, 200);
+      assert.equal(await labelFor('en'), 'Firmenanmeldung');
+      assert.equal((await admin.put('/api/v1/admin/settings', { oidc: { ...saved.body.oidc } })).status, 200);
+      assert.equal(await labelFor('de'), 'Mit Microsoft anmelden');
+      assert.equal(ctx.s.settings.get('oidc').clientSecret, stored, 'das Geheimnis blieb dabei unverändert');
     });
 
     await t.test('OIDC: Weiterleitung mit PKCE, state und nonce', async () => {

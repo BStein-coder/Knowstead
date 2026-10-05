@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { Client, createTestApp } from './helpers.ts';
 import { EN_TEXTS } from '../src/i18n/en.ts';
-import { FREE_TEXT_MIN_FIXED, translate } from '../src/core/i18n.ts';
+import { FREE_TEXT_MIN_FIXED, localizeValue, translate } from '../src/core/i18n.ts';
 import { GLOBAL_PERMISSIONS, ROLE_LABELS } from '../src/core/permissions.ts';
 import { EVENT_TYPES } from '../src/core/events.ts';
 import { TOKEN_SCOPES } from '../src/modules/tokens/service.ts';
@@ -83,7 +83,23 @@ test('Englisch: Katalog vollständig, Übersetzung und Serverantworten', async (
     // Freitext (Kommentarauszüge, Notizen) bleibt unangetastet
     assert.equal(translate('Bitte als Vorlage nutzen', 'en'), 'Bitte als Vorlage nutzen');
     assert.equal(translate('Bild: siehe Anhang', 'en', FREE_TEXT_MIN_FIXED), 'Bild: siehe Anhang');
-    assert.equal(translate('Die Frist ist am 01.10.2026 abgelaufen.', 'en', FREE_TEXT_MIN_FIXED), 'The deadline expired on 01.10.2026.');
+    assert.equal(translate('Die Frist ist am 01.10.2026 abgelaufen.', 'en', FREE_TEXT_MIN_FIXED), 'The deadline expired on 01/10/2026.');
+  });
+
+  await t.test('Datums- und Zahlenangaben in eingesetzten Werten folgen der Sprache', () => {
+    // Benachrichtigungen werden auf Deutsch gespeichert – das Datum darin entsteht, bevor die Sprache feststeht
+    assert.equal(translate('Die Frist ist am 5.10.2026 abgelaufen.', 'en'), 'The deadline expired on 05/10/2026.');
+    assert.equal(translate('Vertretung für Ada Lovelace: 5.10.2026 – 19.10.2026', 'en'), 'Deputy for Ada Lovelace: 05/10/2026 – 19/10/2026');
+    assert.equal(translate('Die Sicherung vom 5.10.2026, 03:00:12 ist gescheitert: Platte voll', 'en'), 'The backup of 05/10/2026, 03:00:12 failed: Platte voll');
+    assert.equal(translate('Aufgabe fällig am Montag, 05.10.: Bericht abgeben', 'en'), 'Task due on Monday, 05/10: Bericht abgeben');
+    assert.equal(translate('Die Aufgabe war am Freitag, 02.10. fällig.', 'en'), 'The task was due on Friday, 02/10.');
+    assert.equal(translate('Das Archiv enthält zu viele Dateien (höchstens 100.000).', 'en'), 'The archive contains too many files (at most 100,000).');
+    // Nur ganze Werte: Ein Datum in einem Seitentitel bleibt, wie es geschrieben wurde
+    assert.equal(translate('Lesebestätigung bis 5.10.2026: „Protokoll vom 5.10.2026“', 'en'), 'Read confirmation by 05/10/2026: “Protokoll vom 5.10.2026”');
+    assert.equal(localizeValue('Version 1.250'), 'Version 1.250');
+    assert.equal(localizeValue('10.0.0.5'), '10.0.0.5');
+    // Deutsch bleibt unverändert
+    assert.equal(translate('Die Frist ist am 5.10.2026 abgelaufen.', 'de'), 'Die Frist ist am 5.10.2026 abgelaufen.');
   });
 
   await t.test('E-Mail in der Sprache der empfangenden Person', () => {
