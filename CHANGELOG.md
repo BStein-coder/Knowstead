@@ -20,6 +20,17 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 - Die Prüfschritte vor einem Pull Request nennen jetzt den Build der Oberfläche – die Server-Tests
   brauchen ihn.
 
+### Tests
+
+- **Wackeliger Layout-Test des Aufgabendialogs behoben**: Der Test „Chat steht rechts neben den Feldern“
+  (und sein Gegenstück für schmale Fenster) maß Formular und Chat in zwei getrennten Aufrufen, während der
+  Dialog noch einglitt. Auf den langsameren Läufern von GitHub lag dazwischen der Anfangsversatz der Bewegung
+  (rund 15 Pixel) – der Test scheiterte dort auch beim Wiederholen, auf schnellen Rechnern nie. Er misst
+  jetzt erst, wenn der Dialog steht (`settled` in `e2e/tests/support/fixtures.ts`). Am Programm ändert
+  sich nichts.
+- Neu: `E2E_CPU_THROTTLE=<Faktor>` bremst den Browser der Oberflächentests künstlich und stellt so langsame
+  Läufer nach (`e2e/README.md`).
+
 ## [2.1.0] – 2026-10-05
 
 Die Installation gibt es jetzt auch auf Englisch: Der Assistent unter Windows, `install.sh` und die

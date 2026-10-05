@@ -22,6 +22,9 @@ export const test = base.extend<Fixtures>({
     await use([]);
   },
   page: async ({ page, browserErrors }, use, testInfo) => {
+    // Langsamen Läufer nachstellen: E2E_CPU_THROTTLE=4 lässt den Browser viermal so langsam rechnen
+    const throttle = Number(process.env.E2E_CPU_THROTTLE ?? 1);
+    if (throttle > 1) await (await page.context().newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: throttle });
     page.on('pageerror', (err) => browserErrors.push(`JavaScript-Fehler: ${err.message}`));
     page.on('console', (msg) => {
       if (msg.type() === 'error' && !IGNORED_CONSOLE.some((re) => re.test(msg.text()))) browserErrors.push(`Konsole: ${msg.text()}`);
@@ -47,11 +50,15 @@ export async function ready(page: Page): Promise<void> {
   await expect(page.locator('main .loading, .auth-page .loading, #root > .loading')).toHaveCount(0, { timeout: 15_000 });
 }
 
-/** Barrierefreiheit eines geöffneten Zustands (z. B. Dialog) nach WCAG 2.1 AA – ohne schwerwiegende Verstöße. */
-export async function expectAccessible(page: Page, include?: string): Promise<void> {
-  // Ein- und Ausblendanimationen abwarten – halbtransparente Zwischenstände verfälschen die Kontrastprüfung.
-  // Nur laufende Animationen auf der Zeitachse des Dokuments: Endlosschleifen (3D-Szene), angehaltene und an
-  // das Scrollen gekoppelte Animationen (Lesefortschritt, Kamerafahrt) werden von selbst nie fertig.
+/**
+ * Wartet, bis Ein- und Ausblendanimationen fertig sind. Wer Positionen misst, braucht das: Dialoge gleiten beim
+ * Öffnen ein, und zwei getrennte Messungen (jede ein eigener Aufruf an den Browser) liegen auf einem langsamen
+ * Rechner in verschiedenen Phasen der Bewegung – ein Versatz, den es im Ruhezustand nicht gibt. Auch halbtransparente
+ * Zwischenstände verfälschen die Kontrastprüfung.
+ * Nur laufende Animationen auf der Zeitachse des Dokuments: Endlosschleifen (3D-Szene), angehaltene und an das
+ * Scrollen gekoppelte Animationen (Lesefortschritt, Kamerafahrt) werden von selbst nie fertig.
+ */
+export async function settled(page: Page): Promise<void> {
   await page.evaluate(() =>
     Promise.all(
       document
@@ -60,6 +67,11 @@ export async function expectAccessible(page: Page, include?: string): Promise<vo
         .map((a) => a.finished.catch(() => undefined)),
     ),
   );
+}
+
+/** Barrierefreiheit eines geöffneten Zustands (z. B. Dialog) nach WCAG 2.1 AA – ohne schwerwiegende Verstöße. */
+export async function expectAccessible(page: Page, include?: string): Promise<void> {
+  await settled(page);
   let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']);
   if (include) builder = builder.include(include);
   const result = await builder.analyze();

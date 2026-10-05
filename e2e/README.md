@@ -55,6 +55,9 @@ Testkonten und -inhalte an (`tests/global.setup.ts`). Die eigene Installation bl
 
 Umgebungsvariablen: `E2E_PORT` (Standard 3899), `E2E_WORKERS` (Standard 2), `E2E_CHANNEL`, `E2E_LOG_LEVEL`,
 `E2E_RETRIES` (Standard 1 unter Windows und in CI, sonst 0).
+`E2E_CPU_THROTTLE=<Faktor>` bremst den Browser künstlich (z. B. `4` = viermal so langsam) und stellt so die langsameren
+Läufer von GitHub nach: Ein Test, der nur auf einem schnellen Rechner besteht, ist meist einer, der mitten in einer
+Animation misst – dann vorher `settled(page)` aus `tests/support/fixtures.ts` aufrufen.
 
 **Wiederholungen.** Windows meldet unter Last gelegentlich `net::ERR_NO_BUFFER_SPACE` (Engpass bei
 Netzwerk-Sockets des Betriebssystems) – die Seite bleibt dann leer. Ein fehlgeschlagener Test wird deshalb

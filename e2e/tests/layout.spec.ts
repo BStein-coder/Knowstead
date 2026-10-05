@@ -1,4 +1,4 @@
-import { test, expect, ready } from './support/fixtures';
+import { test, expect, ready, settled } from './support/fixtures';
 import { AUTH } from './support/data';
 
 /**
@@ -111,6 +111,10 @@ test.describe('Aufgabendialog – Chat als Seitenspalte (breit)', () => {
     const dialog = page.getByRole('dialog', { name: 'Aufgabe' });
     const senden = dialog.getByRole('button', { name: 'Senden' });
     await senden.waitFor();
+    // Der Dialog gleitet beim Öffnen ein. Jede Messung ist ein eigener Aufruf an den Browser: Fällt die erste vor und
+    // die zweite nach den Start der Bewegung, liegt dazwischen ihr Anfangsversatz (rund 15 Pixel) – auf einem
+    // langsamen Rechner jedes Mal, auf einem schnellen fast nie. Deshalb erst messen, wenn der Dialog steht.
+    await settled(page);
     const form = await box(dialog.locator('form.task-form'));
     const chat = await box(dialog.getByRole('region', { name: 'Chat' }));
     expect(chat.x, 'Chat beginnt rechts vom Formular').toBeGreaterThanOrEqual(form.x + form.width - 1);
@@ -138,6 +142,7 @@ test.describe('Aufgabendialog – Chat als Seitenspalte (schmal)', () => {
     await ready(page);
     const dialog = page.getByRole('dialog', { name: 'Aufgabe' });
     await dialog.getByRole('button', { name: 'Senden' }).waitFor();
+    await settled(page); // der Dialog gleitet ein – erst messen, wenn er steht
     const form = await box(dialog.locator('form.task-form'));
     const chat = await box(dialog.getByRole('region', { name: 'Chat' }));
     expect(chat.y, 'Chat beginnt unter dem Formular').toBeGreaterThanOrEqual(form.y + form.height - 1);
