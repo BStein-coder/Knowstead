@@ -28,8 +28,9 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      # Erst bauen, dann testen: Die Tests des Installationskerns prüfen eine Installation samt gebauter Oberfläche
       - run: npm run build
+      - run: npm test
       - name: Sicherheitshinweise der Abhängigkeiten
         run: npm audit --omit=dev --audit-level=high
 

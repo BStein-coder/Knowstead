@@ -38,7 +38,17 @@ function install(args: string[]) {
   return { ...result, events };
 }
 
-test('Installationskern: Konfiguration, Probestart, Prüfung und erneuter Lauf', async (t) => {
+/**
+ * Der Installationskern prüft am Ende die Installation – und dazu gehört die gebaute Oberfläche, wie sie ein
+ * Installationspaket mitbringt. Ohne Build scheitert jeder Lauf an „Oberfläche: nicht gebaut“. Auf dem eigenen
+ * Rechner wird der Test dann ausgelassen (mit Begründung); im CI-Lauf ist das ein Fehler der Reihenfolge, der
+ * auffallen muss: dort erst bauen, dann testen.
+ */
+const BUILT = fs.existsSync(path.join(ROOT, 'web', 'dist', 'index.html'));
+const NOT_BUILT = 'Die Oberfläche ist nicht gebaut (web/dist fehlt) – zuerst „npm run build“ ausführen, dann die Tests';
+
+test('Installationskern: Konfiguration, Probestart, Prüfung und erneuter Lauf', { skip: BUILT || process.env.CI ? false : NOT_BUILT }, async (t) => {
+  assert.ok(BUILT, NOT_BUILT);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'knowstead-install-'));
   const envPath = path.join(dir, '.env');
   // Leerzeichen und Raute: muss in der .env korrekt geschützt werden

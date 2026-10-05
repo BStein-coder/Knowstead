@@ -34,8 +34,9 @@ jobs:
           node scripts/release-notes.mjs "$version" > /dev/null
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
-      - run: npm test
+      # Erst bauen, dann testen: Die Tests des Installationskerns prüfen eine Installation samt gebauter Oberfläche
       - run: npm run build
+      - run: npm test
       - name: Paket bauen
         run: node scripts/package.mjs --out release
       - uses: actions/upload-artifact@v4
