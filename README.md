@@ -190,7 +190,7 @@ configured in the browser under **Administration**.
 | [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md) | Complete installation guide |
 | [docs/handbook](docs/handbook/) | User and administration handbook (also built into every installation as the space "Handbook") |
 | [SECURITY.md](SECURITY.md) | Security features and how to report a vulnerability |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute (German) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute: environment, rules, checks before a pull request |
 | [CHANGELOG.md](CHANGELOG.md) | Release notes (German) |
 | [docs/API.md](docs/API.md) | REST API with examples (German) – the interactive OpenAPI reference at `/api/docs` is in every installation |
 | [docs/ADMINISTRATION.md](docs/ADMINISTRATION.md) | Administration guide incl. Entra ID, SAML and Kerberos proxy examples (German) |

@@ -56,6 +56,7 @@ const INCLUDE = [
   'LICENSE',
   'CHANGELOG.md',
   'SECURITY.md',
+  'SECURITY.de.md',
   'start.cmd',
   'start.sh',
   'install.sh',

@@ -1,57 +1,63 @@
-# Mitarbeiten an Knowstead
+# Contributing to Knowstead
 
-Danke, dass du Knowstead verbessern möchtest! Fehlerberichte, Ideen, Übersetzungen, Dokumentation und Code
-sind gleichermaßen willkommen.
+*[Deutsche Fassung](CONTRIBUTING.de.md)*
 
-## Bevor du loslegst
+Thank you for wanting to improve Knowstead! Bug reports, ideas, translations, documentation and code are
+equally welcome. Issues and pull requests can be written in English or German.
 
-- **Fehler** meldest du über *Issues → Fehler melden*. Hilfreich sind Version, Betriebsart, Schritte zum
-  Nachvollziehen und passende Zeilen aus dem Serverprotokoll (ohne Zugangsdaten).
-- **Sicherheitslücken** bitte **nie** als öffentliches Issue – siehe [SECURITY.md](SECURITY.md).
-- **Größere Änderungen** (neue Module, Datenbankänderungen, neue Abhängigkeiten) zuerst als Issue
-  besprechen. So passt die Umsetzung zur Architektur, bevor viel Arbeit darin steckt.
+## Before you start
 
-## Entwicklungsumgebung
+- **Bugs** are reported via *Issues → Fehler melden* (bug report). Helpful details are the version, how
+  Knowstead is run, steps to reproduce and the matching lines from the server log (without credentials).
+- **Security vulnerabilities:** please **never** as a public issue – see [SECURITY.md](SECURITY.md).
+- **Larger changes** (new modules, database changes, new dependencies): please discuss them in an issue
+  first. That way the implementation fits the architecture before a lot of work has gone into it.
 
-Voraussetzung ist **Node.js 24**. Sonst nichts – kein Datenbankserver, kein Docker.
+## Development environment
+
+The only requirement is **Node.js 24**. Nothing else – no database server, no Docker.
 
 ```bash
 npm install
-npm run dev          # API auf :3000, Oberfläche mit Hot Reload auf :5173
+npm run dev          # API on :3000, interface with hot reload on :5173
 ```
 
-Aufbau, Konventionen und typische Aufgaben (neues Modul, Makro, Migration, Recht) beschreibt
-[docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), den inneren Aufbau [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md).
+Structure, conventions and typical tasks (new module, macro, migration, permission) are described in
+[docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md), the internal design in
+[docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md) (both German).
 
-## Regeln für Änderungen
+## Rules for changes
 
-| Thema | Regel |
+| Topic | Rule |
 | --- | --- |
-| Sprache | Oberfläche, Kommentare, Commit-Nachrichten und Dokumentation auf Deutsch; Bezeichner im Code auf Englisch |
-| Texte | alle Texte der Oberfläche in `web/src/i18n/de.ts` **und** `en.ts`; neue Fehlermeldungen des Servers zusätzlich in `server/src/i18n/en.ts` |
-| Datenbank | Schemaänderungen nur als **neue** Migration unter `server/src/db/migrations/` – bestehende nie ändern |
-| Rechte | nie selbst prüfen, sondern die Rechtedienste nutzen (`perms.requireGlobal`, `pages.requireAccess` …) und mit einer Person **ohne** Recht testen |
-| Tests | neue Funktionen bekommen Server-Tests (`server/test/`), neue Seiten der Oberfläche einen Eintrag in `e2e/tests/support/routes.ts` |
-| Abhängigkeiten | sparsam; neue Pakete im Pull Request begründen (Lizenz, Pflege, Größe) |
-| Dokumentation | Handbuch (`docs/handbuch` und `docs/handbook`), `docs/API.md`, `docs/ADMINISTRATION.md` und `CHANGELOG.md` mitpflegen |
+| Language | interface texts, comments, commit messages and the technical documentation are in German; identifiers in the code are in English |
+| Texts | every interface text goes into `web/src/i18n/de.ts` **and** `en.ts`; new server error messages additionally into `server/src/i18n/en.ts` |
+| Database | schema changes only as a **new** migration under `server/src/db/migrations/` – never change an existing one |
+| Permissions | never check them yourself – use the permission services (`perms.requireGlobal`, `pages.requireAccess` …) and test with a person **without** the permission |
+| Tests | new features get server tests (`server/test/`), new pages of the interface an entry in `e2e/tests/support/routes.ts` |
+| Dependencies | sparingly; justify new packages in the pull request (licence, maintenance, size) |
+| Documentation | keep the handbook (`docs/handbuch` and `docs/handbook`), `docs/API.md`, `docs/ADMINISTRATION.md` and `CHANGELOG.md` up to date |
 
-## Prüfen vor dem Pull Request
+If you do not write German, say so in your pull request – we help with the German texts during review.
+
+## Checks before the pull request
 
 ```bash
-npm run lint         # ESLint und Vollständigkeit der Übersetzungen
-npm run typecheck    # TypeScript für Server und Oberfläche
-npm test             # Server-Tests
-npm run test:e2e     # Oberflächentests (einmalig: npm --prefix e2e ci)
+npm run lint         # ESLint and completeness of the translations
+npm run typecheck    # TypeScript for server and interface
+npm run build        # build the interface – the server tests need it
+npm test             # server tests
+npm run test:e2e     # interface tests (once: npm --prefix e2e ci)
 ```
 
-Dieselben Schritte laufen in GitHub Actions für jeden Pull Request.
+The same steps run in GitHub Actions for every pull request.
 
-## Commit-Nachrichten
+## Commit messages
 
-Kurz und im Imperativ, auf Deutsch – z. B. „Lesebestätigung: Erinnerung vor Fristende“. Eine Änderung
-je Commit; Formatierungsänderungen getrennt von inhaltlichen.
+Short and in the imperative, in German – e.g. „Lesebestätigung: Erinnerung vor Fristende“. One change per
+commit; formatting changes separate from changes in substance.
 
-## Lizenz
+## Licence
 
-Mit einem Beitrag erklärst du dich einverstanden, dass er unter der Lizenz des Projekts
-([LICENSE](LICENSE)) veröffentlicht wird.
+By contributing you agree that your contribution is published under the project's licence
+([LICENSE](LICENSE)).

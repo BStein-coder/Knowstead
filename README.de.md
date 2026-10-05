@@ -347,8 +347,8 @@ Sicherungen – steht in der Oberfläche unter **Administration → Einstellunge
 | [docs/ADMINISTRATION.md](docs/ADMINISTRATION.md) | Betrieb mit vielen Personen, Rechte, Active Directory, **Single Sign-on** (Entra ID, SAML, Kerberos mit Proxy-Beispielen), E-Mail, Freigaben, Lesebestätigungen, Inhaltsanalyse, Echtzeit-Bearbeitung, Texterkennung, Export und Import, Sicherungen, Wartung, Fehlersuche |
 | [docs/ENTWICKLUNG.md](docs/ENTWICKLUNG.md) | Entwicklungsumgebung, Konventionen, neue Module und Makros, Tests und Oberflächentests |
 | [CHANGELOG.md](CHANGELOG.md) | Versionshinweise (auch in der Oberfläche unter Administration → Über) |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Mitarbeiten: Umgebung, Regeln, Prüfungen vor dem Pull Request |
-| [SECURITY.md](SECURITY.md) | Sicherheitslücken vertraulich melden, Sicherheitsmerkmale |
+| [CONTRIBUTING.de.md](CONTRIBUTING.de.md) | Mitarbeiten: Umgebung, Regeln, Prüfungen vor dem Pull Request |
+| [SECURITY.de.md](SECURITY.de.md) | Sicherheitslücken vertraulich melden, Sicherheitsmerkmale |
 | [docs/GITHUB.md](docs/GITHUB.md) | Projekt auf GitHub veröffentlichen: erster Upload, Einstellungen, Prüfungen, Releases |
 
 ---

@@ -2,7 +2,7 @@
 
 Diese Anleitung führt vom lokalen Ordner zum fertig eingerichteten GitHub-Repository – mit laufenden
 Prüfungen, Vorlagen für Issues und vertraulichen Sicherheitsmeldungen. Sie ist für die erste
-Veröffentlichung gedacht; für spätere Änderungen gilt [CONTRIBUTING.md](../CONTRIBUTING.md).
+Veröffentlichung gedacht; für spätere Änderungen gilt [CONTRIBUTING.de.md](../CONTRIBUTING.de.md).
 
 ## 1. Vorbereiten
 

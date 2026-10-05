@@ -1,50 +1,42 @@
-# Sicherheitsrichtlinie
+# Security policy
 
-## Unterstützte Versionen
+*[Deutsche Fassung](SECURITY.de.md)*
 
-Sicherheitskorrekturen gibt es für die jeweils **neueste veröffentlichte Version**. Ältere Versionen –
-auch Installationen aus der Zeit, als Knowstead noch „Doku“ hieß (bis 1.9) – lassen sich ohne
-Datenverlust aktualisieren: [docs/INSTALLATION.md → Updates und Umzug](docs/INSTALLATION.md#11-updates-und-umzug).
+## Supported versions
 
-## Sicherheitslücke melden
+Security fixes are provided for the **latest published version**. Older versions – including
+installations from the time when Knowstead was still called "Doku" (up to 1.9) – can be updated without
+losing data: [docs/INSTALLATION.en.md → Updates and moving](docs/INSTALLATION.en.md#11-updates-and-moving).
 
-Bitte **nicht** als öffentliches Issue. Melde sie vertraulich über
+## Reporting a vulnerability
+
+Please do **not** open a public issue. Report it privately via
 **[Security → Report a vulnerability](https://github.com/BStein-coder/Knowstead/security/advisories/new)**
-(GitHub Security Advisories) in diesem Repository – oder per E-Mail an <info@steintecdev.com>.
+(GitHub Security Advisories) in this repository – or by e-mail to <info@steintecdev.com>.
 
-Hilfreich sind:
+Helpful details:
 
-- betroffene Version und Betriebsart (Windows, Linux, Docker),
-- eine Beschreibung mit Schritten zum Nachvollziehen oder einem Proof of Concept,
-- die Auswirkung (z. B. Rechteausweitung, Datenabfluss, Kontoübernahme),
-- ob die Lücke bereits öffentlich bekannt ist.
+- the affected version and how Knowstead is run (Windows, Linux, Docker),
+- a description with steps to reproduce or a proof of concept,
+- the impact (e.g. privilege escalation, data disclosure, account takeover),
+- whether the vulnerability is already publicly known.
 
-Wir bestätigen den Eingang innerhalb von **5 Werktagen**, stimmen den Zeitplan für eine Korrektur mit dir
-ab und nennen dich auf Wunsch in den Versionshinweisen.
+We acknowledge your report within **5 business days**, agree on a timeline for the fix with you and, if
+you wish, credit you in the release notes.
 
-## Sicherheitsmerkmale im Überblick
+## Security features at a glance
 
-- Passwörter mit scrypt, Sitzungs-Cookies `HttpOnly`/`SameSite=Lax`, CSRF-Schutz über eine eigene
-  Kopfzeile, Anmeldesperre nach Fehlversuchen, Ratenbegrenzung an Anmelde-, SSO- und KI-Routen
-- Single Sign-on: OIDC mit PKCE, `state` und `nonce`; SAML mit signierten Assertions, Prüfung von
-  Aussteller, Zielgruppe und `InResponseTo`; alle Anmeldevorgänge an den Browser gebunden; Windows-
-  Anmeldung nur über eingetragene Proxy-Adressen und optionales gemeinsames Geheimnis
-- Rechteprüfung zentral für Bereiche, Seiten, Anhänge, Suche, Exporte und Live-Verbindungen
-- HTML-Bereinigung für alle Inhalte, Content-Security-Policy und weitere Sicherheits-Header
-- Zugangsdaten (SMTP, LDAP, KI, SSO, Konnektoren) mit AES-256-GCM verschlüsselt gespeichert
-- Uploads mit Größen- und Endungsgrenzen, Schutz vor ZIP-Bomben und Pfadmanipulation beim Import
-- API-Tokens mit Umfängen (`read`, `write`, `admin`), signierte Webhooks
-- Audit-Log für sicherheitsrelevante Ereignisse
+- Passwords hashed with scrypt, session cookies `HttpOnly`/`SameSite=Lax`, CSRF protection through a
+  dedicated header, lockout after failed sign-in attempts, rate limiting on sign-in, SSO and AI routes
+- Single sign-on: OIDC with PKCE, `state` and `nonce`; SAML with signed assertions and validation of
+  issuer, audience and `InResponseTo`; every sign-in flow is bound to the browser; Windows sign-in only
+  through registered proxy addresses and an optional shared secret
+- Permissions are checked centrally for spaces, pages, attachments, search, exports and live connections
+- HTML sanitisation for all content, Content Security Policy and further security headers
+- Credentials (SMTP, LDAP, AI, SSO, connectors) are stored encrypted with AES-256-GCM
+- Uploads with size and extension limits, protection against ZIP bombs and path traversal during import
+- API tokens with scopes (`read`, `write`, `admin`), signed webhooks
+- Audit log for security-relevant events
 
-Empfehlungen für den Betrieb stehen in der Checkliste für den Produktivbetrieb
-([docs/ADMINISTRATION.md](docs/ADMINISTRATION.md#checkliste-für-den-produktivbetrieb)).
-
----
-
-## Security policy (English)
-
-Please report vulnerabilities **privately** via
-**[Security → Report a vulnerability](https://github.com/BStein-coder/Knowstead/security/advisories/new)** (GitHub
-Security Advisories) or by email to <info@steintecdev.com> – not as a public issue. Include the affected version,
-steps to reproduce and the impact. We acknowledge reports within 5 business days and fix issues in the
-latest published release.
+Recommendations for operation are in the production checklist
+([docs/ADMINISTRATION.md](docs/ADMINISTRATION.md#checkliste-für-den-produktivbetrieb), German).

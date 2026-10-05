@@ -9,6 +9,17 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+### Dokumentation
+
+- **Sicherheitsrichtlinie, Hinweise zum Mitarbeiten und Verhaltenskodex auf Englisch**: `SECURITY.md`,
+  `CONTRIBUTING.md` und `CODE_OF_CONDUCT.md` sind jetzt englisch – GitHub zeigt sie in den Reitern des
+  Repositorys. Die deutschen Fassungen stehen daneben als `SECURITY.de.md`, `CONTRIBUTING.de.md` und
+  `CODE_OF_CONDUCT.de.md`.
+- Die Prüfschritte vor einem Pull Request nennen jetzt den Build der Oberfläche – die Server-Tests
+  brauchen ihn.
+
 ## [2.1.0] – 2026-10-05
 
 Die Installation gibt es jetzt auch auf Englisch: Der Assistent unter Windows, `install.sh` und die
