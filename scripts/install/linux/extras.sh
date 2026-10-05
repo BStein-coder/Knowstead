@@ -9,10 +9,16 @@
 #    run <befehl …>   führt aus – im Probelauf wird der Befehl nur angezeigt
 #    say <text>       Ausgabe
 #    DRY_RUN          1 = Probelauf
+#    L <de> <en>      Text in der gewählten Sprache (fehlt die Funktion, bleibt es bei Deutsch)
 #
 #  Nichts hiervon bricht die Installation von Knowstead ab: Scheitert ein Zusatzprogramm, melden die
 #  Funktionen das mit Rückgabe 1 und einem Hinweis, wie es sich nachholen lässt.
 # ---------------------------------------------------------------------------------------------
+
+# Ohne Sprachwahl des Aufrufers: Deutsch
+if ! declare -F L >/dev/null 2>&1; then
+  L() { printf '%s' "$1"; }
+fi
 
 # Paketverwaltung dieser Distribution: apt (Debian, Ubuntu) oder dnf (RHEL, Rocky, Alma, Fedora) – sonst leer
 extras_pkg_manager() {
@@ -119,7 +125,7 @@ extras_pkg_install() { # $1 = Paketverwaltung, Rest = Pakete
       if [ "$EXTRAS_APT_UPDATED" = 0 ]; then
         # Eine einzelne nicht erreichbare Paketquelle lässt »apt-get update« scheitern – die Pakete der
         # Distribution lassen sich dann meist trotzdem installieren.
-        run apt-get update || say "    Die Paketlisten ließen sich nicht vollständig aktualisieren – die Installation wird trotzdem versucht."
+        run apt-get update || say "    $(L "Die Paketlisten ließen sich nicht vollständig aktualisieren – die Installation wird trotzdem versucht." "The package lists could not be updated completely – the installation is attempted anyway.")"
         EXTRAS_APT_UPDATED=1
       fi
       run env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-remove "$@"
@@ -144,24 +150,24 @@ extras_collect() { # $@ = Befehl, der Paketnamen zeilenweise ausgibt
 extras_install_ocr() { # $1 = Paketverwaltung, $2 = Sprachen (deu+eng)
   EXTRAS_OCR_PATH=""
   if [ -z "$1" ]; then
-    say "    [!] Keine Paketverwaltung (apt-get oder dnf) gefunden – Tesseract bitte selbst installieren."
-    say "        Danach: bash install.sh --unattended --install-ocr   oder   Administration → KI & Dateien"
+    say "    [!] $(L "Keine Paketverwaltung (apt-get oder dnf) gefunden – Tesseract bitte selbst installieren." "No package manager (apt-get or dnf) found – please install Tesseract yourself.")"
+    say "        $(L "Danach: bash install.sh --unattended --install-ocr   oder   Administration → KI & Dateien" "Afterwards: bash install.sh --unattended --install-ocr   or   Administration → AI & files")"
     return 1
   fi
   extras_collect extras_ocr_packages "$1" "$2"
   if ! extras_pkg_install "$1" "${EXTRAS_PACKAGES[@]}"; then
     if command -v tesseract >/dev/null 2>&1; then
       # Tesseract war schon da – es ging nur um weitere Sprachen
-      say "    [!] Die Sprachdaten ließen sich nicht installieren – es bleibt bei den vorhandenen Sprachen."
+      say "    [!] $(L "Die Sprachdaten ließen sich nicht installieren – es bleibt bei den vorhandenen Sprachen." "The language data could not be installed – the existing languages remain.")"
     else
-      say "    [!] Tesseract ließ sich nicht installieren – Knowstead wird ohne Texterkennung eingerichtet."
+      say "    [!] $(L "Tesseract ließ sich nicht installieren – Knowstead wird ohne Texterkennung eingerichtet." "Tesseract could not be installed – Knowstead is set up without text recognition.")"
     fi
     if [ "$1" = dnf ]; then
-      say "        RHEL, Rocky und Alma führen Tesseract in der Paketquelle EPEL: dnf install -y epel-release"
+      say "        $(L "RHEL, Rocky und Alma führen Tesseract in der Paketquelle EPEL: dnf install -y epel-release" "RHEL, Rocky and Alma carry Tesseract in the EPEL package source: dnf install -y epel-release")"
     else
-      say "        Besteht Internetzugang? Gibt es für jede Sprache ein Paket (apt-cache search tesseract-ocr-)?"
+      say "        $(L "Besteht Internetzugang? Gibt es für jede Sprache ein Paket (apt-cache search tesseract-ocr-)?" "Is there internet access? Is there a package for every language (apt-cache search tesseract-ocr-)?")"
     fi
-    say "        Später nachholen: bash install.sh --unattended --install-ocr"
+    say "        $(L "Später nachholen:" "To catch up later:") bash install.sh --unattended --install-ocr"
     return 1
   fi
   hash -r
@@ -169,10 +175,10 @@ extras_install_ocr() { # $1 = Paketverwaltung, $2 = Sprachen (deu+eng)
   if [ -z "$EXTRAS_OCR_PATH" ]; then
     # Im Probelauf wurde nichts installiert – das ist kein Fehler
     [ "$DRY_RUN" = 1 ] && return 0
-    say "    [!] Die Pakete sind installiert, »tesseract« liegt aber nicht im Suchpfad – Texterkennung bleibt aus."
+    say "    [!] $(L "Die Pakete sind installiert, »tesseract« liegt aber nicht im Suchpfad – Texterkennung bleibt aus." "The packages are installed, but “tesseract” is not in the search path – text recognition stays off.")"
     return 1
   fi
-  say "    Tesseract: $EXTRAS_OCR_PATH (Sprachen: $(extras_tesseract_languages "$EXTRAS_OCR_PATH" | tr '\n' ' ' | sed 's/ $//'))"
+  say "    Tesseract: $EXTRAS_OCR_PATH ($(L "Sprachen" "languages"): $(extras_tesseract_languages "$EXTRAS_OCR_PATH" | tr '\n' ' ' | sed 's/ $//'))"
   return 0
 }
 
@@ -180,8 +186,8 @@ extras_install_ocr() { # $1 = Paketverwaltung, $2 = Sprachen (deu+eng)
 extras_install_office() { # $1 = Paketverwaltung
   EXTRAS_OFFICE_PATH=""
   if [ -z "$1" ]; then
-    say "    [!] Keine Paketverwaltung (apt-get oder dnf) gefunden – LibreOffice bitte selbst installieren."
-    say "        Danach: bash install.sh --unattended --install-office   oder   Administration → KI & Dateien"
+    say "    [!] $(L "Keine Paketverwaltung (apt-get oder dnf) gefunden – LibreOffice bitte selbst installieren." "No package manager (apt-get or dnf) found – please install LibreOffice yourself.")"
+    say "        $(L "Danach: bash install.sh --unattended --install-office   oder   Administration → KI & Dateien" "Afterwards: bash install.sh --unattended --install-office   or   Administration → AI & files")"
     return 1
   fi
   if [ "$1" = apt ] && [ "$EXTRAS_APT_UPDATED" = 0 ]; then
@@ -191,16 +197,16 @@ extras_install_office() { # $1 = Paketverwaltung
   fi
   extras_collect extras_office_packages "$1"
   if ! extras_pkg_install "$1" "${EXTRAS_PACKAGES[@]}"; then
-    say "    [!] LibreOffice ließ sich nicht installieren – Knowstead wird ohne Office-Vorschau eingerichtet."
-    say "        Besteht Internetzugang, reicht der Speicherplatz (rund 400 MB)?"
-    say "        Später nachholen: bash install.sh --unattended --install-office"
+    say "    [!] $(L "LibreOffice ließ sich nicht installieren – Knowstead wird ohne Office-Vorschau eingerichtet." "LibreOffice could not be installed – Knowstead is set up without the Office preview.")"
+    say "        $(L "Besteht Internetzugang, reicht der Speicherplatz (rund 400 MB)?" "Is there internet access, is there enough disk space (about 400 MB)?")"
+    say "        $(L "Später nachholen:" "To catch up later:") bash install.sh --unattended --install-office"
     return 1
   fi
   hash -r
   EXTRAS_OFFICE_PATH="$(extras_find_office)"
   if [ -z "$EXTRAS_OFFICE_PATH" ]; then
     [ "$DRY_RUN" = 1 ] && return 0
-    say "    [!] Die Pakete sind installiert, »soffice« liegt aber nicht im Suchpfad – Office-Vorschau bleibt aus."
+    say "    [!] $(L "Die Pakete sind installiert, »soffice« liegt aber nicht im Suchpfad – Office-Vorschau bleibt aus." "The packages are installed, but “soffice” is not in the search path – the Office preview stays off.")"
     return 1
   fi
   say "    LibreOffice: $EXTRAS_OFFICE_PATH"

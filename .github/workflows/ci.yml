@@ -57,9 +57,11 @@ jobs:
             [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$null, [ref]$errors)
             if ($errors) { $errors | Out-String | Write-Error; exit 1 }
           }
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install/windows/Install-Knowstead.ps1 -SelfTest "$env:RUNNER_TEMP/assistent"
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          if ((Get-ChildItem "$env:RUNNER_TEMP/assistent/*.png").Count -ne 8) { Write-Error 'Nicht alle Seiten des Assistenten gerendert'; exit 1 }
+          foreach ($language in 'de', 'en') {
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install/windows/Install-Knowstead.ps1 -SelfTest "$env:RUNNER_TEMP/assistent-$language" -Language $language
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            if ((Get-ChildItem "$env:RUNNER_TEMP/assistent-$language/*.png").Count -ne 8) { Write-Error "Nicht alle Seiten des Assistenten gerendert ($language)"; exit 1 }
+          }
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install/windows/Install-Knowstead.ps1 -Unattended -WhatIf -NoElevate -SkipPrepare -NoBrowser -DataDir "$env:RUNNER_TEMP\KnowsteadDaten" -EnvPath "$env:RUNNER_TEMP\.env"
           if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Linux – Syntax, shellcheck, Probelauf
@@ -67,7 +69,8 @@ jobs:
         run: |
           bash -n install.sh update.sh start.sh
           shellcheck -S error install.sh update.sh start.sh
-          bash install.sh --unattended --dry-run --skip-prepare --data-dir /var/lib/knowstead --base-url https://knowstead.example.com
+          bash install.sh --lang de --unattended --dry-run --skip-prepare --data-dir /var/lib/knowstead --base-url https://knowstead.example.com
+          bash install.sh --lang en --unattended --dry-run --skip-prepare --data-dir /var/lib/knowstead --base-url https://knowstead.example.com
       - name: Linux – update.sh mit Root-Rechten an einer nachgestellten Installation
         if: runner.os == 'Linux'
         run: sudo bash server/test/linux/update-root-check.sh

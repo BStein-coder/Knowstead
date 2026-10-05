@@ -16,6 +16,7 @@ import { BACKUP_NAME_RE, inspectBackupDatabase, restoreBackup } from './db/resto
 import { findBackupDb } from './core/legacy.ts';
 import { STOP_FILES } from './core/service-control.ts';
 import { describeProgram, readRunningProgram, runDoctor } from './modules/system/doctor.ts';
+import type { Locale } from './core/i18n.ts';
 import { restartHint, runningIsCurrent } from './core/program.ts';
 
 const args = process.argv.slice(2);
@@ -46,7 +47,7 @@ Befehle:
   user:admin <benutzer>                     Benutzer zur Administratorgruppe hinzufügen
   user:unlock <benutzer>                    Anmeldesperre aufheben, Konto aktivieren und freischalten
   status                                    Version, Datenbankstand, ausstehende Migrationen, Sicherungen
-  doctor [--json]                           Installation prüfen (Node.js, Oberfläche, Datenverzeichnis, Port,
+  doctor [--json] [--lang en]               Installation prüfen (Node.js, Oberfläche, Datenverzeichnis, Port,
                                             Adresse, Datenbank, Sicherungen) – Rückgabewert 1 bei Fehlern
   stop [--timeout 30]                       Laufenden Server sauber beenden (auch ohne Konsole, z. B. als
                                             geplante Aufgabe) und warten, bis er beendet ist
@@ -214,8 +215,11 @@ function serverRunning(config: Config): boolean {
 }
 
 /** „1.6.0 (Paket vom 15.09.2026, 17:50)“ – zwei Pakete derselben Version unterscheidet nur der Bauzeitpunkt. */
-function versionLine(config: Config): string {
-  return config.packageBuiltAt ? `${config.version} (Paket vom ${new Date(config.packageBuiltAt).toLocaleString('de-DE')})` : config.version;
+function versionLine(config: Config, locale: Locale = 'de'): string {
+  if (!config.packageBuiltAt) return config.version;
+  return locale === 'en'
+    ? `${config.version} (package of ${new Date(config.packageBuiltAt).toLocaleString('en-GB')})`
+    : `${config.version} (Paket vom ${new Date(config.packageBuiltAt).toLocaleString('de-DE')})`;
 }
 
 function status(config: Config): void {
@@ -283,19 +287,25 @@ function listBackups(config: Config): void {
 }
 
 async function doctor(config: Config): Promise<void> {
-  const checks = await runDoctor(config);
+  // Die Vorgabe bleibt Deutsch, unabhängig von der Sprache des Systems: update.sh und die Installationsassistenten
+  // werten einzelne Meldungen aus. Englisch gibt es nur auf ausdrücklichen Wunsch.
+  const requested = option('lang') ?? 'de';
+  if (requested !== 'de' && requested !== 'en') throw new Error(`Unbekannte Sprache / unknown language: ${requested} (de, en)`);
+  const locale: Locale = requested;
+  const L = (de: string, en: string) => (locale === 'en' ? en : de);
+  const checks = await runDoctor(config, locale);
   const failed = checks.some((c) => c.status === 'error');
   if (flag('json')) {
     console.log(JSON.stringify({ ok: !failed, version: config.version, packageBuiltAt: config.packageBuiltAt, checks }, null, 2));
   } else {
-    console.log(`Knowstead ${versionLine(config)} – Prüfung der Installation\n`);
+    console.log(`Knowstead ${versionLine(config, locale)} – ${L('Prüfung der Installation', 'installation check')}\n`);
     const icon = { ok: '  ✔', warn: '  !', error: '  ✖' } as const;
     for (const c of checks) {
       console.log(`${icon[c.status]} ${c.title.padEnd(24)} ${c.message}`);
       if (c.hint && c.status !== 'ok') console.log(`${' '.repeat(29)}→ ${c.hint}`);
     }
     const warnings = checks.filter((c) => c.status === 'warn').length;
-    console.log(`\n${failed ? 'Fehler gefunden' : warnings ? `In Ordnung, ${warnings} Hinweis(e)` : 'Alles in Ordnung'}.`);
+    console.log(`\n${failed ? L('Fehler gefunden', 'Errors found') : warnings ? L(`In Ordnung, ${warnings} Hinweis(e)`, `All right, ${warnings} note(s)`) : L('Alles in Ordnung', 'Everything is in order')}.`);
   }
   if (failed) process.exitCode = 1;
 }

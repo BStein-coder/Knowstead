@@ -8,6 +8,9 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+// Die Skripte sprechen die Sprache des Systems. Die Prüfungen hier legen sie fest (Deutsch), damit das Ergebnis
+// nicht vom Rechner abhängt, auf dem sie laufen – die englische Fassung wird ausdrücklich geprüft.
+process.env.KNOWSTEAD_LANG = 'de';
 /** Fortschrittszeilen des Installationskerns (--json-progress) */
 const PROGRESS_PREFIX = '@@KNOWSTEAD ';
 
@@ -129,6 +132,73 @@ test('Installationskern: Konfiguration, Probestart, Prüfung und erneuter Lauf',
       const again = install([...base, '--office-path', soffice]);
       assert.equal(again.status, 0, `${again.stdout}\n${again.stderr}`);
       assert.match(again.stdout, /Office-Vorschau: bereits so eingetragen\./);
+    });
+
+    await t.test('Englisch: Schritte, Hinweise und Prüfung – und die Vorlage der .env', () => {
+      const missing = path.join(dir, 'gibt-es-nicht.exe');
+      const starter = path.join(dir, 'libreoffice');
+      const res = install(['--env-path', envPath, '--skip-prepare', '--skip-test', '--lang', 'en', '--ocr-path', missing, '--office-path', starter]);
+      assert.equal(res.status, 0, `${res.stdout}\n${res.stderr}`);
+      assert.deepEqual(
+        res.events.filter((e) => e.event === 'step').map((e) => e.title),
+        ['Checking Node.js', 'Writing the configuration', 'Creating directories', 'Configuring the additional programs', 'Checking the installation'],
+      );
+      const done = res.events.at(-1)!;
+      const warnings = done.warnings as string[];
+      assert.match(warnings[0], /^Text recognition: .*gibt-es-nicht\.exe was not found – the setting stays unchanged\.$/);
+      // Die Begründung stammt von der Kommandozeile (deutsch) und wird über den Katalog des Servers übertragen
+      assert.equal(warnings[1], 'Office preview could not be configured: Only LibreOffice (soffice, soffice.exe) is allowed as converter');
+      const checks = done.checks as { id: string; title: string; message: string; hint?: string }[];
+      assert.equal(checks.find((c) => c.id === 'web')?.title, 'Interface');
+      assert.match(checks.find((c) => c.id === 'data-writable')!.message, / is writable$/);
+      assert.equal(checks.find((c) => c.id === 'setup')?.message, 'still open');
+      assert.doesNotMatch(JSON.stringify(checks.map((c) => [c.title, c.hint ?? ''])), /Oberfläche|Datenverzeichnis|Datenbank|Sicherungen|prüfen|öffnen/);
+      assert.match(res.stdout, /Notes – Knowstead is set up|Done\. /);
+      assert.doesNotMatch(res.stdout, /Hinweise|Fertig\.|Konfiguration schreiben|Verzeichnisse anlegen|Installation prüfen|Texterkennung|Office-Vorschau/);
+
+      // Vertrag mit update.sh und älteren Skripten: Ohne --lang antwortet die Prüfung auf Deutsch – auch wenn die
+      // Umgebung Englisch nennt. Sie werten einzelne Meldungen aus („läuft“).
+      const doctor = spawnSync(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/src/cli.ts', 'doctor', '--json'], {
+        cwd: ROOT,
+        env: { ...process.env, DATA_DIR: dataDir, PORT: String(port), KNOWSTEAD_SKIP_ENV_FILE: '1', KNOWSTEAD_LANG: 'en', LANG: 'en_US.UTF-8', LC_ALL: 'en_US.UTF-8' },
+        encoding: 'utf8',
+      });
+      const germanChecks = JSON.parse(doctor.stdout).checks as { id: string; title: string; message: string }[];
+      assert.equal(germanChecks.find((c) => c.id === 'web')?.title, 'Oberfläche');
+      assert.match(germanChecks.find((c) => c.id === 'server')!.message, /^läuft nicht – Port \d+ ist frei$/);
+      const doctorEnglish = spawnSync(process.execPath, ['--disable-warning=ExperimentalWarning', 'server/src/cli.ts', 'doctor', '--lang', 'en'], {
+        cwd: ROOT,
+        env: { ...process.env, DATA_DIR: dataDir, PORT: String(port), KNOWSTEAD_SKIP_ENV_FILE: '1' },
+        encoding: 'utf8',
+      });
+      assert.match(doctorEnglish.stdout, /installation check[\s\S]*Interface +built[\s\S]*Server +not running – port \d+ is free/);
+
+      // Neue Installation: Die .env entsteht aus der Vorlage in der gewählten Sprache – mit denselben Werten
+      const fresh = (lang: string) => {
+        const file = path.join(dir, `neu-${lang}`, '.env');
+        fs.mkdirSync(path.dirname(file));
+        const run = install(['--env-path', file, '--data-dir', path.join(dir, `neu-${lang}`, 'data'), '--port', String(port), '--skip-prepare', '--skip-test', '--lang', lang]);
+        assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
+        return fs.readFileSync(file, 'utf8');
+      };
+      const english = fresh('en');
+      const german = fresh('de');
+      assert.match(english, /^# Port of the server$/m);
+      assert.doesNotMatch(english, /Port des Servers|Verzeichnis für/);
+      assert.match(german, /^# Port des Servers$/m);
+      const values = (text: string) => text.split('\n').filter((line) => /^[A-Z_]+=/.test(line) && !line.startsWith('DATA_DIR=')).sort();
+      assert.deepEqual(values(english), values(german));
+
+      // Ohne --lang entscheidet KNOWSTEAD_LANG; eine unbekannte Sprache wird abgewiesen
+      const byEnv = spawnSync(process.execPath, ['scripts/install.mjs', '--env-path', path.join(dir, 'neu-en', '.env'), '--skip-prepare', '--dry-run'], {
+        cwd: ROOT,
+        env: { ...process.env, KNOWSTEAD_LANG: 'en', KNOWSTEAD_SKIP_ENV_FILE: '' },
+        encoding: 'utf8',
+      });
+      assert.match(byEnv.stdout, /Checking Node\.js/);
+      const unknown = install(['--env-path', envPath, '--skip-prepare', '--dry-run', '--lang', 'fr']);
+      assert.equal(unknown.status, 1);
+      assert.match(unknown.stderr, /unknown language: fr/);
     });
 
     await t.test('Zweiter Lauf: Serverschlüssel und eigene Einträge bleiben, alte .env wird gesichert', () => {

@@ -25,7 +25,8 @@ try {
   app.log.info(`Knowstead ${config.version} läuft auf ${config.baseUrl} (API-Dokumentation: ${config.baseUrl}/api/docs)`);
   if (services.users.count() === 0) {
     app.log.info(`Ersteinrichtung: Bitte ${config.baseUrl}/setup im Browser öffnen.`);
-    app.log.info(`Einrichtungscode (nur beim Aufruf von einem anderen Rechner nötig): ${services.auth.setupCode()}`);
+    // Zweisprachig, damit die Zeile im Protokoll auch mit »grep -i "setup code"« zu finden ist
+    app.log.info(`Einrichtungscode / setup code (nur beim Aufruf von einem anderen Rechner nötig / only needed from another computer): ${services.auth.setupCode()}`);
   }
 } catch (err) {
   app.log.error(err);

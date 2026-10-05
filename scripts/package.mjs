@@ -50,6 +50,7 @@ const INCLUDE = [
   'package.json',
   'package-lock.json',
   '.env.example',
+  '.env.example.en',
   'README.md',
   'README.de.md',
   'LICENSE',
@@ -63,6 +64,7 @@ const INCLUDE = [
   'Knowstead-Dienst.cmd',
   'docs',
   'plugins',
+  'scripts/lang.mjs',
   'scripts/prepare.mjs',
   'scripts/install.mjs',
   'scripts/loadtest.mjs',
@@ -172,6 +174,24 @@ for (const entry of INCLUDE) {
     filter: (src) => !/[\\/](node_modules|\.git)([\\/]|$)/.test(path.relative(root, src)) && !/\.log$/.test(src),
   });
 }
+
+// Was die mitgelieferten Skripte selbst einbinden, muss im Paket liegen – sonst bricht der Assistent erst beim
+// Installieren ab. Erst die Verweise im Quelltext, dann ein Probelauf des Installationskerns aus dem Paket heraus
+// (verändert nichts und braucht keine Abhängigkeiten).
+const unresolved = [];
+for (const entry of INCLUDE.filter((name) => /^scripts\/[^/]+\.mjs$/.test(name))) {
+  const source = fs.readFileSync(path.join(stage, entry), 'utf8');
+  for (const match of source.matchAll(/\b(?:from|import)\s*\(?\s*['"](\.{1,2}\/[^'"]+)['"]/g)) {
+    // Bezugsort ist der Ordner des Skripts – oder der Programmordner bei Code, den es mit »node -e« dort startet
+    if (!fs.existsSync(path.join(stage, path.dirname(entry), match[1])) && !fs.existsSync(path.join(stage, match[1]))) unresolved.push(`${entry} → ${match[1]}`);
+  }
+}
+if (unresolved.length) fail(`Im Paket fehlen Dateien, die mitgelieferte Skripte einbinden: ${unresolved.join(', ')}`);
+const probe = spawnSync(process.execPath, ['scripts/install.mjs', '--lang', 'de', '--dry-run', '--skip-prepare', '--skip-test', '--env-path', path.join(stage, '.env.probe')], {
+  cwd: stage,
+  encoding: 'utf8',
+});
+if (probe.status !== 0) fail(`Der Installationskern startet aus dem Paket heraus nicht: ${(probe.stderr || probe.stdout).trim()}`);
 
 if (targetPlatform !== 'win32') {
   // Mit Windows-Zeilenenden bricht bash ab („$'\r': command not found“)

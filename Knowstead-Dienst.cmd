@@ -2,6 +2,7 @@
 rem ---------------------------------------------------------------------------
 rem  Knowstead steuern (Windows):  Knowstead-Dienst.cmd start ^| stop ^| restart ^| status ^| log
 rem  Protokoll laufend verfolgen:  Knowstead-Dienst.cmd log -Follow
+rem  Sprache der Meldungen:       Knowstead-Dienst.cmd status -Language en   (sonst Anzeigesprache von Windows)
 rem ---------------------------------------------------------------------------
 setlocal
 cd /d "%~dp0"

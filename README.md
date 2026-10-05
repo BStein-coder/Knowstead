@@ -76,7 +76,7 @@ Light and dark design are both shown; each user chooses their own.
 
 The interface comes with light and dark design, keyboard shortcuts, a command palette (`Ctrl`+`K`), a
 responsive layout for phones and tablets and is checked automatically against **WCAG 2.1 AA** on every
-page. Quality assurance: 445 server tests, 298 browser tests and a layout sweep over every page in five
+page. Quality assurance: 452 server tests, 298 browser tests and a layout sweep over every page in five
 window widths.
 
 ---
@@ -136,8 +136,9 @@ you through e-mail, backups, people and spaces.
   Docker, HTTPS and reverse proxy, e-mail, Active Directory, single sign-on, OCR, backups, updates,
   troubleshooting
 
-> The installer and the command-line tools currently print their messages in **German**. Both guides
-> explain every prompt and show the commands to run the installer without any questions.
+> The installers speak **English and German** – they follow the language of the system, or choose with
+> `sudo bash install.sh --lang en` on Linux and `Knowstead-Installation.cmd -Language en` on Windows.
+> `update.sh` and most command-line tools still print German messages; both guides give the exact commands.
 
 ---
 
@@ -206,9 +207,10 @@ Knowstead was first built for German-speaking organisations and is bilingual:
 
 - **English and German:** the complete web interface including administration, e-mails, exports, error
   messages, templates and the handbook. Each user chooses their language; the administrator sets the
-  default.
-- **German only for now:** the installer (`install.sh`, the Windows wizard), `update.sh`, the command-line
-  tool, the server log and the release notes, plus the technical guides marked "(German)" above.
+  default. The installers (`install.sh`, the Windows wizard, the start scripts) and the installation check
+  (`npm run cli -- doctor --lang en`) follow the system language or an explicit choice.
+- **German only for now:** `update.sh`, the rest of the command-line tool, the server log and the release
+  notes, plus the technical guides marked "(German)" above.
 
 Source code comments and commit messages are in German; identifiers are in English.
 

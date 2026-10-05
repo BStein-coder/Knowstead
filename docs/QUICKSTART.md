@@ -5,9 +5,11 @@ every step is explained in depth in the [installation guide](INSTALLATION.en.md)
 
 *[Deutsche Fassung der Installationsanleitung](INSTALLATION.md)*
 
-> **Good to know:** the installer and the command-line tools currently print their messages in
-> **German**. This guide gives you the commands that run without any questions and translates the prompts
-> you may see. The web interface, the handbook and all e-mails are fully available in English.
+> **Good to know:** the installers speak **English and German**. They follow the language of your system
+> (German if it is German, English otherwise); `--lang en` on Linux or `-Language en` on Windows chooses
+> English explicitly. `update.sh` and most other command-line tools still print German messages – this
+> guide gives you the exact commands. The web interface, the handbook and all e-mails are fully available
+> in English.
 
 ## Contents
 
@@ -49,11 +51,11 @@ file next to it from the [Releases](https://github.com/BStein-coder/Knowstead/re
 the checksum:
 
 ```bash
-sha256sum -c knowstead-2.0.1-linux-x64.tar.gz.sha256
+sha256sum -c knowstead-2.1.0-linux-x64.tar.gz.sha256
 ```
 
 ```powershell
-Get-FileHash .\knowstead-2.0.1-windows-x64.zip -Algorithm SHA256
+Get-FileHash .\knowstead-2.1.0-windows-x64.zip -Algorithm SHA256
 ```
 
 The packages contain the built user interface and all runtime dependencies. To build one yourself from
@@ -65,13 +67,13 @@ is in `release/`; this also works on Windows for a Linux server).
 ### Linux
 
 ```bash
-sudo tar -xzf knowstead-2.0.1-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.0.1-linux-x64 /opt/knowstead
+sudo tar -xzf knowstead-2.1.0-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.1.0-linux-x64 /opt/knowstead
 ```
 
 Run the installer without questions – replace the address with yours:
 
 ```bash
-cd /opt/knowstead && sudo bash install.sh --unattended --install-node --data-dir /var/lib/knowstead --base-url https://wiki.example.com --access local-proxy --install-ocr --ocr-languages eng
+cd /opt/knowstead && sudo bash install.sh --lang en --unattended --install-node --data-dir /var/lib/knowstead --base-url https://wiki.example.com --access local-proxy --install-ocr --ocr-languages eng
 ```
 
 What this does: installs Node.js 24 if it is missing, creates the system account `knowstead` and the data
@@ -81,6 +83,7 @@ Tesseract so that scanned PDFs and images become searchable.
 
 | Option | Meaning |
 | --- | --- |
+| `--lang en` | messages in English (`de` for German). Without it the installer follows `KNOWSTEAD_LANG`, then the system language |
 | `--access local-proxy` | the reverse proxy runs on this server (recommended; Knowstead listens on 127.0.0.1 only). Alternatives: `remote-proxy --proxy-address 10.0.0.5`, or `direct` (no HTTPS – tests only) |
 | `--install-ocr`, `--ocr-languages eng+deu` | text recognition for scans; languages as Tesseract codes |
 | `--install-office` | LibreOffice without a desktop (about 400 MB) – preview of Word, Excel, PowerPoint and Visio files |
@@ -90,34 +93,37 @@ Tesseract so that scanned PDFs and images become searchable.
 In a container without `sudo` (Proxmox LXC) run the same commands as root without `sudo`. Control the
 service with `systemctl start|stop|restart|status knowstead`; the log is `journalctl -u knowstead -f`.
 
-If you start `sudo bash install.sh` **without** `--unattended`, it asks the same things in German:
+If you start `sudo bash install.sh --lang en` **without** `--unattended`, it asks the same things one by
+one and suggests a sensible answer for each – press Enter to accept it:
 
-| Prompt | Meaning | Answer |
-| --- | --- | --- |
-| `Datenverzeichnis` | data directory | e.g. `/var/lib/knowstead` |
-| `Zugriff: 1 = Reverse-Proxy auf diesem Server …, 2 = Proxy auf anderem Rechner, 3 = direkt ohne HTTPS` | how users reach Knowstead | `1` (proxy on this server), `2` (proxy on another machine) or `3` (direct, tests only) |
-| `Port` | internal port | `3000` |
-| `Adresse für die Nutzenden` | public address (used in links and e-mails) | `https://wiki.example.com` |
-| `Autostart (systemd/none)` | start automatically | `systemd` |
-| `Texterkennung (OCR) installieren? (j/n)` | install text recognition | `j` = yes, `n` = no |
-| `LibreOffice installieren? (j/n)` | install the Office preview | `j` = yes, `n` = no |
+| Prompt | Answer |
+| --- | --- |
+| `Data directory` | e.g. `/var/lib/knowstead` |
+| `Access: 1 = reverse proxy on this server (recommended), 2 = proxy on another computer, 3 = directly without HTTPS` | `1`, `2` or `3` (tests only) |
+| `Port` | internal port, `3000` |
+| `Address for the users` | public address (used in links and e-mails), e.g. `https://wiki.example.com` |
+| `Autostart (systemd/none)` | `systemd` |
+| `Install text recognition (OCR)? (y/n)` | `y` or `n` |
+| `Install LibreOffice? (y/n)` | `y` or `n` |
 
 ### Windows
 
 1. Extract the ZIP to e.g. `D:\Knowstead` (the program folder – **not** the data directory).
 2. Double-click **`Knowstead-Installation.cmd`** and confirm the User Account Control prompt.
-3. Follow the wizard (it is in German):
+3. Follow the wizard. It uses the display language of Windows (German if that is German, English
+   otherwise); the link *Auf Deutsch* / *In English* on the first page switches.
 
 | Page | What to enter |
 | --- | --- |
-| **Willkommen** (welcome) | checks Node.js 24 and offers to install it with `winget` |
-| **Datenverzeichnis** (data directory) | e.g. `D:\KnowsteadData` – a local drive outside the program folder |
-| **Erreichbarkeit** (access) | *Reverse-Proxy auf diesem Server* (proxy on this server, recommended), *Proxy auf einem anderen Rechner* (proxy on another machine) or *direkt im Netzwerk* (direct, tests only); public address and port |
-| **Betrieb** (operation) | automatic start as *geplante Aufgabe* (scheduled task, no extra software) or *Windows-Dienst mit NSSM*; firewall rule; Microsoft Defender exclusion for the database files |
-| **Zusatzfunktionen** (extras) | Tesseract (OCR) and LibreOffice (Office preview) – found or installed with `winget` |
-| **Zusammenfassung** → **Installation** → **Fertig** | summary, progress, result; the button *Ersteinrichtung im Browser öffnen* opens the setup |
+| **Welcome** | checks Node.js 24 and offers to install it with `winget` |
+| **Data directory** | e.g. `D:\KnowsteadData` – a local drive outside the program folder |
+| **Access** | *Reverse proxy on this server* (recommended), *Reverse proxy on another computer* or *Directly on the network* (tests only); public address and port |
+| **Operation** | automatic start as a *scheduled task* (no extra software) or *Windows service with NSSM*; firewall rule; Microsoft Defender exclusion for the database files |
+| **Extras** | Tesseract (OCR) and LibreOffice (Office preview) – found or installed with `winget` |
+| **Summary** → **Installation** → **Done** | summary, progress, result; the button *Open the first-time setup in the browser* opens the setup |
 
-Or without the wizard, in PowerShell (it asks for administrator rights itself):
+Or without the wizard, in PowerShell (it asks for administrator rights itself; add `-Language en` or
+`-Language de` to choose the language of the messages):
 
 ```powershell
 .\Knowstead-Installation.cmd -Unattended -DataDir D:\KnowsteadData -BaseUrl https://wiki.example.com -Access LocalProxy
@@ -174,14 +180,14 @@ Open your address. Without any accounts Knowstead shows the setup wizard: choose
 an accent colour, optionally sample content, and create the administrator account.
 
 From another computer the wizard asks for the **setup code** – it protects a freshly started server from
-being set up by someone else. It is in the server log (the log is in German; the word to look for is
-`Einrichtungscode`):
+being set up by someone else. It is in the server log (the log is in German, but this line also says
+`setup code`):
 
 | Installation | Command |
 | --- | --- |
-| Linux | `journalctl -u knowstead \| grep Einrichtungscode` |
-| Windows | `Select-String -Path D:\KnowsteadData\logs\knowstead.log -Pattern Einrichtungscode` |
-| Docker | `docker compose logs knowstead \| grep Einrichtungscode` |
+| Linux | `journalctl -u knowstead \| grep -i "setup code"` |
+| Windows | `Select-String -Path D:\KnowsteadData\logs\knowstead.log -Pattern 'setup code'` |
+| Docker | `docker compose logs knowstead \| grep -i "setup code"` |
 
 No code is needed on the server itself (`http://localhost:3000/setup`) – from your own machine an SSH
 tunnel does the same: `ssh -L 3000:127.0.0.1:3000 admin@your-server`.
@@ -193,12 +199,12 @@ company accounts (Active Directory, Entra ID, SAML).
 ## 6. Check the installation and the backup
 
 ```bash
-cd /opt/knowstead && npm run cli -- doctor
+cd /opt/knowstead && npm run cli -- doctor --lang en
 ```
 
 checks Node.js, the user interface, the data directory, port and address, the server key, the database,
-the setup and the backups. The output is German: `läuft` means "running", `Alles in Ordnung` "everything
-is fine", `Hinweis` "note" and `Fehler` "error"; each finding comes with a hint what to do.
+the setup and the backups; each finding comes with a hint what to do. (Without `--lang en` the output is
+German – scripts such as `update.sh` rely on that.)
 
 Knowstead backs up every night at 3 a.m. and keeps seven backups in `<data directory>/backups/`.
 
@@ -222,6 +228,8 @@ The script verifies the checksum, prepares the new program next to the old one w
 running, stops the service, swaps the folders, starts and checks. If the new version does not answer, the
 previous one comes back by itself – including the database. `--dry-run` shows the steps without changing
 anything; `sudo bash /opt/knowstead/update.sh --rollback` returns to the previous version later.
+`update.sh` prints its messages in German for now: `Fertig` means "done", `Probelauf` "dry run",
+`Sicherung` "backup" and `[!]` marks an error.
 
 - **Windows:** `.\Knowstead-Dienst.cmd stop`, extract the new package over the program folder, then
   `.\Knowstead-Installation.cmd -Unattended`.

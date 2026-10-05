@@ -28,12 +28,14 @@
  *   --skip-test              keinen Probestart
  *   --dry-run                nur anzeigen, was geschehen würde
  *   --json-progress          Fortschritt zusätzlich als Zeilen „@@KNOWSTEAD {json}“ (für grafische Assistenten)
+ *   --lang <de|en>           Sprache der Meldungen (Standard: KNOWSTEAD_LANG, sonst die Sprache des Systems)
  */
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveLanguage, texts } from './lang.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -46,6 +48,14 @@ const option = (name) => {
 const flag = (name) => args.includes(`--${name}`);
 const dryRun = flag('dry-run');
 const jsonProgress = flag('json-progress');
+
+/**
+ * Sprache der Meldungen. Beim Einbinden in Tests bleibt es bei Deutsch – erst `main` legt die Sprache fest.
+ * @type {'de' | 'en'}
+ */
+let lang = 'de';
+/** Text in der gewählten Sprache: L('deutsch', 'english') */
+let L = texts(lang);
 
 function emit(event) {
   if (jsonProgress) console.log(`@@KNOWSTEAD ${JSON.stringify(event)}`);
@@ -75,12 +85,12 @@ function warn(message) {
 /** Wert so schreiben, dass process.loadEnvFile ihn unverändert liest (Windows-Pfade ohne Escapes). */
 export function formatEnvValue(value) {
   const text = String(value);
-  if (/[\r\n]/.test(text)) throw new Error('Zeilenumbrüche sind in .env-Werten nicht möglich');
+  if (/[\r\n]/.test(text)) throw new Error(L('Zeilenumbrüche sind in .env-Werten nicht möglich', 'Line breaks are not possible in .env values'));
   const needsQuotes = /#/.test(text) || /^\s|\s$/.test(text) || /^["'`]/.test(text);
   if (!needsQuotes) return text;
   if (!text.includes("'")) return `'${text}'`;
   if (!/["\\]/.test(text)) return `"${text}"`;
-  throw new Error(`Der Wert ${text} lässt sich nicht in die .env schreiben (Anführungszeichen und #)`);
+  throw new Error(L(`Der Wert ${text} lässt sich nicht in die .env schreiben (Anführungszeichen und #)`, `The value ${text} cannot be written to the .env file (quotation marks and #)`));
 }
 
 /** Setzt Schlüssel in einer .env: vorhandene Zeilen werden ersetzt, Kommentare und andere Werte bleiben. */
@@ -92,12 +102,12 @@ export function updateEnv(text, values) {
     if (!match || !(match[1] in values)) return line;
     done.add(match[1]);
     const value = values[match[1]];
-    return value === null ? `# ${line.trim()}  (entfernt vom Installationsassistenten)` : `${match[1]}=${formatEnvValue(value)}`;
+    return value === null ? `# ${line.trim()}  (${L('entfernt vom Installationsassistenten', 'removed by the installer')})` : `${match[1]}=${formatEnvValue(value)}`;
   });
   const missing = Object.entries(values).filter(([key, value]) => !done.has(key) && value !== null);
   if (missing.length) {
     if (out.length && out.at(-1) !== '') out.push('');
-    out.push(`# Installationsassistent (${new Date().toISOString().slice(0, 10)})`);
+    out.push(`# ${L('Installationsassistent', 'Installer')} (${new Date().toISOString().slice(0, 10)})`);
     for (const [key, value] of missing) out.push(`${key}=${formatEnvValue(value)}`);
   }
   let result = out.join('\n');
@@ -157,25 +167,44 @@ export function pickOcrLanguages(wanted, available) {
  * Was wird für die Texterkennung eingetragen? `available` ist die Liste von Tesseract – oder null, wenn sie sich
  * nicht ermitteln ließ. Tesseract bricht bei einer einzigen fehlenden Sprache ganz ab, deshalb kommt nur in die
  * Einstellung, was vorhanden ist; ohne eine einzige der gewünschten Sprachen gibt es nichts einzutragen
- * (`languages: null`). `level: 'warn'` heißt: am Ende der Installation noch einmal zeigen.
+ * (`languages: null`). `level: 'warn'` heißt: am Ende der Installation noch einmal zeigen. `language` ist die
+ * Sprache der Meldung (Standard Deutsch).
  */
-export function planOcrLanguages(wanted, available) {
+export function planOcrLanguages(wanted, available, language = 'de') {
+  const T = texts(language);
   const list = (langs) => langs.split('+').join(', ');
   if (!available) {
-    return { languages: wanted, level: 'info', message: `Vorhandene Sprachdaten ließen sich nicht ermitteln (tesseract --list-langs) – eingetragen wird ${wanted}.` };
+    return {
+      languages: wanted,
+      level: 'info',
+      message: T(
+        `Vorhandene Sprachdaten ließen sich nicht ermitteln (tesseract --list-langs) – eingetragen wird ${wanted}.`,
+        `The installed language data could not be determined (tesseract --list-langs) – ${wanted} will be configured.`,
+      ),
+    };
   }
   const picked = pickOcrLanguages(wanted, available);
   if (!picked.languages) {
     return {
       languages: null,
       level: 'warn',
-      message: `Tesseract hat keine Sprachdaten für ${list(wanted)} (vorhanden: ${available.join(', ') || 'keine'}) – die Einstellung bleibt unverändert. Sprachdaten installieren oder --ocr-languages anpassen.`,
+      message: T(
+        `Tesseract hat keine Sprachdaten für ${list(wanted)} (vorhanden: ${available.join(', ') || 'keine'}) – die Einstellung bleibt unverändert. Sprachdaten installieren oder --ocr-languages anpassen.`,
+        `Tesseract has no language data for ${list(wanted)} (available: ${available.join(', ') || 'none'}) – the setting stays unchanged. Install the language data or adjust --ocr-languages.`,
+      ),
     };
   }
   if (picked.missing.length) {
-    return { languages: picked.languages, level: 'warn', message: `Sprachdaten fehlen für ${picked.missing.join(', ')} – erkannt wird vorerst nur ${list(picked.languages)}.` };
+    return {
+      languages: picked.languages,
+      level: 'warn',
+      message: T(
+        `Sprachdaten fehlen für ${picked.missing.join(', ')} – erkannt wird vorerst nur ${list(picked.languages)}.`,
+        `Language data is missing for ${picked.missing.join(', ')} – for now only ${list(picked.languages)} is recognised.`,
+      ),
+    };
   }
-  return { languages: picked.languages, level: 'info', message: `Sprachen: ${picked.languages}` };
+  return { languages: picked.languages, level: 'info', message: T(`Sprachen: ${picked.languages}`, `Languages: ${picked.languages}`) };
 }
 
 /* ----------------------------------- Hilfen ----------------------------------- */
@@ -200,40 +229,73 @@ function portFree(port, host) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Meldung der Kommandozeile (deutsch) für die englische Ausgabe übertragen – über denselben Katalog, mit dem
+ * der Server seine Antworten übersetzt. Unbekanntes bleibt, wie es ist.
+ */
+async function localized(message) {
+  if (lang !== 'en' || !message) return message;
+  try {
+    const { translate } = await import('../server/src/core/i18n.ts');
+    return translate(message, 'en');
+  } catch {
+    return message;
+  }
+}
+
 /* ----------------------------------- Ablauf ----------------------------------- */
 
 async function main() {
-  console.log('\n  Knowstead – Installation');
+  try {
+    lang = resolveLanguage(option('lang'));
+  } catch (err) {
+    fail(err instanceof Error ? err.message : String(err));
+  }
+  L = texts(lang);
+  // Was dieser Lauf selbst startet (scripts/prepare.mjs), spricht dieselbe Sprache
+  process.env.KNOWSTEAD_LANG = lang;
 
-  step('node', 'Node.js prüfen');
+  console.log(`\n  Knowstead – ${L('Installation', 'installation')}`);
+
+  step('node', L('Node.js prüfen', 'Checking Node.js'));
   const major = Number(process.versions.node.split('.')[0]);
-  if (major < 24) fail(`Node.js ${process.versions.node} ist zu alt – benötigt wird Version 24 oder neuer (https://nodejs.org/).`);
+  if (major < 24) {
+    fail(L(`Node.js ${process.versions.node} ist zu alt – benötigt wird Version 24 oder neuer (https://nodejs.org/).`, `Node.js ${process.versions.node} is too old – version 24 or newer is required (https://nodejs.org/).`));
+  }
   info(`Node.js ${process.versions.node}`);
   const ocrLanguages = option('ocr-languages');
-  if (ocrLanguages !== undefined && !OCR_LANGUAGES.test(ocrLanguages)) fail(`Ungültige Sprachen der Texterkennung: ${ocrLanguages} (Tesseract-Kürzel, z. B. deu+eng)`);
+  if (ocrLanguages !== undefined && !OCR_LANGUAGES.test(ocrLanguages)) {
+    fail(L(`Ungültige Sprachen der Texterkennung: ${ocrLanguages} (Tesseract-Kürzel, z. B. deu+eng)`, `Invalid text recognition languages: ${ocrLanguages} (Tesseract codes, e.g. deu+eng)`));
+  }
 
-  step('config', 'Konfiguration schreiben');
+  step('config', L('Konfiguration schreiben', 'Writing the configuration'));
   const envFile = path.resolve(option('env-path') ?? path.join(root, '.env'));
   const originalText = fs.existsSync(envFile) ? fs.readFileSync(envFile, 'utf8') : null;
   // Einträge einer Installation aus der Zeit vor der Umbenennung (DOKU_…) ziehen unter ihren heutigen Namen um
-  const existingText = originalText === null ? fs.readFileSync(path.join(root, '.env.example'), 'utf8') : renameLegacyEnv(originalText);
-  if (originalText !== null && existingText !== originalText) info('Einträge DOKU_… heißen jetzt KNOWSTEAD_… – die Werte bleiben');
+  // Neue Installation: Vorlage mit Kommentaren in der gewählten Sprache
+  const template = lang === 'en' && fs.existsSync(path.join(root, '.env.example.en')) ? '.env.example.en' : '.env.example';
+  const existingText = originalText === null ? fs.readFileSync(path.join(root, template), 'utf8') : renameLegacyEnv(originalText);
+  if (originalText !== null && existingText !== originalText) info(L('Einträge DOKU_… heißen jetzt KNOWSTEAD_… – die Werte bleiben', 'Entries DOKU_… are now called KNOWSTEAD_… – the values stay'));
   const existing = readEnv(fs.existsSync(envFile) ? existingText : '');
   const port = Number(option('port') ?? existing.PORT ?? 3000);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) fail(`Ungültiger Port: ${option('port')}`);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) fail(L(`Ungültiger Port: ${option('port')}`, `Invalid port: ${option('port')}`));
   const host = option('host') ?? existing.HOST ?? '0.0.0.0';
-  if (!net.isIP(host) && host !== 'localhost') fail(`Ungültige Netzwerkschnittstelle: ${host} (z. B. 127.0.0.1 oder 0.0.0.0)`);
+  if (!net.isIP(host) && host !== 'localhost') {
+    fail(L(`Ungültige Netzwerkschnittstelle: ${host} (z. B. 127.0.0.1 oder 0.0.0.0)`, `Invalid network interface: ${host} (e.g. 127.0.0.1 or 0.0.0.0)`));
+  }
   const baseUrl = (option('base-url') ?? existing.BASE_URL ?? `http://localhost:${port}`).replace(/\/+$/, '');
   try {
     const url = new URL(baseUrl);
     if (!/^https?:$/.test(url.protocol)) throw new Error('Protokoll');
   } catch {
-    fail(`Ungültige Adresse: ${baseUrl} (z. B. https://knowstead.firma.de)`);
+    fail(L(`Ungültige Adresse: ${baseUrl} (z. B. https://knowstead.firma.de)`, `Invalid address: ${baseUrl} (e.g. https://knowstead.example.com)`));
   }
   const dataDir = path.resolve(root, option('data-dir') ?? existing.DATA_DIR ?? 'data');
-  if (/^\\\\/.test(dataDir)) fail('Das Datenverzeichnis darf nicht auf einer Netzfreigabe liegen (SQLite braucht lokale Dateisperren).');
+  if (/^\\\\/.test(dataDir)) {
+    fail(L('Das Datenverzeichnis darf nicht auf einer Netzfreigabe liegen (SQLite braucht lokale Dateisperren).', 'The data directory must not be on a network share (SQLite needs local file locks).'));
+  }
   const service = option('service') ?? existing.KNOWSTEAD_SERVICE ?? null;
-  if (service && !['task', 'nssm', 'systemd', 'docker', 'none'].includes(service)) fail(`Unbekannte Betriebsart: ${service}`);
+  if (service && !['task', 'nssm', 'systemd', 'docker', 'none'].includes(service)) fail(L(`Unbekannte Betriebsart: ${service}`, `Unknown service type: ${service}`));
   const values = {
     PORT: String(port),
     HOST: host,
@@ -247,21 +309,21 @@ async function main() {
     ...(service && service !== 'none' ? { KNOWSTEAD_SERVICE: service } : service === 'none' ? { KNOWSTEAD_SERVICE: null } : {}),
   };
   const nextText = updateEnv(fs.existsSync(envFile) ? existingText : existingText, values);
-  for (const [key, value] of Object.entries(values)) info(`${key.padEnd(14)} ${value ?? '(entfernt)'}`);
-  if (existing.KNOWSTEAD_SECRET) info('KNOWSTEAD_SECRET    bleibt unverändert');
+  for (const [key, value] of Object.entries(values)) info(`${key.padEnd(14)} ${value ?? L('(entfernt)', '(removed)')}`);
+  if (existing.KNOWSTEAD_SECRET) info(`KNOWSTEAD_SECRET    ${L('bleibt unverändert', 'stays unchanged')}`);
   if (!dryRun) {
     if (originalText !== null && originalText !== nextText) {
       const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
       fs.copyFileSync(envFile, `${envFile}.bak-${stamp}`);
       // Kann KNOWSTEAD_SECRET und Zugangsdaten enthalten – nur für den Eigentümer lesbar
       fs.chmodSync(`${envFile}.bak-${stamp}`, 0o600);
-      info(`Bisherige Konfiguration gesichert: ${path.basename(envFile)}.bak-${stamp}`);
+      info(L(`Bisherige Konfiguration gesichert: ${path.basename(envFile)}.bak-${stamp}`, `Previous configuration backed up: ${path.basename(envFile)}.bak-${stamp}`));
     }
     fs.writeFileSync(envFile, nextText, { mode: 0o600 });
-    info(`Geschrieben: ${envFile}`);
+    info(L(`Geschrieben: ${envFile}`, `Written: ${envFile}`));
   }
 
-  step('dirs', 'Verzeichnisse anlegen');
+  step('dirs', L('Verzeichnisse anlegen', 'Creating directories'));
   const logFile = values.LOG_FILE ?? existing.LOG_FILE;
   const dirs = [dataDir, ...(logFile ? [path.dirname(path.resolve(dataDir, logFile))] : [])];
   for (const dir of dirs) {
@@ -270,7 +332,7 @@ async function main() {
   }
   const relativeData = path.relative(root, dataDir);
   if (relativeData && !relativeData.startsWith('..') && !path.isAbsolute(relativeData)) {
-    info('Hinweis: Das Datenverzeichnis liegt im Programmordner – für einfache Updates besser außerhalb.');
+    info(L('Hinweis: Das Datenverzeichnis liegt im Programmordner – für einfache Updates besser außerhalb.', 'Note: the data directory is inside the program folder – for easy updates it is better kept outside.'));
   }
 
   // Umgebung für Probestart und Prüfung: genau die neue Konfiguration, unabhängig von der Datei
@@ -278,21 +340,26 @@ async function main() {
   for (const [key, value] of Object.entries(values)) if (value === null) delete env[key];
 
   if (!flag('skip-prepare')) {
-    step('prepare', 'Abhängigkeiten und Oberfläche');
+    step('prepare', L('Abhängigkeiten und Oberfläche', 'Dependencies and interface'));
     if (dryRun) info('node scripts/prepare.mjs');
-    else if (runNode([path.join('scripts', 'prepare.mjs')], process.env).status !== 0) fail('Abhängigkeiten oder Oberfläche konnten nicht vorbereitet werden – Meldungen oben prüfen.');
+    else if (runNode([path.join('scripts', 'prepare.mjs')], process.env).status !== 0) {
+      fail(L('Abhängigkeiten oder Oberfläche konnten nicht vorbereitet werden – Meldungen oben prüfen.', 'Dependencies or interface could not be prepared – check the messages above.'));
+    }
   }
 
   let needsSetup = null;
   if (!flag('skip-test') && !dryRun) {
-    step('test', 'Probestart');
+    step('test', L('Probestart', 'Trial start'));
+    // Ohne --lang antwortet die Prüfung auf Deutsch – daran erkennt dieser Lauf (wie update.sh) den laufenden Server
     const doctorBefore = JSON.parse(runNode([path.join('server', 'src', 'cli.ts'), 'doctor', '--json'], env, { capture: true }).stdout || '{}');
     const running = doctorBefore.checks?.find((c) => c.id === 'server')?.message === 'läuft';
     if (running) {
-      info('Der Server läuft bereits mit diesem Datenverzeichnis – Probestart übersprungen.');
+      info(L('Der Server läuft bereits mit diesem Datenverzeichnis – Probestart übersprungen.', 'The server is already running with this data directory – trial start skipped.'));
     } else {
       const testHost = host === '0.0.0.0' ? '127.0.0.1' : host;
-      if (!(await portFree(port, host))) fail(`Port ${port} ist belegt – bitte einen anderen Port wählen oder das Programm beenden, das ihn nutzt.`);
+      if (!(await portFree(port, host))) {
+        fail(L(`Port ${port} ist belegt – bitte einen anderen Port wählen oder das Programm beenden, das ihn nutzt.`, `Port ${port} is in use – please choose another port or stop the program that uses it.`));
+      }
       const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join('server', 'src', 'index.ts')], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
       let output = '';
       child.stdout.on('data', (d) => (output += d));
@@ -308,29 +375,29 @@ async function main() {
       if (!status) {
         if (child.exitCode === null) child.kill();
         console.error(output.split('\n').slice(-20).join('\n'));
-        fail('Der Probestart ist fehlgeschlagen – die letzten Zeilen des Protokolls stehen oben.');
+        fail(L('Der Probestart ist fehlgeschlagen – die letzten Zeilen des Protokolls stehen oben.', 'The trial start failed – the last lines of the log are shown above.'));
       }
       needsSetup = !!status.needsSetup;
-      info(`Server antwortet (Knowstead ${status.version}${needsSetup ? ', Ersteinrichtung ausstehend' : ''})`);
+      info(L(`Server antwortet (Knowstead ${status.version}${needsSetup ? ', Ersteinrichtung ausstehend' : ''})`, `Server responds (Knowstead ${status.version}${needsSetup ? ', first-time setup pending' : ''})`));
       fs.writeFileSync(path.join(dataDir, 'knowstead.stop'), 'Probestart');
       let timer;
       const code = await Promise.race([exited, new Promise((resolve) => (timer = setTimeout(() => resolve('timeout'), 30_000)))]);
       clearTimeout(timer);
       if (code === 'timeout') {
         child.kill();
-        fail('Der Server hat sich nach dem Probestart nicht beendet.');
+        fail(L('Der Server hat sich nach dem Probestart nicht beendet.', 'The server did not stop after the trial start.'));
       }
-      info('Probestart beendet');
+      info(L('Probestart beendet', 'Trial start finished'));
     }
   }
 
   const cli = path.join('server', 'src', 'cli.ts');
   const extras = [
-    ['ocr-path', 'ocr', 'Texterkennung'],
-    ['office-path', 'officePreview', 'Office-Vorschau'],
+    ['ocr-path', 'ocr', L('Texterkennung', 'Text recognition')],
+    ['office-path', 'officePreview', L('Office-Vorschau', 'Office preview')],
   ].filter(([name]) => option(name));
   if (extras.length) {
-    step('extras', 'Zusatzprogramme eintragen');
+    step('extras', L('Zusatzprogramme eintragen', 'Configuring the additional programs'));
     // Zusatzprogramme sind keine Voraussetzung: Lässt sich eines nicht eintragen, bleibt seine Einstellung, wie sie
     // ist, und die Installation läuft weiter. Ein Abbruch an dieser Stelle ließe bei einem Update ein angehaltenes
     // Knowstead zurück – wegen einer Funktion, die sich jederzeit in der Administration nachtragen lässt.
@@ -338,7 +405,7 @@ async function main() {
       const file = option(name);
       info(`${key}: ${file}`);
       if (!fs.existsSync(file)) {
-        warn(`${label}: ${file} wurde nicht gefunden – die Einstellung bleibt unverändert.`);
+        warn(L(`${label}: ${file} wurde nicht gefunden – die Einstellung bleibt unverändert.`, `${label}: ${file} was not found – the setting stays unchanged.`));
         continue;
       }
       let value = { enabled: true, sofficePath: file };
@@ -355,7 +422,7 @@ async function main() {
         if (!wanted || !OCR_LANGUAGES.test(wanted)) wanted = 'deu+eng';
         const listed = spawnSync(file, ['--list-langs'], { encoding: 'utf8', timeout: 20_000, windowsHide: true });
         const available = listed.error || listed.status !== 0 ? null : parseTesseractLanguages(`${listed.stdout}\n${listed.stderr}`);
-        const plan = planOcrLanguages(wanted, available);
+        const plan = planOcrLanguages(wanted, available, lang);
         if (plan.level === 'warn') warn(`${label}: ${plan.message}`);
         else info(`  ${plan.message}`);
         if (!plan.languages) continue;
@@ -365,25 +432,27 @@ async function main() {
         const result = runNode([cli, 'settings:set', key, JSON.stringify(value)], env, { capture: true });
         if (result.status !== 0) {
           // Die letzte Zeile ist die Meldung („Fehler: …“), davor stehen allenfalls Protokollzeilen
-          const reason = (result.stderr || result.stdout || '').trim().split(/\r?\n/).at(-1)?.replace(/^Fehler:\s*/, '') || `Abbruch mit Code ${result.status}`;
-          warn(`${label} ließ sich nicht eintragen: ${reason}`);
+          const last = (result.stderr || result.stdout || '').trim().split(/\r?\n/).at(-1)?.replace(/^Fehler:\s*/, '');
+          const reason = last ? await localized(last) : L(`Abbruch mit Code ${result.status}`, `exited with code ${result.status}`);
+          warn(L(`${label} ließ sich nicht eintragen: ${reason}`, `${label} could not be configured: ${reason}`));
           continue;
         }
         // Schlüssel und Typ stimmen hier immer – „Keine Änderung“ heißt also: stand schon so in den Einstellungen
         const said = result.stdout.trim();
-        info(/^Keine Änderung/.test(said) ? `${label}: bereits so eingetragen.` : said);
+        const unchanged = /^Keine Änderung/.test(said);
+        info(unchanged ? L(`${label}: bereits so eingetragen.`, `${label}: already configured this way.`) : L(said, `${label}: saved.`));
       }
     }
   }
 
-  step('doctor', 'Installation prüfen');
+  step('doctor', L('Installation prüfen', 'Checking the installation'));
   let checks = [];
   if (!dryRun) {
-    const result = runNode([cli, 'doctor', '--json'], env, { capture: true });
+    const result = runNode([cli, 'doctor', '--json', '--lang', lang], env, { capture: true });
     try {
       checks = JSON.parse(result.stdout).checks;
     } catch {
-      fail(`Prüfung nicht möglich: ${(result.stderr || result.stdout).trim()}`);
+      fail(L(`Prüfung nicht möglich: ${(result.stderr || result.stdout).trim()}`, `The check could not be run: ${(result.stderr || result.stdout).trim()}`));
     }
     const icon = { ok: '✔', warn: '!', error: '✖' };
     for (const c of checks) {
@@ -392,7 +461,7 @@ async function main() {
     }
     if (checks.some((c) => c.status === 'error')) {
       emit({ event: 'done', ok: false, checks });
-      fail('Die Prüfung hat Fehler gefunden – siehe oben.');
+      fail(L('Die Prüfung hat Fehler gefunden – siehe oben.', 'The check found errors – see above.'));
     }
   }
 
@@ -401,13 +470,17 @@ async function main() {
     fs.writeFileSync(reportFile, warnings.map((line) => `${line}\n`).join(''));
   } else if (warnings.length && !jsonProgress) {
     // Die grafischen Assistenten bekommen die Hinweise mit dem Abschlussereignis und zeigen sie selbst
-    console.log('\n  Hinweise – Knowstead ist eingerichtet, bei den Zusatzprogrammen blieb etwas offen:');
+    console.log(`\n  ${L('Hinweise – Knowstead ist eingerichtet, bei den Zusatzprogrammen blieb etwas offen:', 'Notes – Knowstead is set up, but something remained open with the additional programs:')}`);
     for (const line of warnings) console.log(`    [!] ${line}`);
-    console.log('    → Nachholen: Administration → KI & Dateien, oder den Assistenten erneut ausführen.');
+    console.log(`    → ${L('Nachholen: Administration → KI & Dateien, oder den Assistenten erneut ausführen.', 'To catch up: Administration → AI & files, or run the installer again.')}`);
   }
 
   const localUrl = `http://localhost:${port}`;
-  console.log(`\n  Fertig. ${needsSetup === false ? `Knowstead: ${baseUrl}` : `Ersteinrichtung auf diesem Rechner: ${localUrl}/setup (ohne Einrichtungscode)`}\n`);
+  const closing =
+    needsSetup === false
+      ? `Knowstead: ${baseUrl}`
+      : L(`Ersteinrichtung auf diesem Rechner: ${localUrl}/setup (ohne Einrichtungscode)`, `First-time setup on this computer: ${localUrl}/setup (no setup code needed)`);
+  console.log(`\n  ${L('Fertig.', 'Done.')} ${closing}\n`);
   emit({ event: 'done', ok: true, dryRun, envFile, dataDir, port, baseUrl, localUrl, setupUrl: `${localUrl}/setup`, needsSetup, checks, warnings });
 }
 

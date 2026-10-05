@@ -30,6 +30,10 @@ function findBash(): string | null {
 }
 const bash = findBash();
 
+// Die Skripte sprechen die Sprache des Systems. Die Prüfungen hier legen sie fest (Deutsch), damit das Ergebnis
+// nicht vom Rechner abhängt, auf dem sie laufen – die englische Fassung wird ausdrücklich geprüft.
+process.env.KNOWSTEAD_LANG = 'de';
+
 test('Installationskern: Sprachen der Texterkennung', () => {
   for (const ok of ['deu', 'deu+eng', 'deu+eng+fra', 'chi_sim+eng']) assert.ok(OCR_LANGUAGES.test(ok), ok);
   for (const bad of ['', 'de', 'deu eng', 'deu,eng', 'deu+', 'deu;rm -rf /', 'a+b+c+d+e+f+g', '$(id)']) assert.ok(!OCR_LANGUAGES.test(bad), bad);
@@ -134,13 +138,55 @@ test('Windows-Assistent: Probelauf mit -InstallTesseract und -InstallLibreOffice
   }
 });
 
+test('Windows-Assistent: Englisch – gewählt mit -Language oder über KNOWSTEAD_LANG', { skip: process.platform === 'win32' ? false : 'nur unter Windows' }, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'knowstead-assistent-'));
+  const wizard = (extra: string[], env: Record<string, string> = {}) => {
+    const res = spawnSync(
+      'powershell.exe',
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(root, 'scripts', 'install', 'windows', 'Install-Knowstead.ps1'), '-Unattended', '-WhatIf', '-NoElevate', '-SkipPrepare', '-EnvPath', path.join(dir, '.env'), '-DataDir', path.join(dir, 'daten'), '-Port', '3986', '-Service', 'Task', ...extra],
+      { encoding: 'utf8', timeout: 120_000, env: { ...process.env, ...env } },
+    );
+    return { status: res.status, out: res.stdout + res.stderr };
+  };
+  const english = (out: string) => {
+    // Plan des Assistenten, Meldungen des Installationskerns und der Abschluss – alles in einer Sprache
+    assert.match(out, /Program folder: +\S/);
+    assert.match(out, /Steps:/);
+    assert.match(out, /autostart as scheduled task \\Knowstead\\Knowstead \(Local Service account, restart on failure\)/);
+    assert.match(out, /Checking Node\.js/);
+    assert.match(out, /\(dry run\) Setting up the scheduled task/);
+    assert.match(out, /First-time setup on this server: http:\/\/localhost:3986\/setup/);
+    assert.doesNotMatch(out, /Programmordner|Schritte:|Probelauf|Ersteinrichtung|Geplante Aufgabe|Vorbereiten|Fertig/);
+  };
+  try {
+    const chosen = wizard(['-Language', 'en']);
+    assert.equal(chosen.status, 0, chosen.out);
+    english(chosen.out);
+    const byEnv = wizard([], { KNOWSTEAD_LANG: 'en' });
+    assert.equal(byEnv.status, 0, byEnv.out);
+    english(byEnv.out);
+    // Die ausdrückliche Wahl geht vor
+    const german = wizard(['-Language', 'de'], { KNOWSTEAD_LANG: 'en' });
+    assert.match(german.out, /Programmordner: +\S/);
+    assert.match(german.out, /\(Probelauf\) Geplante Aufgabe/);
+    // Beanstandungen auf Englisch
+    const bad = wizard(['-Language', 'en', '-BaseUrl', 'knowstead', '-Access', 'RemoteProxy']);
+    assert.equal(bad.status, 2, bad.out);
+    assert.match(bad.out, /The address must start with http:\/\/ or https:\/\//);
+    assert.match(bad.out, /Please give the IP address of the reverse proxy/);
+    assert.ok(!fs.existsSync(path.join(dir, '.env')), 'der Probelauf schreibt keine .env');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 /**
  * Prüfstand für den Windows-Assistenten: Er holt die beteiligten Funktionen unverändert aus Install-Knowstead.ps1 und
  * stellt nur die Systembefehle nach (Dienst, geplante Aufgabe, Aufruf von Node). So lässt sich der Ablauf
  * „anhalten → Fehlschlag → wieder starten“ ohne Administratorrechte und ohne echten Dienst prüfen.
  * Nur ASCII: Windows PowerShell 5.1 läse eine Datei ohne BOM sonst in der ANSI-Codepage.
  */
-const WIZARD_HARNESS = String.raw`param([string]$Wizard, [string]$Scenario)
+const WIZARD_HARNESS = String.raw`param([string]$Wizard, [string]$Scenario, [string]$Language = 'de')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2
 $TaskPath = '\Knowstead\'
@@ -152,12 +198,13 @@ $script:DoneEvent = $null
 $script:WasRunning = ''
 $script:Notes = New-Object System.Collections.Generic.List[string]
 $script:Calls = New-Object System.Collections.Generic.List[string]
+$script:Lang = $Language
 
 $tokens = $null
 $errors = $null
 $ast = [System.Management.Automation.Language.Parser]::ParseFile($Wizard, [ref]$tokens, [ref]$errors)
 if ($errors.Count) { throw "Parserfehler: $($errors[0].Message)" }
-$wanted = @('Write-Log', 'Invoke-Checked', 'Add-Note', 'Stop-Knowstead', 'Restore-Knowstead', 'Invoke-KnowsteadInstall')
+$wanted = @('T', 'Write-Log', 'Invoke-Checked', 'Add-Note', 'Stop-Knowstead', 'Restore-Knowstead', 'Invoke-KnowsteadInstall')
 $found = @()
 foreach ($fn in $ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
   if ($wanted -contains $fn.Name) { . ([scriptblock]::Create($fn.Extent.Text)); $found += $fn.Name }
@@ -198,10 +245,10 @@ test('Windows-Assistent: Nach einem Fehlschlag läuft ein vorher laufendes Knows
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'knowstead-assistent-'));
   const harness = path.join(dir, 'pruefstand.ps1');
   fs.writeFileSync(harness, WIZARD_HARNESS);
-  const run = (scenario: string) => {
+  const run = (scenario: string, language = 'de') => {
     const res = spawnSync(
       'powershell.exe',
-      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', harness, '-Wizard', path.join(root, 'scripts', 'install', 'windows', 'Install-Knowstead.ps1'), '-Scenario', scenario],
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', harness, '-Wizard', path.join(root, 'scripts', 'install', 'windows', 'Install-Knowstead.ps1'), '-Scenario', scenario, '-Language', language],
       { encoding: 'utf8', timeout: 120_000 },
     );
     assert.equal(res.status, 0, res.stdout + res.stderr);
@@ -241,6 +288,13 @@ test('Windows-Assistent: Nach einem Fehlschlag läuft ein vorher laufendes Knows
     const broken = run('service-fail-startfails');
     assert.equal(broken.outcome, 'error: Die Einrichtung ist fehlgeschlagen');
     assert.match(broken.out, /nicht wieder starten: Start nicht moeglich/);
+
+    // Dieselben Meldungen auf Englisch
+    const english = run('task-fail', 'en');
+    // (den Gedankenstrich gibt die Konsole je nach Zeichensatz als »-« aus)
+    assert.match(english.out, /The setup was not completed\. Knowstead was running before . it is being started again\./);
+    assert.match(english.out, /Knowstead has been started again\./);
+    assert.match(run('service-fail-startfails', 'en').out, /could not be started again: Start nicht moeglich/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -276,9 +330,10 @@ exit 0`,
 
   const env = (extra: Record<string, string> = {}) => ({ ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}`, ...extra });
   /** Führt Bash-Zeilen mit eingebundenen Hilfsfunktionen aus – `run` und `say` wie in install.sh. */
-  const sh = (script: string, opts: { dryRun?: boolean; env?: Record<string, string> } = {}) => {
+  const sh = (script: string, opts: { dryRun?: boolean; english?: boolean; env?: Record<string, string> } = {}) => {
     const prelude = `set -euo pipefail
 DRY_RUN=${opts.dryRun ? 1 : 0}
+${opts.english ? `L() { printf '%s' "$2"; }` : ''}
 say() { printf '%s\\n' "$*"; }
 run() { if [ "$DRY_RUN" = 1 ]; then printf '    (Probelauf) %s\\n' "$*"; else "$@"; fi; }
 . '${extras}'
@@ -403,10 +458,72 @@ run() { if [ "$DRY_RUN" = 1 ]; then printf '    (Probelauf) %s\\n' "$*"; else "$
       assert.match(res.out, /pfad=\[\]/);
     });
 
-    const installSh = (args: string[], input = '') => {
-      const res = spawnSync(bash!, ['install.sh', '--dry-run', '--service', 'none', '--data-dir', '/var/lib/knowstead-test', ...args], { cwd: root, encoding: 'utf8', env: env(), input });
+    const installSh = (args: string[], input = '', extraEnv: Record<string, string> = {}) => {
+      const res = spawnSync(bash!, ['install.sh', '--dry-run', '--service', 'none', '--data-dir', '/var/lib/knowstead-test', ...args], { cwd: root, encoding: 'utf8', env: env(extraEnv), input });
       return { status: res.status, out: res.stdout.replaceAll('\r', ''), err: res.stderr };
     };
+
+    await t.test('Englisch: Sprachwahl, Hilfe, Probelauf und Rückfragen', () => {
+      reset();
+      const help = (args: string[], extraEnv: Record<string, string>) => {
+        const res = spawnSync(bash!, ['install.sh', ...args, '--help'], { cwd: root, encoding: 'utf8', env: env(extraEnv) });
+        return res.stdout.replaceAll('\r', '');
+      };
+      // Ausdrücklich gewählt, sonst KNOWSTEAD_LANG, sonst die Sprache des Systems – »C« sagt nichts über die Person
+      const none = { KNOWSTEAD_LANG: '', LC_ALL: '', LC_MESSAGES: '', LANG: '' };
+      assert.match(help([], { ...none, KNOWSTEAD_LANG: 'en' }), /^Install Knowstead, change its settings or finish an update \(Linux\)/);
+      assert.match(help(['--lang', 'de'], { ...none, KNOWSTEAD_LANG: 'en' }), /Knowstead installieren, Einstellungen ändern/);
+      assert.match(help([], { ...none, LANG: 'de_DE.UTF-8' }), /Knowstead installieren, Einstellungen ändern/);
+      assert.match(help([], { ...none, LC_ALL: 'de_AT.UTF-8', LANG: 'en_US.UTF-8' }), /Knowstead installieren/);
+      assert.match(help([], { ...none, LC_ALL: 'C.UTF-8', LANG: 'en_US.UTF-8' }), /^Install Knowstead/);
+      assert.match(help([], { ...none, LANG: 'C' }), /^Install Knowstead/, 'ohne Angabe zur Sprache: Englisch');
+      assert.match(help(['--lang', 'en'], none), /--lang <de\|en> +language of the messages/);
+      const unknown = spawnSync(bash!, ['install.sh', '--lang', 'fr', '--help'], { cwd: root, encoding: 'utf8', env: env() });
+      assert.equal(unknown.status, 2);
+      assert.match(unknown.stderr, /unknown language: fr/);
+
+      const res = installSh(['--unattended', '--lang', 'en', '--install-ocr', '--install-office']);
+      assert.equal(res.status, 0, res.err + res.out);
+      assert.match(res.out, /▸ Requirements/);
+      assert.match(res.out, /Data directory: +\/var\/lib\/knowstead-test/);
+      assert.match(res.out, /Text recognition: +will be installed \(Tesseract, languages deu, eng\)/);
+      assert.match(res.out, /Office preview: +will be installed \(headless LibreOffice\)/);
+      assert.match(res.out, /\(dry run\) env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-remove tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng/);
+      assert.match(res.out, /\(dry run\) Enabled afterwards: text recognition Office preview/);
+      // Der Installationskern übernimmt die Sprache, und der Abschluss nennt die englischen Wege
+      assert.match(res.out, /Knowstead – installation[\s\S]*Checking Node\.js[\s\S]*Done\.[\s\S]*First-time setup:[\s\S]*grep -i "setup code"/);
+      assert.match(res.out, /cli\.ts doctor --lang en/);
+      assert.doesNotMatch(res.out, /Voraussetzungen|Probelauf|Fertig|Datenverzeichnis|Texterkennung|Ersteinrichtung|Hinweise|wird installiert/);
+      assert.deepEqual(calls(), [], 'der Probelauf installiert nichts');
+
+      // Rückfragen (sie erscheinen nur an einem Terminal): Vorgabe y bzw. n – hier Texterkennung per Vorgabe, LibreOffice
+      // mit »y«. Der Hinweis auf die andere Sprache erscheint nur, wenn die Sprache nicht ausdrücklich gewählt wurde.
+      const asked = installSh(['--lang', 'en'], '\n\n\n\n\n\ny\n');
+      assert.equal(asked.status, 0, asked.err + asked.out);
+      assert.match(asked.out, /Knowstead – installation \(program folder /);
+      assert.match(asked.out, /Access: 1 = reverse proxy on this server \(recommended\)/);
+      assert.match(asked.out, /Text recognition: +will be installed/);
+      assert.match(asked.out, /Office preview: +will be installed/);
+      assert.doesNotMatch(asked.out, /auf Deutsch/);
+      const hinted = installSh([], '\n\n\n\n\n\n\n', { ...none, LANG: 'en_GB.UTF-8' });
+      assert.match(hinted.out, /Language: English – auf Deutsch: bash install\.sh --lang de/);
+      const hintedGerman = installSh([], '\n\n\n\n\n\n\n', { ...none, LANG: 'de_DE.UTF-8' });
+      assert.match(hintedGerman.out, /Sprache: Deutsch – in English: bash install\.sh --lang en/);
+    });
+
+    await t.test('Englisch: Hinweise zu den Zusatzprogrammen', () => {
+      reset();
+      const missing = sh('if extras_install_ocr "" deu; then echo JA; else echo NEIN; fi; if extras_install_office ""; then echo JA; else echo NEIN; fi', { english: true });
+      assert.equal(missing.status, 0, missing.err);
+      assert.match(missing.out, /No package manager \(apt-get or dnf\) found – please install Tesseract yourself\./);
+      assert.match(missing.out, /please install LibreOffice yourself\./);
+      const failed = sh('if extras_install_ocr apt deu+eng; then echo JA; else echo NEIN; fi; if extras_install_office apt; then echo JA; else echo NEIN; fi', { english: true, env: { APT_FAIL: '1' } });
+      assert.match(failed.out, /Tesseract could not be installed – Knowstead is set up without text recognition\./);
+      assert.match(failed.out, /LibreOffice could not be installed – Knowstead is set up without the Office preview\./);
+      assert.match(failed.out, /To catch up later: bash install\.sh --unattended --install-office/);
+      assert.doesNotMatch(missing.out + failed.out, /Paketverwaltung|ließ sich nicht|nachholen|Besteht Internetzugang/);
+      reset();
+    });
 
     await t.test('install.sh ohne Rückfragen: --install-ocr und --install-office', () => {
       reset();

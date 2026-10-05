@@ -100,7 +100,7 @@ schaltet das im Benutzermenü ab, und die Administration kann „reduziert“ al
 
 | Funktion | Kurz |
 | --- | --- |
-| **Installationsassistent** | Windows: Doppelklick auf `Knowstead-Installation.cmd` – grafischer Assistent für Datenverzeichnis, Erreichbarkeit, Autostart (geplante Aufgabe oder NSSM), Firewall, Virenscanner-Ausnahme und Zusatzprogramme; Linux: `sudo bash install.sh` mit systemd-Dienst – auch im Proxmox-LXC-Container, Node.js installiert es auf Wunsch mit. Beide auch ohne Rückfragen – ideal für Updates |
+| **Installationsassistent** | Windows: Doppelklick auf `Knowstead-Installation.cmd` – grafischer Assistent für Datenverzeichnis, Erreichbarkeit, Autostart (geplante Aufgabe oder NSSM), Firewall, Virenscanner-Ausnahme und Zusatzprogramme; Linux: `sudo bash install.sh` mit systemd-Dienst – auch im Proxmox-LXC-Container, Node.js installiert es auf Wunsch mit. Beide auch ohne Rückfragen – ideal für Updates – und auf Deutsch oder Englisch (Sprache des Systems, `--lang en` bzw. `-Language en`) |
 | **Installationspaket** | fertig gebaute Pakete für Windows und Linux in den GitHub-Releases – auf dem Server kein Build und kein npm-Download |
 | **Nächste Schritte** | Administration → Nächste Schritte führt nach der Ersteinrichtung durch HTTPS, Autostart, E-Mail, Sicherung, Personen und Bereiche |
 | **Prüfen und Steuern** | `npm run cli -- doctor` prüft die Installation, `cli stop` beendet Knowstead geordnet, `Knowstead-Dienst.cmd` steuert den Autostart unter Windows |
@@ -138,6 +138,8 @@ für den Produktivbetrieb (Dienst, HTTPS, Proxy, Docker, E-Mail, AD) steht in
    Erreichbarkeit, Autostart und Zusatzprogramme ab, richtet alles ein und prüft das Ergebnis.
    **Linux:** `sudo bash install.sh` – auch in einem Proxmox-LXC-Container
    ([Anleitung](docs/INSTALLATION.md#proxmox-ve-lxc-container)); fehlt Node.js 24, bietet das Skript die Installation an.
+   Die Assistenten sprechen die Sprache des Systems (Deutsch, sonst Englisch); ausdrücklich wählen:
+   `sudo bash install.sh --lang de` bzw. `Knowstead-Installation.cmd -Language de`.
 3. Am Ende öffnet der Assistent die Ersteinrichtung im Browser. Danach führt **Administration → Nächste
    Schritte** durch E-Mail, Sicherung, Personen und Bereiche.
 
@@ -378,7 +380,7 @@ gestopptem Server zu kopieren.
   API-Tokens mit Umfängen, HTML-Bereinigung (sanitize-html), Content-Security-Policy und weitere
   Sicherheits-Header, AES-256-GCM für gespeicherte Zugangsdaten (auch KI-Schlüssel), Ratenbegrenzung an
   Anmelde- und KI-Routen
-- **Qualität:** 445 Server-Tests (node:test), 298 Browsertests mit Barrierefreiheitsprüfung (hell, dunkel, mobil)
+- **Qualität:** 452 Server-Tests (node:test), 298 Browsertests mit Barrierefreiheitsprüfung (hell, dunkel, mobil)
   (Playwright, axe-core), dazu eine Layout-Messung über alle Seiten in fünf Fensterbreiten, ESLint,
   TypeScript im strikten Modus
 - **Lizenz:** MIT

@@ -11,10 +11,13 @@ and in the [handbook](handbook/11-administration.md).
 
 **Time needed:** about 15 minutes with the assistant, plus certificate and reverse proxy; 30–60 minutes by hand.
 
-> **Language:** the installer (`install.sh`, the Windows wizard), `update.sh`, the command-line tool and
-> the server log currently print their messages in **German**. The web interface, the handbook and all
-> e-mails are fully available in English. Wherever this guide quotes program output or wizard labels, it
-> shows the German text exactly as printed, with the English meaning next to it.
+> **Language:** the installers (`install.sh`, the Windows wizard, `start.sh`/`start.cmd`) speak **English
+> and German**. They follow the language of the system – German if it is German, English otherwise. To
+> choose explicitly: `--lang en` (or `de`) for `install.sh`, `-Language en` for the Windows wizard, or the
+> environment variable `KNOWSTEAD_LANG=en` for all of them. `update.sh`, most of the command-line tool and
+> the server log still print their messages in **German**; where this guide quotes them, it shows the
+> German text exactly as printed, with the English meaning next to it. The web interface, the handbook
+> and all e-mails are fully available in English.
 
 ## Contents
 
@@ -73,11 +76,11 @@ existing values and the server key are kept.
 The checksum is in the `.sha256` file next to each package:
 
 ```powershell
-Get-FileHash .\knowstead-2.0.1-windows-x64.zip -Algorithm SHA256
+Get-FileHash .\knowstead-2.1.0-windows-x64.zip -Algorithm SHA256
 ```
 
 ```bash
-sha256sum -c knowstead-2.0.1-linux-x64.tar.gz.sha256
+sha256sum -c knowstead-2.1.0-linux-x64.tar.gz.sha256
 ```
 
 A package is made for the operating system it was built for. If it is extracted on a different system
@@ -87,18 +90,20 @@ anyway, the first start installs the matching dependencies (internet access requ
 
 1. Extract the package to e.g. `D:\Knowstead` (the program folder – **not** the future data directory).
 2. Double-click **`Knowstead-Installation.cmd`** and confirm the User Account Control prompt.
-3. The pages of the wizard (the wizard is in German):
+3. The pages of the wizard. It uses the display language of Windows (German if that is German, English
+   otherwise); the link *Auf Deutsch* / *In English* on the first page switches, and
+   `Knowstead-Installation.cmd -Language en` chooses the language from the start:
 
 | Page | Content |
 | --- | --- |
-| **Willkommen** (welcome) | checks Node.js 24 – if it is missing, a button installs the LTS version via `winget`; detects an existing installation and pre-fills all values |
-| **Datenverzeichnis** (data directory) | e.g. `D:\KnowsteadDaten` – a local drive, outside the program folder; shows the free space |
-| **Erreichbarkeit** (access) | *Reverse-Proxy auf diesem Server* (reverse proxy on this server – recommended, Knowstead listens on 127.0.0.1 only), *Proxy auf einem anderen Rechner* (proxy on another machine, with its IP address) or *direkt im Netzwerk* (directly in the network, for tests only); address for the users and port |
-| **Betrieb** (operation) | automatic start as a **scheduled task** (*geplante Aufgabe*, no extra software), as a **Windows service with NSSM** or no automatic start; firewall rule; exclusion of the database files in Microsoft Defender |
-| **Zusatzfunktionen** (extras) | Tesseract (text recognition) and LibreOffice (Office preview) are looked for and switched on if you wish. If they are missing, the wizard installs them with `winget` when ticked – Tesseract including German and English language data |
-| **Zusammenfassung** (summary) | all steps to check before anything is changed |
+| **Welcome** | checks Node.js 24 – if it is missing, a button installs the LTS version via `winget`; detects an existing installation and pre-fills all values |
+| **Data directory** | e.g. `D:\KnowsteadDaten` – a local drive, outside the program folder; shows the free space |
+| **Access** | *Reverse proxy on this server* (recommended, Knowstead listens on 127.0.0.1 only), *Reverse proxy on another computer* (with its IP address) or *Directly on the network* (for tests only); address for the users and port |
+| **Operation** | automatic start as a **scheduled task** (no extra software), as a **Windows service with NSSM** or no automatic start; firewall rule; exclusion of the database files in Microsoft Defender |
+| **Extras** | Tesseract (text recognition) and LibreOffice (Office preview) are looked for and switched on if you wish. If they are missing, the wizard installs them with `winget` when ticked – Tesseract including German and English language data |
+| **Summary** | all steps to check before anything is changed |
 | **Installation** | progress and the complete log (saved under `<data directory>\logs\installation-*.log`) |
-| **Fertig** (done) | result of the check and **„Ersteinrichtung im Browser öffnen“** ("open the first setup in the browser") – on the server itself without a setup code |
+| **Done** | result of the check and **Open the first-time setup in the browser** – on the server itself without a setup code |
 
 **Automatic start as a scheduled task:** the task `\Knowstead\Knowstead` starts at system start under the
 account *Local Service* – without sign-in, without a password and with read permission on the program
@@ -143,7 +148,7 @@ open. If the setup fails after the wizard has stopped a running Knowstead, it st
 ### Linux
 
 ```bash
-sudo tar -xzf knowstead-2.0.1-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.0.1-linux-x64 /opt/knowstead
+sudo tar -xzf knowstead-2.1.0-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.1.0-linux-x64 /opt/knowstead
 ```
 
 ```bash
@@ -157,25 +162,27 @@ start, sets up the hardened systemd service `knowstead` and opens the port in `u
 needed. If Node.js 24 is missing, the script offers to install it from the NodeSource package source
 (without questions: `--install-node`; by hand see [section 5.1](#51-install-nodejs)).
 
-The questions in the terminal, in German, and what to answer:
+The script speaks the language of the system (`sudo bash install.sh --lang en` chooses English, `--lang
+de` German). The questions in the terminal and what to answer – Enter takes the suggestion in square
+brackets:
 
 | Prompt | Meaning | Answer |
 | --- | --- | --- |
-| `Datenverzeichnis` | data directory | an absolute path, e.g. `/var/lib/knowstead` |
-| `Zugriff: 1 = Reverse-Proxy auf diesem Server (empfohlen), 2 = Proxy auf anderem Rechner, 3 = direkt ohne HTTPS` | how users reach Knowstead | `1` reverse proxy on this server (recommended), `2` proxy on another machine, `3` directly without HTTPS |
-| `IP-Adresse des Proxys` | IP address of the proxy (only with `2`) | e.g. `10.0.0.5` |
+| `Data directory` | where database, attachments and backups are kept | an absolute path, e.g. `/var/lib/knowstead` |
+| `Access: 1 = reverse proxy on this server (recommended), 2 = proxy on another computer, 3 = directly without HTTPS` | how users reach Knowstead | `1`, `2` or `3` |
+| `IP address of the proxy` | only with `2` | e.g. `10.0.0.5` |
 | `Port` | internal port | `3000` |
-| `Adresse für die Nutzenden` | address for the users (appears in links and e-mails) | e.g. `https://knowstead.firma.de` |
+| `Address for the users` | appears in links and e-mails | e.g. `https://knowstead.firma.de` |
 | `Autostart (systemd/none)` | automatic start | `systemd` or `none` |
-| `… (j/n)` | yes/no question | `j` (*ja*) = yes, `n` (*nein*) = no; Enter takes the default in square brackets |
+| `… (y/n)` | yes/no question | `y` = yes, `n` = no (the German version asks `(j/n)`; both answers are accepted in either language) |
 
 It also asks about the two **extra programs** and installs them, if you wish, from the package source of
 the distribution (`apt` on Debian and Ubuntu, `dnf` on RHEL, Rocky, Alma and Fedora):
 
 | Question | Default | What is installed | Without questions |
 | --- | --- | --- | --- |
-| **Texterkennung (OCR) installieren?** (install text recognition?) | yes | Tesseract with the language data for German and English, about 25 MB – makes scanned PDFs and images searchable | `--install-ocr`, further languages with `--ocr-languages deu+eng+fra` |
-| **LibreOffice installieren?** (install LibreOffice?) | no | LibreOffice without a graphical interface including fonts, about 400 MB – preview for Word, Excel, PowerPoint and Visio | `--install-office` |
+| **Install text recognition (OCR)?** | yes | Tesseract with the language data for German and English, about 25 MB – makes scanned PDFs and images searchable | `--install-ocr`, further languages with `--ocr-languages deu+eng+fra` |
+| **Install LibreOffice?** | no | LibreOffice without a graphical interface including fonts, about 400 MB – preview for Word, Excel, PowerPoint and Visio | `--install-office` |
 
 If a program is already there, the script only asks whether the function should be switched on; if
 Tesseract lacks some language data, it offers to install them. The packages are downloaded **before** a
@@ -240,7 +247,7 @@ apt update && apt install -y curl
 ```
 
 ```bash
-cd /opt && curl -fLO https://github.com/BStein-coder/Knowstead/releases/download/v2.0.1/knowstead-2.0.1-linux-x64.tar.gz
+cd /opt && curl -fLO https://github.com/BStein-coder/Knowstead/releases/download/v2.1.0/knowstead-2.1.0-linux-x64.tar.gz
 ```
 
 No release on GitHub yet? Then build the package on the Windows machine that has the program folder and
@@ -250,18 +257,18 @@ copy it into the container via the Proxmox host:
 cd D:\Knowstead
 npm run build
 node scripts/package.mjs --target linux-x64
-scp release\knowstead-2.0.1-linux-x64.tar.gz root@proxmox:/tmp/
+scp release\knowstead-2.1.0-linux-x64.tar.gz root@proxmox:/tmp/
 ```
 
 ```bash
-pct push <CT-ID> /tmp/knowstead-2.0.1-linux-x64.tar.gz /opt/knowstead-2.0.1-linux-x64.tar.gz
+pct push <CT-ID> /tmp/knowstead-2.1.0-linux-x64.tar.gz /opt/knowstead-2.1.0-linux-x64.tar.gz
 ```
 
 The package contains the user interface and the runtime parts for Linux; owner and permissions are
 correct even if it was built on Windows. Then extract it in the container:
 
 ```bash
-cd /opt && tar -xzf knowstead-2.0.1-linux-x64.tar.gz && mv knowstead-2.0.1-linux-x64 knowstead
+cd /opt && tar -xzf knowstead-2.1.0-linux-x64.tar.gz && mv knowstead-2.1.0-linux-x64 knowstead
 ```
 
 **3. Install:**
@@ -275,12 +282,12 @@ server. For access there are usually two ways in Proxmox environments:
 
 | Setup | Choice in the assistant | Setting up the proxy |
 | --- | --- | --- |
-| Reverse proxy in another container or VM (Nginx Proxy Manager, Traefik, Caddy) | *Reverse-Proxy auf einem anderen Rechner* (reverse proxy on another machine) with the IP address of the proxy | target `http://<IP of the Knowstead container>:3000`; in Nginx Proxy Manager switch on **Websockets Support** and, for large attachments, enter `client_max_body_size 2G;` under *Advanced* |
-| Caddy in the same container | *Reverse-Proxy auf diesem Server* (reverse proxy on this server) | `apt install -y caddy`, the Caddyfile from [section 7.1](#71-caddy--the-simplest-option) to `/etc/caddy/Caddyfile`, then `systemctl reload caddy` |
+| Reverse proxy in another container or VM (Nginx Proxy Manager, Traefik, Caddy) | *Reverse proxy on another computer* with the IP address of the proxy | target `http://<IP of the Knowstead container>:3000`; in Nginx Proxy Manager switch on **Websockets Support** and, for large attachments, enter `client_max_body_size 2G;` under *Advanced* |
+| Caddy in the same container | *Reverse proxy on this server* | `apt install -y caddy`, the Caddyfile from [section 7.1](#71-caddy--the-simplest-option) to `/etc/caddy/Caddyfile`, then `systemctl reload caddy` |
 
 **4. First setup:** open the public address in the browser, e.g. `https://knowstead.firma.de/setup`.
-`journalctl -u knowstead | grep Einrichtungscode` in the container console shows the setup code
-(*Einrichtungscode*).
+`journalctl -u knowstead | grep -i "setup code"` in the container console shows the setup code
+(*Einrichtungscode* in the German log).
 
 **Notes on operation:**
 
@@ -313,8 +320,9 @@ npm run cli -- doctor
 checks Node.js, the built user interface, the data directory (writable, free space, not a network share),
 port, address and proxy setting, the server key, the database state, the first setup and the backups –
 with a hint what to do. `--json` returns the result in machine-readable form; the exit code is `1` if an
-error was found. The output is German: `läuft` means "running", `läuft nicht` "not running",
-`Alles in Ordnung` "everything is fine", `Hinweis` "note" and `Fehler` "error".
+error was found. `npm run cli -- doctor --lang en` prints the result in English. Without `--lang` the
+output is German – scripts such as `update.sh` rely on that: `läuft` means "running", `läuft nicht` "not
+running", `Alles in Ordnung` "everything is fine", `Hinweis` "note" and `Fehler` "error".
 
 ### After the installation
 
@@ -476,7 +484,7 @@ node scripts\prepare.mjs     # installs the dependencies and builds the user int
 npm start                    # trial start in the foreground
 ```
 
-The log shows `Knowstead 2.0.1 läuft auf https://knowstead.firma.de` ("… is running at …") and – as long
+The log shows `Knowstead 2.1.0 läuft auf https://knowstead.firma.de` ("… is running at …") and – as long
 as there is no account yet – the **setup code** (*Einrichtungscode*). End the trial start with
 `Ctrl`+`C`. The first setup follows after the proxy has been set up
 ([section 8](#8-first-setup-in-the-browser)).
@@ -893,7 +901,7 @@ For the redirect from HTTP to HTTPS the website additionally needs an HTTP bindi
 ### 7.5 Checking the proxy
 
 ```bash
-curl https://knowstead.firma.de/api/v1/health                   # {"status":"ok","version":"2.0.1",…}
+curl https://knowstead.firma.de/api/v1/health                   # {"status":"ok","version":"2.1.0",…}
 curl -s -o /dev/null -D - https://knowstead.firma.de/login      # 200, among others content-security-policy, strict-transport-security
 ```
 
@@ -909,7 +917,8 @@ made in a second window appears without reloading (Server-Sent Events work).
 
 1. Open `https://knowstead.firma.de` – without accounts Knowstead redirects to the setup wizard `/setup`.
 2. Enter the **setup code**. It protects a freshly started server from being set up by someone else
-   first, and it is in the log (the log is German – look for *Einrichtungscode*):
+   first, and it is in the log (the log is German – look for *Einrichtungscode*; the same line also says
+   `setup code`):
 
    | Installation | Finding the code |
    | --- | --- |
@@ -1099,7 +1108,7 @@ one transaction, and an older version never starts on a newer database.
 package and its `.sha256` file to the server, then:
 
 ```bash
-sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.0.1-linux-x64.tar.gz
+sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.1.0-linux-x64.tar.gz
 ```
 
 | Step | What happens |
@@ -1121,8 +1130,8 @@ Stand läuft` (check that the new version runs) and finally `Fertig` (done).
   `--target /opt/knowstead`):
 
   ```bash
-  cd /tmp && tar -xzf knowstead-2.0.1-linux-x64.tar.gz
-  sudo bash /tmp/knowstead-2.0.1-linux-x64/update.sh
+  cd /tmp && tar -xzf knowstead-2.1.0-linux-x64.tar.gz
+  sudo bash /tmp/knowstead-2.1.0-linux-x64/update.sh
   ```
 
 - **Installation from the time when Knowstead was still called "Doku" (up to 1.9):** service, account,
@@ -1130,7 +1139,7 @@ Stand läuft` (check that the new version runs) and finally `Fertig` (done).
   new package and finds the service `doku` by itself:
 
   ```bash
-  sudo bash /opt/doku/update.sh /tmp/knowstead-2.0.1-linux-x64.tar.gz
+  sudo bash /opt/doku/update.sh /tmp/knowstead-2.1.0-linux-x64.tar.gz
   ```
 
   Wherever this guide mentions `/opt/knowstead`, `/var/lib/knowstead` or the service `knowstead`, such an
@@ -1252,8 +1261,8 @@ The detailed list for continuous operation is in the
 ## 13. Troubleshooting the installation
 
 The first step for every problem: `npm run cli -- doctor` in the program folder – the check names cause
-and remedy for the most common cases. Messages are quoted in German, as the program prints them, with
-their meaning.
+and remedy for the most common cases. Messages are quoted in German with their meaning; the installers
+print the English wording when they run in English.
 
 | Symptom | Cause and solution |
 | --- | --- |

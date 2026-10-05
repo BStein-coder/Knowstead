@@ -56,7 +56,7 @@ git status --short
 ```
 
 ```bash
-git commit -m "Knowstead 2.0.1"
+git commit -m "Knowstead 2.1.0"
 ```
 
 ```bash
@@ -103,12 +103,12 @@ Scheitert ein Test, enthält das Artefakt `playwright-report` Screenshots und Tr
 
 1. Version in `package.json`, `server/package.json` und `web/package.json` erhöhen und den Abschnitt
    *Unveröffentlicht* in `CHANGELOG.md` in die neue Version umbenennen bzw. – wenn es ihn nicht gibt –
-   den Abschnitt der Version oben anlegen (`## [2.0.1] – JJJJ-MM-TT`). Das Protokoll erscheint so, wie es
+   den Abschnitt der Version oben anlegen (`## [2.1.0] – JJJJ-MM-TT`). Das Protokoll erscheint so, wie es
    ist, unter *Administration → Über*.
 2. Commit und Tag anlegen und hochladen:
 
 ```bash
-git tag -a v2.0.1 -m "Knowstead 2.0.1"
+git tag -a v2.1.0 -m "Knowstead 2.1.0"
 ```
 
 ```bash
@@ -122,8 +122,8 @@ git push origin main --tags
 
 | Datei | Inhalt |
 | --- | --- |
-| `knowstead-2.0.1-windows-x64.zip` | Programm mit vorgebauter Oberfläche und installierten Laufzeitabhängigkeiten, `Knowstead-Installation.cmd` |
-| `knowstead-2.0.1-linux-x64.tar.gz` | dasselbe für Linux mit `install.sh` und `update.sh` |
+| `knowstead-2.1.0-windows-x64.zip` | Programm mit vorgebauter Oberfläche und installierten Laufzeitabhängigkeiten, `Knowstead-Installation.cmd` |
+| `knowstead-2.1.0-linux-x64.tar.gz` | dasselbe für Linux mit `install.sh` und `update.sh` |
 | `*.sha256` | Prüfsummen zum Abgleich nach dem Herunterladen |
 
 Die Pakete sind betriebssystemabhängig, weil eine Abhängigkeit (PDF-Vorschaubilder) native Programmteile
@@ -148,4 +148,4 @@ Sichtbarkeit und Signierung Entscheidungen des Betreibers sind.
 - [ ] erster Push erfolgreich, CI grün
 - [ ] private Sicherheitsmeldungen und Dependabot aktiviert
 - [ ] Branch-Regel für `main` mit erforderlichen Prüfungen
-- [ ] erstes Release `v2.0.1` über den Tag angelegt, beide Installationspakete am Release
+- [ ] erstes Release `v2.1.0` über den Tag angelegt, beide Installationspakete am Release

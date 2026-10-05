@@ -4,7 +4,8 @@
 export const OCR_LANGUAGES: RegExp;
 export function parseTesseractLanguages(output: unknown): string[];
 export function pickOcrLanguages(wanted: string, available: string[]): { languages: string; missing: string[] };
-export function planOcrLanguages(wanted: string, available: string[] | null): { languages: string | null; level: 'info' | 'warn'; message: string };
+/** `language` ist die Sprache der Meldung (Standard Deutsch). */
+export function planOcrLanguages(wanted: string, available: string[] | null, language?: 'de' | 'en'): { languages: string | null; level: 'info' | 'warn'; message: string };
 export function formatEnvValue(value: unknown): string;
 export function updateEnv(text: string, values: Record<string, string | null>): string;
 export function readEnv(text: string | null | undefined): Record<string, string>;

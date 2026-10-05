@@ -38,6 +38,9 @@
   Autostart, Firewall-Regel und Virenscanner-Ausnahmen entfernen. Programm und Daten bleiben erhalten.
 .PARAMETER SelfTest
   Oberfläche aufbauen und jede Seite als Bild in diesen Ordner speichern, ohne etwas zu verändern.
+.PARAMETER Language
+  Sprache des Assistenten und der Meldungen: de oder en. Ohne Angabe gilt die Umgebungsvariable KNOWSTEAD_LANG,
+  sonst die Anzeigesprache von Windows (Deutsch, sonst Englisch).
 
 .EXAMPLE
   .\Knowstead-Installation.cmd
@@ -71,7 +74,8 @@ param(
   [switch]$NoElevate,
   # Nur für Tests: abweichende .env (der Autostart nutzt immer die .env im Programmordner)
   [string]$EnvPath,
-  [string]$SelfTest
+  [string]$SelfTest,
+  [ValidateSet('', 'de', 'en')][string]$Language = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -92,6 +96,21 @@ $script:DoneEvent = $null
 $script:WasRunning = ''
 # Hinweise zu den Zusatzprogrammen: Sie halten die Installation nicht auf und stehen am Ende noch einmal
 $script:Notes = New-Object System.Collections.Generic.List[string]
+
+# Sprache der Meldungen: -Language de|en, sonst KNOWSTEAD_LANG, sonst die Anzeigesprache von Windows.
+# Deutsch, wenn die Angabe mit »de« beginnt – sonst Englisch (wie install.sh und scripts/lang.mjs).
+$script:Lang = $Language
+if (-not $script:Lang) { $script:Lang = [string]$env:KNOWSTEAD_LANG }
+if (-not $script:Lang) { $script:Lang = [System.Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName }
+if ($script:Lang -like 'de*') { $script:Lang = 'de' } else { $script:Lang = 'en' }
+# Im Assistenten gewählte andere Sprache – er wird dann in ihr neu aufgebaut
+$script:SwitchLanguage = ''
+
+# Text in der gewählten Sprache: T 'deutsch' 'english'
+function T([string]$De, [string]$En) {
+  if ($script:Lang -eq 'en') { return $En }
+  return $De
+}
 
 # ------------------------------------------------------------------------------------------------
 #  Grundlagen
@@ -280,33 +299,35 @@ function New-InstallOptions {
   return $opts
 }
 
+# Liefert Beanstandungen als Objekte: Area ordnet sie einer Seite des Assistenten zu (data, access, service, extras)
 function Test-InstallOptions($opts) {
-  $errors = New-Object System.Collections.Generic.List[string]
-  if (-not $opts.DataDir) { $errors.Add('Bitte ein Datenverzeichnis angeben.') }
-  elseif ($opts.DataDir.StartsWith('\\')) { $errors.Add('Das Datenverzeichnis muss auf einem lokalen Laufwerk liegen (keine Netzfreigabe).') }
-  elseif (-not [IO.Path]::IsPathRooted($opts.DataDir)) { $errors.Add('Bitte einen vollständigen Pfad für das Datenverzeichnis angeben, z. B. D:\KnowsteadDaten.') }
-  if ($opts.Port -lt 1 -or $opts.Port -gt 65535) { $errors.Add('Der Port muss zwischen 1 und 65535 liegen.') }
+  $errors = New-Object System.Collections.Generic.List[object]
+  $add = { param([string]$Area, [string]$Text) $errors.Add([pscustomobject]@{ Area = $Area; Text = $Text }) }
+  if (-not $opts.DataDir) { & $add 'data' (T 'Bitte ein Datenverzeichnis angeben.' 'Please specify a data directory.') }
+  elseif ($opts.DataDir.StartsWith('\\')) { & $add 'data' (T 'Das Datenverzeichnis muss auf einem lokalen Laufwerk liegen (keine Netzfreigabe).' 'The data directory must be on a local drive (no network share).') }
+  elseif (-not [IO.Path]::IsPathRooted($opts.DataDir)) { & $add 'data' (T 'Bitte einen vollständigen Pfad für das Datenverzeichnis angeben, z. B. D:\KnowsteadDaten.' 'Please give a full path for the data directory, e.g. D:\KnowsteadData.') }
+  if ($opts.Port -lt 1 -or $opts.Port -gt 65535) { & $add 'access' (T 'Der Port muss zwischen 1 und 65535 liegen.' 'The port must be between 1 and 65535.') }
   $uri = $null
   if (-not [Uri]::TryCreate($opts.BaseUrl, [UriKind]::Absolute, [ref]$uri) -or ($uri.Scheme -ne 'http' -and $uri.Scheme -ne 'https')) {
-    $errors.Add('Die Adresse muss mit http:// oder https:// beginnen, z. B. https://knowstead.firma.de.')
+    & $add 'access' (T 'Die Adresse muss mit http:// oder https:// beginnen, z. B. https://knowstead.firma.de.' 'The address must start with http:// or https://, e.g. https://knowstead.example.com.')
   }
   if ($opts.Access -eq 'RemoteProxy') {
     $ip = $null
     if (-not $opts.ProxyAddress -or -not [System.Net.IPAddress]::TryParse(($opts.ProxyAddress -split '/')[0], [ref]$ip)) {
-      $errors.Add('Bitte die IP-Adresse des Reverse-Proxys angeben (z. B. 10.0.0.5).')
+      & $add 'access' (T 'Bitte die IP-Adresse des Reverse-Proxys angeben (z. B. 10.0.0.5).' 'Please give the IP address of the reverse proxy (e.g. 10.0.0.5).')
     }
   }
   if ($opts.Service -eq 'Nssm' -and (-not $opts.NssmPath -or -not (Test-Path -LiteralPath $opts.NssmPath))) {
-    $errors.Add('Für den Windows-Dienst wird nssm.exe benötigt – bitte den Pfad angeben (https://nssm.cc/download) oder die geplante Aufgabe wählen.')
+    & $add 'service' (T 'Für den Windows-Dienst wird nssm.exe benötigt – bitte den Pfad angeben (https://nssm.cc/download) oder die geplante Aufgabe wählen.' 'The Windows service requires nssm.exe – please give its path (https://nssm.cc/download) or choose the scheduled task.')
   }
   # Fehlt das Programm und soll es installiert werden, steht der Pfad erst nach der Installation fest
   $installOcr = $opts.InstallTesseract -and -not $opts.TesseractPath
   $installOffice = $opts.InstallLibreOffice -and -not $opts.LibreOfficePath
-  if ($opts.UseTesseract -and -not $installOcr -and (-not $opts.TesseractPath -or -not (Test-Path -LiteralPath $opts.TesseractPath))) { $errors.Add("Tesseract wurde nicht gefunden: $($opts.TesseractPath)") }
-  if ($opts.UseLibreOffice -and -not $installOffice -and (-not $opts.LibreOfficePath -or -not (Test-Path -LiteralPath $opts.LibreOfficePath))) { $errors.Add("LibreOffice wurde nicht gefunden: $($opts.LibreOfficePath)") }
-  if ($opts.UseTesseract -and $opts.OcrLanguages -notmatch '^[a-z_]{3,20}(\+[a-z_]{3,20}){0,5}$') { $errors.Add('Sprachen der Texterkennung (Tesseract) bitte als Kürzel angeben, z. B. deu+eng.') }
+  if ($opts.UseTesseract -and -not $installOcr -and (-not $opts.TesseractPath -or -not (Test-Path -LiteralPath $opts.TesseractPath))) { & $add 'extras' (T "Tesseract wurde nicht gefunden: $($opts.TesseractPath)" "Tesseract was not found: $($opts.TesseractPath)") }
+  if ($opts.UseLibreOffice -and -not $installOffice -and (-not $opts.LibreOfficePath -or -not (Test-Path -LiteralPath $opts.LibreOfficePath))) { & $add 'extras' (T "LibreOffice wurde nicht gefunden: $($opts.LibreOfficePath)" "LibreOffice was not found: $($opts.LibreOfficePath)") }
+  if ($opts.UseTesseract -and $opts.OcrLanguages -notmatch '^[a-z_]{3,20}(\+[a-z_]{3,20}){0,5}$') { & $add 'extras' (T 'Sprachen der Texterkennung (Tesseract) bitte als Kürzel angeben, z. B. deu+eng.' 'Please give the text recognition languages (Tesseract) as codes, e.g. deu+eng.') }
   if (($installOcr -or $installOffice) -and -not (Test-Winget)) {
-    $errors.Add('Für die Installation von Tesseract oder LibreOffice wird winget benötigt (App-Installer aus dem Microsoft Store) – oder die Programme von Hand installieren und den Pfad angeben.')
+    & $add 'extras' (T 'Für die Installation von Tesseract oder LibreOffice wird winget benötigt (App-Installer aus dem Microsoft Store) – oder die Programme von Hand installieren und den Pfad angeben.' 'Installing Tesseract or LibreOffice requires winget (App Installer from the Microsoft Store) – or install the programs by hand and give their path.')
   }
   return $errors
 }
@@ -322,36 +343,36 @@ function Get-EnvSettings($opts) {
 function Get-InstallPlan($opts) {
   $net = Get-EnvSettings $opts
   $plan = New-Object System.Collections.Generic.List[string]
-  $plan.Add("Programmordner:      $Root")
-  $plan.Add("Datenverzeichnis:    $($opts.DataDir)")
-  $plan.Add("Adresse:             $($opts.BaseUrl)")
-  $plan.Add("Port:                $($opts.Port) (lauscht auf $($net.Host))")
+  $plan.Add((T "Programmordner:      $Root" "Program folder:      $Root"))
+  $plan.Add((T "Datenverzeichnis:    $($opts.DataDir)" "Data directory:      $($opts.DataDir)"))
+  $plan.Add((T "Adresse:             $($opts.BaseUrl)" "Address:             $($opts.BaseUrl)"))
+  $plan.Add((T "Port:                $($opts.Port) (lauscht auf $($net.Host))" "Port:                $($opts.Port) (listens on $($net.Host))"))
   switch ($opts.Access) {
-    'LocalProxy' { $plan.Add('Zugriff:             über einen Reverse-Proxy auf diesem Server (HTTPS)') }
-    'RemoteProxy' { $plan.Add("Zugriff:             über den Reverse-Proxy $($opts.ProxyAddress)") }
-    default { $plan.Add('Zugriff:             direkt im Netzwerk (ohne HTTPS – nur für Tests)') }
+    'LocalProxy' { $plan.Add((T 'Zugriff:             über einen Reverse-Proxy auf diesem Server (HTTPS)' 'Access:              through a reverse proxy on this server (HTTPS)')) }
+    'RemoteProxy' { $plan.Add((T "Zugriff:             über den Reverse-Proxy $($opts.ProxyAddress)" "Access:              through the reverse proxy $($opts.ProxyAddress)")) }
+    default { $plan.Add((T 'Zugriff:             direkt im Netzwerk (ohne HTTPS – nur für Tests)' 'Access:              directly on the network (without HTTPS – for tests only)')) }
   }
   $plan.Add('')
-  $plan.Add('Schritte:')
-  if ($opts.Existing.Task -or $opts.Existing.ServiceObj) { $plan.Add('  • laufenden Knowstead-Server geordnet beenden') }
-  $plan.Add('  • Konfiguration (.env) schreiben – bisherige Datei wird gesichert, Serverschlüssel bleibt')
-  if ($opts.SkipPrepare) { $plan.Add('  • Abhängigkeiten und Oberfläche: übersprungen') } else { $plan.Add('  • Abhängigkeiten installieren und Oberfläche bauen (beim ersten Mal einige Minuten)') }
-  $plan.Add('  • Probestart und Prüfung der Installation')
+  $plan.Add((T 'Schritte:' 'Steps:'))
+  if ($opts.Existing.Task -or $opts.Existing.ServiceObj) { $plan.Add((T '  • laufenden Knowstead-Server geordnet beenden' '  • stop the running Knowstead server gracefully')) }
+  $plan.Add((T '  • Konfiguration (.env) schreiben – bisherige Datei wird gesichert, Serverschlüssel bleibt' '  • write the configuration (.env) – the previous file is backed up, the server key stays'))
+  if ($opts.SkipPrepare) { $plan.Add((T '  • Abhängigkeiten und Oberfläche: übersprungen' '  • dependencies and interface: skipped')) } else { $plan.Add((T '  • Abhängigkeiten installieren und Oberfläche bauen (beim ersten Mal einige Minuten)' '  • install dependencies and build the interface (a few minutes the first time)')) }
+  $plan.Add((T '  • Probestart und Prüfung der Installation' '  • trial start and check of the installation'))
   switch ($opts.Service) {
-    'Task' { $plan.Add('  • Autostart als geplante Aufgabe »\Knowstead\Knowstead« (Konto »Lokaler Dienst«, Neustart bei Fehlern)') }
-    'Nssm' { $plan.Add("  • Windows-Dienst »Knowstead« mit NSSM ($($opts.NssmPath))") }
-    default { $plan.Add('  • kein Autostart – Start von Hand mit start.cmd') }
+    'Task' { $plan.Add((T '  • Autostart als geplante Aufgabe »\Knowstead\Knowstead« (Konto »Lokaler Dienst«, Neustart bei Fehlern)' '  • autostart as scheduled task \Knowstead\Knowstead (Local Service account, restart on failure)')) }
+    'Nssm' { $plan.Add((T "  • Windows-Dienst »Knowstead« mit NSSM ($($opts.NssmPath))" "  • Windows service Knowstead with NSSM ($($opts.NssmPath))")) }
+    default { $plan.Add((T '  • kein Autostart – Start von Hand mit start.cmd' '  • no autostart – start by hand with start.cmd')) }
   }
-  if ($opts.Service -ne 'None') { $plan.Add('  • Rechte: Lesen auf den Programmordner, Ändern auf das Datenverzeichnis für das Dienstkonto') }
+  if ($opts.Service -ne 'None') { $plan.Add((T '  • Rechte: Lesen auf den Programmordner, Ändern auf das Datenverzeichnis für das Dienstkonto' '  • permissions: read on the program folder, modify on the data directory for the service account')) }
   if ($opts.Firewall -and $opts.Access -ne 'LocalProxy') {
-    if ($opts.Access -eq 'RemoteProxy') { $plan.Add("  • Firewall: Port $($opts.Port) nur für $($opts.ProxyAddress) öffnen") } else { $plan.Add("  • Firewall: Port $($opts.Port) im Domänen- und privaten Netzwerk öffnen") }
+    if ($opts.Access -eq 'RemoteProxy') { $plan.Add((T "  • Firewall: Port $($opts.Port) nur für $($opts.ProxyAddress) öffnen" "  • firewall: open port $($opts.Port) for $($opts.ProxyAddress) only")) } else { $plan.Add((T "  • Firewall: Port $($opts.Port) im Domänen- und privaten Netzwerk öffnen" "  • firewall: open port $($opts.Port) on domain and private networks")) }
   }
-  if ($opts.DefenderExclusion) { $plan.Add('  • Microsoft Defender: Datenbankdateien vom Echtzeit-Scan ausnehmen') }
-  if ($opts.InstallTesseract -and -not $opts.TesseractPath) { $plan.Add("  • Tesseract mit winget installieren (UB-Mannheim.TesseractOCR), Sprachdaten $($opts.OcrLanguages) ergänzen, Texterkennung einschalten") }
-  elseif ($opts.UseTesseract) { $plan.Add("  • Texterkennung mit Tesseract einschalten ($($opts.TesseractPath))") }
-  if ($opts.InstallLibreOffice -and -not $opts.LibreOfficePath) { $plan.Add('  • LibreOffice mit winget installieren (TheDocumentFoundation.LibreOffice), Office-Vorschau einschalten') }
-  elseif ($opts.UseLibreOffice) { $plan.Add("  • Office-Vorschau mit LibreOffice einschalten ($($opts.LibreOfficePath))") }
-  if ($opts.Service -ne 'None') { $plan.Add('  • Knowstead starten und Erreichbarkeit prüfen') }
+  if ($opts.DefenderExclusion) { $plan.Add((T '  • Microsoft Defender: Datenbankdateien vom Echtzeit-Scan ausnehmen' '  • Microsoft Defender: exclude the database files from real-time scanning')) }
+  if ($opts.InstallTesseract -and -not $opts.TesseractPath) { $plan.Add((T "  • Tesseract mit winget installieren (UB-Mannheim.TesseractOCR), Sprachdaten $($opts.OcrLanguages) ergänzen, Texterkennung einschalten" "  • install Tesseract with winget (UB-Mannheim.TesseractOCR), add language data $($opts.OcrLanguages), enable text recognition")) }
+  elseif ($opts.UseTesseract) { $plan.Add((T "  • Texterkennung mit Tesseract einschalten ($($opts.TesseractPath))" "  • enable text recognition with Tesseract ($($opts.TesseractPath))")) }
+  if ($opts.InstallLibreOffice -and -not $opts.LibreOfficePath) { $plan.Add((T '  • LibreOffice mit winget installieren (TheDocumentFoundation.LibreOffice), Office-Vorschau einschalten' '  • install LibreOffice with winget (TheDocumentFoundation.LibreOffice), enable the Office preview')) }
+  elseif ($opts.UseLibreOffice) { $plan.Add((T "  • Office-Vorschau mit LibreOffice einschalten ($($opts.LibreOfficePath))" "  • enable the Office preview with LibreOffice ($($opts.LibreOfficePath))")) }
+  if ($opts.Service -ne 'None') { $plan.Add((T '  • Knowstead starten und Erreichbarkeit prüfen' '  • start Knowstead and check that it can be reached')) }
   return $plan
 }
 
@@ -419,7 +440,7 @@ function Receive-ScriptLine([string]$Line) {
 function Invoke-Checked([string]$Description, [scriptblock]$Action) {
   # -WhatIf: nur beschreiben, was geschehen würde
   if ($WhatIfPreference) {
-    Write-Log "  (Probelauf) $Description"
+    Write-Log (T "  (Probelauf) $Description" "  (dry run) $Description")
     return
   }
   Write-Log "  ▸ $Description"
@@ -435,20 +456,20 @@ function Add-Note([string]$Text) {
 function Install-WingetPackage([string]$Id, [string]$Name) {
   $arguments = @('install', '--id', $Id, '-e', '--silent', '--accept-package-agreements', '--accept-source-agreements')
   if ($WhatIfPreference) {
-    Write-Log "  (Probelauf) winget $($arguments -join ' ')"
+    Write-Log (T "  (Probelauf) winget $($arguments -join ' ')" "  (dry run) winget $($arguments -join ' ')")
     return $true
   }
   if (-not (Test-Winget)) {
-    Write-Log "  [!] winget ist nicht vorhanden – $Name bitte von Hand installieren."
+    Write-Log (T "  [!] winget ist nicht vorhanden – $Name bitte von Hand installieren." "  [!] winget is not available – please install $Name by hand.")
     return $false
   }
-  Write-Log "  ▸ $Name mit winget installieren ($Id) – das kann einige Minuten dauern"
+  Write-Log (T "  ▸ $Name mit winget installieren ($Id) – das kann einige Minuten dauern" "  ▸ Installing $Name with winget ($Id) – this can take a few minutes")
   Update-Ui
   $proc = Start-Process winget.exe -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden
   Update-PathFromRegistry
   # 0 = installiert; -1978335189 = bereits vorhanden und aktuell
   if ($proc.ExitCode -eq 0 -or $proc.ExitCode -eq -1978335189) { return $true }
-  Write-Log "  [!] winget meldet Fehler $($proc.ExitCode) – $Name wurde nicht installiert."
+  Write-Log (T "  [!] winget meldet Fehler $($proc.ExitCode) – $Name wurde nicht installiert." "  [!] winget reports error $($proc.ExitCode) – $Name was not installed.")
   return $false
 }
 
@@ -463,19 +484,19 @@ function Add-TesseractLanguages([string]$Path, [string]$Languages) {
     $url = "https://github.com/tesseract-ocr/tessdata_fast/raw/main/$lang.traineddata"
     $target = Join-Path $tessdata "$lang.traineddata"
     if ($WhatIfPreference) {
-      Write-Log "  (Probelauf) Sprachdaten laden: $url → $target"
+      Write-Log (T "  (Probelauf) Sprachdaten laden: $url → $target" "  (dry run) Download language data: $url → $target")
       continue
     }
     try {
-      Write-Log "  ▸ Sprachdaten »$lang« laden ($url)"
+      Write-Log (T "  ▸ Sprachdaten »$lang« laden ($url)" "  ▸ Downloading language data $lang ($url)")
       Update-Ui
       [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
       Invoke-WebRequest -Uri $url -OutFile "$target.download" -UseBasicParsing
-      if ((Get-Item -LiteralPath "$target.download").Length -lt 100KB) { throw 'Die Datei ist zu klein – vermutlich keine Sprachdaten.' }
+      if ((Get-Item -LiteralPath "$target.download").Length -lt 100KB) { throw (T 'Die Datei ist zu klein – vermutlich keine Sprachdaten.' 'The file is too small – probably not language data.') }
       Move-Item -LiteralPath "$target.download" -Destination $target -Force
     } catch {
-      Write-Log "  [!] Sprachdaten »$lang« ließen sich nicht laden: $($_.Exception.Message)"
-      Write-Log "      Von Hand: $url herunterladen und nach $tessdata kopieren, danach die Sprachen unter Administration → KI & Dateien eintragen."
+      Write-Log (T "  [!] Sprachdaten »$lang« ließen sich nicht laden: $($_.Exception.Message)" "  [!] Language data $lang could not be downloaded: $($_.Exception.Message)")
+      Write-Log (T "      Von Hand: $url herunterladen und nach $tessdata kopieren, danach die Sprachen unter Administration → KI & Dateien eintragen." "      By hand: download $url and copy it to $tessdata, then enter the languages under Administration → AI & files.")
       Remove-Item -LiteralPath "$target.download" -Force -ErrorAction SilentlyContinue
     }
   }
@@ -485,11 +506,11 @@ function Add-TesseractLanguages([string]$Path, [string]$Languages) {
 # Scheitert die Installation, geht es ohne die Zusatzfunktion weiter.
 function Install-KnowsteadExtras($opts) {
   if ($opts.InstallTesseract -and -not $opts.TesseractPath) {
-    Set-Progress 4 'Tesseract installieren'
+    Set-Progress 4 (T 'Tesseract installieren' 'Installing Tesseract')
     if (Install-WingetPackage 'UB-Mannheim.TesseractOCR' 'Tesseract') { $opts.TesseractPath = Find-Tesseract }
     if (-not $opts.TesseractPath) {
-      if ($WhatIfPreference) { Write-Log '  (Probelauf) Danach: Texterkennung einschalten' }
-      else { Add-Note 'Texterkennung: Tesseract wurde nicht installiert oder danach nicht gefunden – Knowstead wird ohne Texterkennung eingerichtet.' }
+      if ($WhatIfPreference) { Write-Log (T '  (Probelauf) Danach: Texterkennung einschalten' '  (dry run) Afterwards: enable text recognition') }
+      else { Add-Note (T 'Texterkennung: Tesseract wurde nicht installiert oder danach nicht gefunden – Knowstead wird ohne Texterkennung eingerichtet.' 'Text recognition: Tesseract was not installed or not found afterwards – Knowstead is set up without text recognition.') }
       $opts.UseTesseract = $false
     }
   }
@@ -497,11 +518,11 @@ function Install-KnowsteadExtras($opts) {
     Add-TesseractLanguages $opts.TesseractPath $opts.OcrLanguages
   }
   if ($opts.InstallLibreOffice -and -not $opts.LibreOfficePath) {
-    Set-Progress 6 'LibreOffice installieren'
+    Set-Progress 6 (T 'LibreOffice installieren' 'Installing LibreOffice')
     if (Install-WingetPackage 'TheDocumentFoundation.LibreOffice' 'LibreOffice') { $opts.LibreOfficePath = Find-LibreOffice }
     if (-not $opts.LibreOfficePath) {
-      if ($WhatIfPreference) { Write-Log '  (Probelauf) Danach: Office-Vorschau einschalten' }
-      else { Add-Note 'Office-Vorschau: LibreOffice wurde nicht installiert oder danach nicht gefunden – Knowstead wird ohne Office-Vorschau eingerichtet.' }
+      if ($WhatIfPreference) { Write-Log (T '  (Probelauf) Danach: Office-Vorschau einschalten' '  (dry run) Afterwards: enable the Office preview') }
+      else { Add-Note (T 'Office-Vorschau: LibreOffice wurde nicht installiert oder danach nicht gefunden – Knowstead wird ohne Office-Vorschau eingerichtet.' 'Office preview: LibreOffice was not installed or not found afterwards – Knowstead is set up without the Office preview.') }
       $opts.UseLibreOffice = $false
     }
   }
@@ -515,11 +536,11 @@ function Stop-Knowstead($NodePath, $opts) {
   $task = Get-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -ErrorAction SilentlyContinue
   if ($svc -and $svc.Status -eq 'Running') { $script:WasRunning = 'Service' }
   elseif ($task -and $task.State -eq 'Running') { $script:WasRunning = 'Task' }
-  Invoke-Checked 'Laufenden Knowstead-Server geordnet beenden' {
+  Invoke-Checked (T 'Laufenden Knowstead-Server geordnet beenden' 'Stopping the running Knowstead server gracefully') {
     # NSSM zuerst: es sendet Strg+C und würde ein selbst beendetes Programm sofort neu starten
     if ($existing.ServiceObj -and $existing.ServiceObj.Status -eq 'Running') { Stop-Service -Name $ServiceName -Force }
     $code = Invoke-NodeScript $NodePath @('--disable-warning=ExperimentalWarning', 'server\src\cli.ts', 'stop', '--timeout', '60')
-    if ($code -ne 0) { throw 'Der laufende Server ließ sich nicht beenden.' }
+    if ($code -ne 0) { throw (T 'Der laufende Server ließ sich nicht beenden.' 'The running server could not be stopped.') }
     if ($existing.Task) { Stop-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -ErrorAction SilentlyContinue }
   }
 }
@@ -530,45 +551,45 @@ function Restore-Knowstead {
   $script:WasRunning = ''
   if ($WhatIfPreference -or -not $was) { return }
   Write-Log ''
-  Write-Log 'Die Einrichtung wurde nicht abgeschlossen. Knowstead lief vorher – es wird wieder gestartet.'
+  Write-Log (T 'Die Einrichtung wurde nicht abgeschlossen. Knowstead lief vorher – es wird wieder gestartet.' 'The setup was not completed. Knowstead was running before – it is being started again.')
   try {
     if ($was -eq 'Service') { Start-Service -Name $ServiceName }
     else { Start-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName }
-    Write-Log '  Knowstead wurde wieder gestartet.'
+    Write-Log (T '  Knowstead wurde wieder gestartet.' '  Knowstead has been started again.')
   } catch {
-    Write-Log "  [!] Knowstead ließ sich nicht wieder starten: $($_.Exception.Message)"
+    Write-Log (T "  [!] Knowstead ließ sich nicht wieder starten: $($_.Exception.Message)" "  [!] Knowstead could not be started again: $($_.Exception.Message)")
   }
 }
 
 function Grant-Access([string]$Account, $opts) {
-  Invoke-Checked "Rechte für $Account setzen" {
+  Invoke-Checked (T "Rechte für $Account setzen" "Setting permissions for $Account") {
     # Vererbbare Rechte am Ordner genügen – icacls überträgt sie auf vorhandene Dateien
     $null = & icacls.exe $Root /grant '*S-1-5-19:(OI)(CI)RX' /C /Q
     if (-not (Test-Path -LiteralPath $opts.DataDir)) { New-Item -ItemType Directory -Force -Path $opts.DataDir | Out-Null }
     $null = & icacls.exe $opts.DataDir /grant '*S-1-5-19:(OI)(CI)M' /C /Q
-    if ($LASTEXITCODE -ne 0) { throw "Rechte für das Datenverzeichnis ließen sich nicht setzen (icacls $LASTEXITCODE)." }
+    if ($LASTEXITCODE -ne 0) { throw (T "Rechte für das Datenverzeichnis ließen sich nicht setzen (icacls $LASTEXITCODE)." "Permissions for the data directory could not be set (icacls $LASTEXITCODE).") }
   }
 }
 
 function Register-KnowsteadTask([string]$NodePath, $opts) {
   $account = Get-LocalServiceAccount
   Grant-Access $account $opts
-  Invoke-Checked 'Geplante Aufgabe \Knowstead\Knowstead einrichten (beim Systemstart, Konto »Lokaler Dienst«)' {
+  Invoke-Checked (T 'Geplante Aufgabe \Knowstead\Knowstead einrichten (beim Systemstart, Konto »Lokaler Dienst«)' 'Setting up the scheduled task \Knowstead\Knowstead (at system start, Local Service account)') {
     $action = New-ScheduledTaskAction -Execute $NodePath -Argument '--disable-warning=ExperimentalWarning server\src\index.ts' -WorkingDirectory $Root
     $trigger = New-ScheduledTaskTrigger -AtStartup
     $principal = New-ScheduledTaskPrincipal -UserId $account -LogonType ServiceAccount -RunLevel Limited
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
-    Register-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description 'Knowstead – Dokumentation und Wissen. Beenden mit: npm run cli -- stop' -Force | Out-Null
+    Register-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description (T 'Knowstead – Dokumentation und Wissen. Beenden mit: npm run cli -- stop' 'Knowstead – documentation and knowledge. Stop with: npm run cli -- stop') -Force | Out-Null
   }
   if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
-    Write-Log '  Hinweis: Ein Windows-Dienst »Knowstead« existiert zusätzlich – bitte nur eine Betriebsart verwenden.'
+    Write-Log (T '  Hinweis: Ein Windows-Dienst »Knowstead« existiert zusätzlich – bitte nur eine Betriebsart verwenden.' '  Note: a Windows service named Knowstead exists as well – please use only one way of running it.')
   }
 }
 
 function Register-KnowsteadNssm([string]$NodePath, $opts) {
   $nssm = $opts.NssmPath
   Grant-Access 'NT AUTHORITY\LocalService' $opts
-  Invoke-Checked "Windows-Dienst »Knowstead« mit NSSM einrichten" {
+  Invoke-Checked (T "Windows-Dienst »Knowstead« mit NSSM einrichten" "Setting up the Windows service Knowstead with NSSM") {
     if (-not (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue)) {
       & $nssm install $ServiceName $NodePath '--disable-warning=ExperimentalWarning server\src\index.ts' | Out-Null
     }
@@ -577,7 +598,7 @@ function Register-KnowsteadNssm([string]$NodePath, $opts) {
     & $nssm set $ServiceName Application $NodePath | Out-Null
     & $nssm set $ServiceName AppParameters '--disable-warning=ExperimentalWarning server\src\index.ts' | Out-Null
     & $nssm set $ServiceName AppDirectory $Root | Out-Null
-    & $nssm set $ServiceName DisplayName 'Knowstead – Dokumentation' | Out-Null
+    & $nssm set $ServiceName DisplayName (T 'Knowstead – Dokumentation' 'Knowstead – documentation') | Out-Null
     & $nssm set $ServiceName Start SERVICE_AUTO_START | Out-Null
     & $nssm set $ServiceName ObjectName 'NT AUTHORITY\LocalService' | Out-Null
     & $nssm set $ServiceName AppStderr (Join-Path $logs 'dienst-fehler.log') | Out-Null
@@ -585,20 +606,20 @@ function Register-KnowsteadNssm([string]$NodePath, $opts) {
     & $nssm set $ServiceName AppRestartDelay 5000 | Out-Null
   }
   if (Get-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -ErrorAction SilentlyContinue) {
-    Invoke-Checked 'Bisherige geplante Aufgabe entfernen' { Unregister-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Confirm:$false }
+    Invoke-Checked (T 'Bisherige geplante Aufgabe entfernen' 'Removing the previous scheduled task') { Unregister-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Confirm:$false }
   }
 }
 
 function Set-KnowsteadFirewall($opts) {
   if (-not $opts.Firewall -or $opts.Access -eq 'LocalProxy') {
     if (Get-NetFirewallRule -DisplayName $FirewallRule -ErrorAction SilentlyContinue) {
-      Invoke-Checked 'Nicht mehr benötigte Firewall-Regel »Knowstead« entfernen' { Remove-NetFirewallRule -DisplayName $FirewallRule }
+      Invoke-Checked (T 'Nicht mehr benötigte Firewall-Regel »Knowstead« entfernen' 'Removing the firewall rule Knowstead, which is no longer needed') { Remove-NetFirewallRule -DisplayName $FirewallRule }
     }
     return
   }
   $remote = 'Any'
   if ($opts.Access -eq 'RemoteProxy') { $remote = $opts.ProxyAddress }
-  Invoke-Checked "Firewall-Regel »Knowstead«: Port $($opts.Port) für $remote" {
+  Invoke-Checked (T "Firewall-Regel »Knowstead«: Port $($opts.Port) für $remote" "Firewall rule Knowstead: port $($opts.Port) for $remote") {
     Remove-NetFirewallRule -DisplayName $FirewallRule -ErrorAction SilentlyContinue
     New-NetFirewallRule -DisplayName $FirewallRule -Direction Inbound -Protocol TCP -LocalPort $opts.Port -RemoteAddress $remote -Profile Domain, Private -Action Allow | Out-Null
   }
@@ -607,23 +628,23 @@ function Set-KnowsteadFirewall($opts) {
 function Set-DefenderExclusion($opts) {
   if (-not $opts.DefenderExclusion) { return }
   if (-not (Get-Command Add-MpPreference -ErrorAction SilentlyContinue)) {
-    Write-Log '  Microsoft Defender ist nicht verfügbar – bei einem anderen Virenscanner knowstead.db, knowstead.db-wal und knowstead.db-shm ausnehmen.'
+    Write-Log (T '  Microsoft Defender ist nicht verfügbar – bei einem anderen Virenscanner knowstead.db, knowstead.db-wal und knowstead.db-shm ausnehmen.' '  Microsoft Defender is not available – with another virus scanner, exclude knowstead.db, knowstead.db-wal and knowstead.db-shm.')
     return
   }
-  Invoke-Checked 'Datenbankdateien vom Echtzeit-Scan ausnehmen' {
+  Invoke-Checked (T 'Datenbankdateien vom Echtzeit-Scan ausnehmen' 'Excluding the database files from real-time scanning') {
     try {
       $files = @('knowstead.db', 'knowstead.db-wal', 'knowstead.db-shm') | ForEach-Object { Join-Path $opts.DataDir $_ }
       Add-MpPreference -ExclusionPath $files
     } catch {
-      Write-Log "  Hinweis: Ausnahme ließ sich nicht setzen ($($_.Exception.Message)) – ggf. per Gruppenrichtlinie verwaltet."
+      Write-Log (T "  Hinweis: Ausnahme ließ sich nicht setzen ($($_.Exception.Message)) – ggf. per Gruppenrichtlinie verwaltet." "  Note: the exclusion could not be set ($($_.Exception.Message)) – possibly managed by group policy.")
     }
   }
 }
 
 function Start-Knowstead($opts) {
   switch ($opts.Service) {
-    'Task' { Invoke-Checked 'Knowstead starten' { Start-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName } }
-    'Nssm' { Invoke-Checked 'Knowstead starten' { Start-Service -Name $ServiceName } }
+    'Task' { Invoke-Checked (T 'Knowstead starten' 'Starting Knowstead') { Start-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName } }
+    'Nssm' { Invoke-Checked (T 'Knowstead starten' 'Starting Knowstead') { Start-Service -Name $ServiceName } }
     default { return $false }
   }
   if ($WhatIfPreference) { return $true }
@@ -631,12 +652,12 @@ function Start-Knowstead($opts) {
   for ($i = 0; $i -lt 120; $i++) {
     try {
       $res = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 2
-      if ($res.StatusCode -eq 200) { Write-Log "  Knowstead antwortet auf Port $($opts.Port)."; return $true }
+      if ($res.StatusCode -eq 200) { Write-Log (T "  Knowstead antwortet auf Port $($opts.Port)." "  Knowstead responds on port $($opts.Port)."); return $true }
     } catch { }
     Start-Sleep -Milliseconds 500
     Update-Ui
   }
-  throw "Knowstead ist nach dem Start nicht erreichbar. Protokoll: $(Join-Path $opts.DataDir 'logs\knowstead.log')"
+  throw (T "Knowstead ist nach dem Start nicht erreichbar. Protokoll: $(Join-Path $opts.DataDir 'logs\knowstead.log')" "Knowstead cannot be reached after the start. Log: $(Join-Path $opts.DataDir 'logs\knowstead.log')")
 }
 
 function Invoke-KnowsteadInstall($opts) {
@@ -652,11 +673,11 @@ function Invoke-KnowsteadInstall($opts) {
 
 function Invoke-KnowsteadInstallSteps($opts) {
   $node = Get-NodeInfo
-  if (-not $node -or $node.Major -lt 24) { throw 'Node.js 24 oder neuer wird benötigt (https://nodejs.org/).' }
+  if (-not $node -or $node.Major -lt 24) { throw (T 'Node.js 24 oder neuer wird benötigt (https://nodejs.org/).' 'Node.js 24 or newer is required (https://nodejs.org/).') }
   $net = Get-EnvSettings $opts
   $script:LogLines.Clear()
-  Set-Progress 3 'Vorbereiten'
-  Write-Log "Knowstead-Installation – $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+  Set-Progress 3 (T 'Vorbereiten' 'Preparing')
+  Write-Log (T "Knowstead-Installation – $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" "Knowstead installation – $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
   foreach ($line in (Get-InstallPlan $opts)) { Write-Log $line }
   Write-Log ''
 
@@ -665,7 +686,7 @@ function Invoke-KnowsteadInstallSteps($opts) {
 
   $serviceHint = 'none'
   if ($opts.Service -eq 'Task') { $serviceHint = 'task' } elseif ($opts.Service -eq 'Nssm') { $serviceHint = 'nssm' }
-  $arguments = @('scripts\install.mjs', '--json-progress', '--data-dir', $opts.DataDir, '--port', "$($opts.Port)", '--host', $net.Host, '--base-url', $opts.BaseUrl, '--trust-proxy', $net.TrustProxy, '--service', $serviceHint)
+  $arguments = @('scripts\install.mjs', '--json-progress', '--lang', $script:Lang, '--data-dir', $opts.DataDir, '--port', "$($opts.Port)", '--host', $net.Host, '--base-url', $opts.BaseUrl, '--trust-proxy', $net.TrustProxy, '--service', $serviceHint)
   if ($opts.Service -ne 'None') { $arguments += @('--log-file', 'logs\knowstead.log') }
   if ($opts.SkipPrepare) { $arguments += '--skip-prepare' }
   if ($opts.UseTesseract) {
@@ -678,22 +699,22 @@ function Invoke-KnowsteadInstallSteps($opts) {
   if ($WhatIfPreference) { $arguments += '--dry-run' }
   $script:DoneEvent = $null
   $code = Invoke-NodeScript $node.Path $arguments
-  if ($code -ne 0) { throw 'Die Einrichtung ist fehlgeschlagen – Details stehen im Protokoll oben.' }
+  if ($code -ne 0) { throw (T 'Die Einrichtung ist fehlgeschlagen – Details stehen im Protokoll oben.' 'The setup failed – details are in the log above.') }
 
-  Set-Progress 86 'Autostart, Firewall und Virenscanner'
+  Set-Progress 86 (T 'Autostart, Firewall und Virenscanner' 'Autostart, firewall and virus scanner')
   switch ($opts.Service) {
     'Task' { Register-KnowsteadTask $node.Path $opts }
     'Nssm' { Register-KnowsteadNssm $node.Path $opts }
     default {
       if (Get-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -ErrorAction SilentlyContinue) {
-        Invoke-Checked 'Geplante Aufgabe entfernen (kein Autostart gewünscht)' { Unregister-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Confirm:$false }
+        Invoke-Checked (T 'Geplante Aufgabe entfernen (kein Autostart gewünscht)' 'Removing the scheduled task (no autostart wanted)') { Unregister-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Confirm:$false }
       }
     }
   }
   Set-KnowsteadFirewall $opts
   Set-DefenderExclusion $opts
 
-  Set-Progress 94 'Knowstead starten'
+  Set-Progress 94 (T 'Knowstead starten' 'Starting Knowstead')
   # Ab hier startet der Assistent Knowstead selbst – ein Fehlschlag soll keinen zweiten Start auslösen
   $script:WasRunning = ''
   $started = Start-Knowstead $opts
@@ -702,9 +723,9 @@ function Invoke-KnowsteadInstallSteps($opts) {
     New-Item -ItemType Directory -Force -Path $logDir | Out-Null
     $logFile = Join-Path $logDir ("installation-{0}.log" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
     [IO.File]::WriteAllLines($logFile, $script:LogLines, (New-Object Text.UTF8Encoding($true)))
-    Write-Log "Protokoll gespeichert: $logFile"
+    Write-Log (T "Protokoll gespeichert: $logFile" "Log saved: $logFile")
   }
-  Set-Progress 100 'Fertig'
+  Set-Progress 100 (T 'Fertig' 'Done')
   $setupUrl = "http://localhost:$($opts.Port)/setup"
   $needsSetup = $true
   if ($script:DoneEvent -and $null -ne (Get-JsonValue $script:DoneEvent 'needsSetup')) { $needsSetup = [bool]$script:DoneEvent.needsSetup }
@@ -719,20 +740,20 @@ function Invoke-KnowsteadUninstall {
   $opts = New-InstallOptions
   $node = Get-NodeInfo
   if ($node) { Stop-Knowstead $node.Path $opts }
-  if ($opts.Existing.Task) { Invoke-Checked 'Geplante Aufgabe \Knowstead\Knowstead entfernen' { Unregister-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Confirm:$false } }
+  if ($opts.Existing.Task) { Invoke-Checked (T 'Geplante Aufgabe \Knowstead\Knowstead entfernen' 'Removing the scheduled task \Knowstead\Knowstead') { Unregister-ScheduledTask -TaskPath $TaskPath -TaskName $TaskName -Confirm:$false } }
   if ($opts.Existing.ServiceObj) {
     $nssm = $opts.NssmPath
-    Invoke-Checked 'Windows-Dienst »Knowstead« entfernen' {
+    Invoke-Checked (T 'Windows-Dienst »Knowstead« entfernen' 'Removing the Windows service Knowstead') {
       if ($nssm -and (Test-Path -LiteralPath $nssm)) { & $nssm remove $ServiceName confirm | Out-Null } else { & sc.exe delete $ServiceName | Out-Null }
     }
   }
-  if (Get-NetFirewallRule -DisplayName $FirewallRule -ErrorAction SilentlyContinue) { Invoke-Checked 'Firewall-Regel »Knowstead« entfernen' { Remove-NetFirewallRule -DisplayName $FirewallRule } }
+  if (Get-NetFirewallRule -DisplayName $FirewallRule -ErrorAction SilentlyContinue) { Invoke-Checked (T 'Firewall-Regel »Knowstead« entfernen' 'Removing the firewall rule Knowstead') { Remove-NetFirewallRule -DisplayName $FirewallRule } }
   if (Get-Command Remove-MpPreference -ErrorAction SilentlyContinue) {
-    Invoke-Checked 'Virenscanner-Ausnahmen entfernen' {
+    Invoke-Checked (T 'Virenscanner-Ausnahmen entfernen' 'Removing the virus scanner exclusions') {
       try { Remove-MpPreference -ExclusionPath (@('knowstead.db', 'knowstead.db-wal', 'knowstead.db-shm') | ForEach-Object { Join-Path $opts.DataDir $_ }) } catch { }
     }
   }
-  Write-Log "Autostart entfernt. Programmordner ($Root) und Datenverzeichnis ($($opts.DataDir)) bleiben unverändert."
+  Write-Log (T "Autostart entfernt. Programmordner ($Root) und Datenverzeichnis ($($opts.DataDir)) bleiben unverändert." "Autostart removed. Program folder ($Root) and data directory ($($opts.DataDir)) stay unchanged.")
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -812,7 +833,7 @@ function New-PathRow([string]$Value, [string]$Mode, [string]$Filter) {
   $row.AutoSize = $true
   $box = New-TextBox $Value ($ContentWidth - (S 110))
   $button = New-Object System.Windows.Forms.Button
-  $button.Text = 'Durchsuchen …'
+  $button.Text = (T 'Durchsuchen …' 'Browse …')
   $button.Width = S 100
   $button.Height = $box.Height + 2
   $button.Margin = New-Object System.Windows.Forms.Padding((S 8), 0, 0, 0)
@@ -827,7 +848,7 @@ function New-PathRow([string]$Value, [string]$Mode, [string]$Filter) {
   } else {
     $button.Add_Click({
         $dialog = New-Object System.Windows.Forms.OpenFileDialog
-        $dialog.Filter = 'Programme (*.exe)|*.exe'
+        $dialog.Filter = (T 'Programme (*.exe)|*.exe' 'Programs (*.exe)|*.exe')
         if ($this.Tag.Text) { $dialog.FileName = $this.Tag.Text }
         if ($dialog.ShowDialog() -eq 'OK') { $this.Tag.Text = $dialog.FileName }
       })
@@ -914,14 +935,14 @@ function Show-Wizard {
   $header.Height = S 76
   $header.BackColor = $AccentColor
   $title = New-Object System.Windows.Forms.Label
-  $title.Text = 'Knowstead installieren'
+  $title.Text = (T 'Knowstead installieren' 'Install Knowstead')
   $title.ForeColor = [System.Drawing.Color]::White
   $title.Font = New-Font 16 ([System.Drawing.FontStyle]::Bold)
   $title.AutoSize = $true
   $title.Location = New-Object System.Drawing.Point((S 24), (S 7))
   $subtitle = New-Object System.Windows.Forms.Label
   $version = (Get-Content (Join-Path $Root 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
-  $subtitle.Text = "Dokumentation und Wissen · Version $version"
+  $subtitle.Text = (T "Dokumentation und Wissen · Version $version" "Documentation and knowledge · version $version")
   $subtitle.ForeColor = [System.Drawing.Color]::FromArgb(219, 234, 254)
   $subtitle.Font = New-Font 9
   $subtitle.AutoSize = $true
@@ -942,9 +963,9 @@ function Show-Wizard {
   $next = New-Object System.Windows.Forms.Button
   $cancel = New-Object System.Windows.Forms.Button
   foreach ($b in @($back, $next, $cancel)) { $b.Size = New-Object System.Drawing.Size((S 116), (S 32)); $b.Font = New-Font 9.75; $footer.Controls.Add($b) }
-  $back.Text = '< Zurück'; $back.Location = New-Object System.Drawing.Point((S 468), (S 13))
-  $next.Text = 'Weiter >'; $next.Location = New-Object System.Drawing.Point((S 592), (S 13))
-  $cancel.Text = 'Abbrechen'; $cancel.Location = New-Object System.Drawing.Point((S 726), (S 13))
+  $back.Text = (T '< Zurück' '< Back'); $back.Location = New-Object System.Drawing.Point((S 468), (S 13))
+  $next.Text = (T 'Weiter >' 'Next >'); $next.Location = New-Object System.Drawing.Point((S 592), (S 13))
+  $cancel.Text = (T 'Abbrechen' 'Cancel'); $cancel.Location = New-Object System.Drawing.Point((S 726), (S 13))
   $next.BackColor = $AccentColor; $next.ForeColor = [System.Drawing.Color]::White; $next.FlatStyle = 'Flat'; $next.FlatAppearance.BorderSize = 0
 
   $content = New-Object System.Windows.Forms.Panel
@@ -958,61 +979,72 @@ function Show-Wizard {
   $form.CancelButton = $cancel
 
   # --- Seite 1: Willkommen ---
-  $pWelcome = New-Page 'Willkommen' 'Der Assistent richtet Knowstead auf diesem Server ein: Konfiguration, Datenverzeichnis, Autostart, Firewall und Zusatzprogramme. Danach folgt die Ersteinrichtung im Browser. Alle Angaben lassen sich später mit diesem Assistenten ändern.'
-  $pWelcome.Controls.Add((New-Label 'Voraussetzungen' 10.5 -Bold -Bottom 6))
+  $pWelcome = New-Page (T 'Willkommen' 'Welcome') (T 'Der Assistent richtet Knowstead auf diesem Server ein: Konfiguration, Datenverzeichnis, Autostart, Firewall und Zusatzprogramme. Danach folgt die Ersteinrichtung im Browser. Alle Angaben lassen sich später mit diesem Assistenten ändern.' 'The assistant sets up Knowstead on this server: configuration, data directory, autostart, firewall and additional programs. The first-time setup in the browser follows afterwards. All values can be changed later with this assistant.')
+  $pWelcome.Controls.Add((New-Label (T 'Voraussetzungen' 'Requirements') 10.5 -Bold -Bottom 6))
   $ui.NodeStatus = New-Label '' -Bottom 4
   $pWelcome.Controls.Add($ui.NodeStatus)
   $nodeButtons = New-Object System.Windows.Forms.FlowLayoutPanel
   $nodeButtons.AutoSize = $true
   $nodeButtons.Margin = New-Object System.Windows.Forms.Padding(0, 0, 0, (S 10))
   $ui.InstallNode = New-Object System.Windows.Forms.Button
-  $ui.InstallNode.Text = 'Node.js jetzt installieren (winget)'
+  $ui.InstallNode.Text = (T 'Node.js jetzt installieren (winget)' 'Install Node.js now (winget)')
   $ui.InstallNode.AutoSize = $true
-  $ui.NodeLink = New-LinkLabel 'Download-Seite öffnen' 'https://nodejs.org/'
+  $ui.NodeLink = New-LinkLabel (T 'Download-Seite öffnen' 'Open the download page') 'https://nodejs.org/'
   $ui.NodeLink.Margin = New-Object System.Windows.Forms.Padding((S 10), (S 8), 0, 0)
   $nodeButtons.Controls.Add($ui.InstallNode)
   $nodeButtons.Controls.Add($ui.NodeLink)
   $pWelcome.Controls.Add($nodeButtons)
-  $pWelcome.Controls.Add((New-Label "Programmordner: $Root" -Bottom 4))
+  $pWelcome.Controls.Add((New-Label (T "Programmordner: $Root" "Program folder: $Root") -Bottom 4))
   if ($existing.HasEnv -or $existing.Task -or $existing.ServiceObj) {
     $mode = @()
-    if ($existing.Task) { $mode += 'geplante Aufgabe' }
-    if ($existing.ServiceObj) { $mode += 'Windows-Dienst' }
-    $modeText = 'ohne Autostart'
-    if ($mode.Count) { $modeText = $mode -join ' und ' }
-    $pWelcome.Controls.Add((New-Label "Vorhandene Installation erkannt ($modeText). Die bisherigen Angaben sind vorausgefüllt – so lassen sich Einstellungen ändern oder nach dem Einspielen neuer Programmdateien ein Update abschließen." -Bottom 10))
+    if ($existing.Task) { $mode += (T 'geplante Aufgabe' 'scheduled task') }
+    if ($existing.ServiceObj) { $mode += (T 'Windows-Dienst' 'Windows service') }
+    $modeText = (T 'ohne Autostart' 'without autostart')
+    if ($mode.Count) { $modeText = $mode -join (T ' und ' ' and ') }
+    $pWelcome.Controls.Add((New-Label (T "Vorhandene Installation erkannt ($modeText). Die bisherigen Angaben sind vorausgefüllt – so lassen sich Einstellungen ändern oder nach dem Einspielen neuer Programmdateien ein Update abschließen." "Existing installation detected ($modeText). The previous values are filled in – this way settings can be changed, or an update completed after new program files have been copied in.") -Bottom 10))
     $ui.Remove = New-Object System.Windows.Forms.Button
-    $ui.Remove.Text = 'Autostart entfernen …'
+    $ui.Remove.Text = (T 'Autostart entfernen …' 'Remove autostart …')
     $ui.Remove.AutoSize = $true
     $pWelcome.Controls.Add($ui.Remove)
   }
-  $pWelcome.Controls.Add((New-LinkLabel 'Installationsanleitung öffnen' (Join-Path $Root 'docs\INSTALLATION.md')))
+  $pWelcome.Controls.Add((New-LinkLabel (T 'Installationsanleitung öffnen' 'Open the installation guide') (Join-Path $Root (T 'docs\INSTALLATION.md' 'docs\INSTALLATION.en.md'))))
+  # Die andere Sprache: Der Assistent schließt sich und wird in ihr neu aufgebaut (noch ist nichts eingegeben)
+  $ui.Switch = New-Object System.Windows.Forms.LinkLabel
+  $ui.Switch.Text = T 'In English' 'Auf Deutsch'
+  $ui.Switch.AutoSize = $true
+  $ui.Switch.Font = New-Font 9
+  $ui.Switch.Margin = New-Object System.Windows.Forms.Padding(0, 0, 0, (S 10))
+  $ui.Switch.Add_LinkClicked({
+      $script:SwitchLanguage = $(if ($script:Lang -eq 'en') { 'de' } else { 'en' })
+      $form.Close()
+    })
+  $pWelcome.Controls.Add($ui.Switch)
 
   $refreshNode = {
     $info = Get-NodeInfo
     if ($info -and $info.Major -ge 24) {
-      $ui.NodeStatus.Text = "✔  Node.js $($info.Version) gefunden"
+      $ui.NodeStatus.Text = (T "✔  Node.js $($info.Version) gefunden" "✔  Node.js $($info.Version) found")
       $ui.NodeStatus.ForeColor = [System.Drawing.Color]::FromArgb(21, 128, 61)
       $ui.InstallNode.Visible = $false
       $ui.NodeLink.Visible = $false
     } elseif ($info) {
-      $ui.NodeStatus.Text = "✖  Node.js $($info.Version) ist zu alt – benötigt wird Version 24 oder neuer."
+      $ui.NodeStatus.Text = (T "✖  Node.js $($info.Version) ist zu alt – benötigt wird Version 24 oder neuer." "✖  Node.js $($info.Version) is too old – version 24 or newer is required.")
       $ui.NodeStatus.ForeColor = [System.Drawing.Color]::FromArgb(185, 28, 28)
     } else {
-      $ui.NodeStatus.Text = '✖  Node.js wurde nicht gefunden – benötigt wird Version 24 oder neuer.'
+      $ui.NodeStatus.Text = (T '✖  Node.js wurde nicht gefunden – benötigt wird Version 24 oder neuer.' '✖  Node.js was not found – version 24 or newer is required.')
       $ui.NodeStatus.ForeColor = [System.Drawing.Color]::FromArgb(185, 28, 28)
     }
     $ui.InstallNode.Visible = -not ($info -and $info.Major -ge 24) -and [bool](Get-Command winget.exe -ErrorAction SilentlyContinue)
   }
   & $refreshNode
   $ui.InstallNode.Add_Click({
-      $answer = [System.Windows.Forms.MessageBox]::Show('Node.js (LTS) wird mit winget von der offiziellen Paketquelle heruntergeladen und installiert. Fortfahren?', 'Node.js installieren', 'YesNo', 'Question')
+      $answer = [System.Windows.Forms.MessageBox]::Show((T 'Node.js (LTS) wird mit winget von der offiziellen Paketquelle heruntergeladen und installiert. Fortfahren?' 'Node.js (LTS) will be downloaded and installed with winget from the official package source. Continue?'), (T 'Node.js installieren' 'Install Node.js'), 'YesNo', 'Question')
       if ($answer -ne 'Yes') { return }
       $form.UseWaitCursor = $true
       try {
         $proc = Start-Process winget.exe -ArgumentList @('install', '--id', 'OpenJS.NodeJS.LTS', '-e', '--silent', '--accept-package-agreements', '--accept-source-agreements') -Wait -PassThru
         Update-PathFromRegistry
-        if ($proc.ExitCode -ne 0) { [System.Windows.Forms.MessageBox]::Show("winget meldet Fehler $($proc.ExitCode). Bitte Node.js von https://nodejs.org/ installieren.", 'Node.js', 'OK', 'Warning') | Out-Null }
+        if ($proc.ExitCode -ne 0) { [System.Windows.Forms.MessageBox]::Show((T "winget meldet Fehler $($proc.ExitCode). Bitte Node.js von https://nodejs.org/ installieren." "winget reports error $($proc.ExitCode). Please install Node.js from https://nodejs.org/."), 'Node.js', 'OK', 'Warning') | Out-Null }
       } finally {
         $form.UseWaitCursor = $false
         & $refreshNode
@@ -1020,36 +1052,36 @@ function Show-Wizard {
     })
 
   # --- Seite 2: Datenverzeichnis ---
-  $pData = New-Page 'Datenverzeichnis' 'Hier liegen Datenbank, Anhänge, Sicherungen, Protokolle und der Serverschlüssel – das Wichtigste für jede Sicherung.'
+  $pData = New-Page (T 'Datenverzeichnis' 'Data directory') (T 'Hier liegen Datenbank, Anhänge, Sicherungen, Protokolle und der Serverschlüssel – das Wichtigste für jede Sicherung.' 'This is where the database, attachments, backups, logs and the server key are kept – the most important thing for every backup.')
   $ui.DataDir = New-PathRow $opts.DataDir 'folder'
-  Add-Field $pData 'Ordner' $ui.DataDir 'Auf einer lokalen SSD und außerhalb des Programmordners, damit Updates die Daten nicht berühren. Keine Netzfreigabe (SQLite braucht zuverlässige Dateisperren).'
+  Add-Field $pData (T 'Ordner' 'Folder') $ui.DataDir (T 'Auf einer lokalen SSD und außerhalb des Programmordners, damit Updates die Daten nicht berühren. Keine Netzfreigabe (SQLite braucht zuverlässige Dateisperren).' 'On a local SSD and outside the program folder, so that updates do not touch the data. No network share (SQLite needs reliable file locks).')
   $ui.DiskInfo = New-Label '' 9 -Muted
   $pData.Controls.Add($ui.DiskInfo)
   $updateDisk = {
     try {
       $drive = [IO.Path]::GetPathRoot($ui.DataDir.Tag.Text)
       $di = New-Object IO.DriveInfo($drive)
-      $ui.DiskInfo.Text = ('Freier Speicher auf {0}: {1:N1} GB' -f $drive, ($di.AvailableFreeSpace / 1GB))
+      $ui.DiskInfo.Text = ((T 'Freier Speicher auf {0}: {1:N1} GB' 'Free space on {0}: {1:N1} GB') -f $drive, ($di.AvailableFreeSpace / 1GB))
     } catch { $ui.DiskInfo.Text = '' }
   }
   $ui.DataDir.Tag.Add_TextChanged($updateDisk)
   & $updateDisk
 
   # --- Seite 3: Erreichbarkeit ---
-  $pAccess = New-Page 'Erreichbarkeit' 'Wie erreichen die Nutzenden Knowstead? Für den Betrieb gehört ein Reverse-Proxy mit HTTPS-Zertifikat davor (IIS, Caddy, nginx) – Beispielkonfigurationen stehen in der Installationsanleitung, Abschnitt 7.'
+  $pAccess = New-Page (T 'Erreichbarkeit' 'Access') (T 'Wie erreichen die Nutzenden Knowstead? Für den Betrieb gehört ein Reverse-Proxy mit HTTPS-Zertifikat davor (IIS, Caddy, nginx) – Beispielkonfigurationen stehen in der Installationsanleitung, Abschnitt 7.' 'How do users reach Knowstead? For production, a reverse proxy with an HTTPS certificate belongs in front of it (IIS, Caddy, nginx) – example configurations are in the installation guide, section 7.')
   $ui.Access = New-RadioGroup @(
-    @('LocalProxy', 'Reverse-Proxy auf diesem Server (empfohlen)', 'Knowstead lauscht nur auf 127.0.0.1 – von außen ist nur der Proxy erreichbar.'),
-    @('RemoteProxy', 'Reverse-Proxy auf einem anderen Rechner', 'Knowstead lauscht im Netzwerk; die Firewall lässt nur den Proxy durch.'),
-    @('Direct', 'Direkt im Netzwerk, ohne Proxy', 'Nur zum Ausprobieren: ohne HTTPS werden Passwörter unverschlüsselt übertragen.')
+    @('LocalProxy', (T 'Reverse-Proxy auf diesem Server (empfohlen)' 'Reverse proxy on this server (recommended)'), (T 'Knowstead lauscht nur auf 127.0.0.1 – von außen ist nur der Proxy erreichbar.' 'Knowstead listens on 127.0.0.1 only – from outside only the proxy can be reached.')),
+    @('RemoteProxy', (T 'Reverse-Proxy auf einem anderen Rechner' 'Reverse proxy on another computer'), (T 'Knowstead lauscht im Netzwerk; die Firewall lässt nur den Proxy durch.' 'Knowstead listens on the network; the firewall only lets the proxy through.')),
+    @('Direct', (T 'Direkt im Netzwerk, ohne Proxy' 'Directly on the network, without a proxy'), (T 'Nur zum Ausprobieren: ohne HTTPS werden Passwörter unverschlüsselt übertragen.' 'For trying out only: without HTTPS, passwords are transmitted unencrypted.'))
   ) $opts.Access
   $pAccess.Controls.Add($ui.Access)
   $ui.ProxyAddress = New-TextBox $opts.ProxyAddress (S 220)
-  Add-Field $pAccess 'IP-Adresse des Proxys' $ui.ProxyAddress 'Nur bei »Reverse-Proxy auf einem anderen Rechner«, z. B. 10.0.0.5.'
+  Add-Field $pAccess (T 'IP-Adresse des Proxys' 'IP address of the proxy') $ui.ProxyAddress (T 'Nur bei »Reverse-Proxy auf einem anderen Rechner«, z. B. 10.0.0.5.' 'Only for a reverse proxy on another computer, e.g. 10.0.0.5.')
   $ui.BaseUrl = New-TextBox $opts.BaseUrl
-  Add-Field $pAccess 'Adresse für die Nutzenden' $ui.BaseUrl 'Steht in allen Links und E-Mails, z. B. https://knowstead.firma.de.'
+  Add-Field $pAccess (T 'Adresse für die Nutzenden' 'Address for the users') $ui.BaseUrl (T 'Steht in allen Links und E-Mails, z. B. https://knowstead.firma.de.' 'Appears in all links and e-mails, e.g. https://knowstead.example.com.')
   $ui.Port = New-Object System.Windows.Forms.NumericUpDown
   $ui.Port.Minimum = 1; $ui.Port.Maximum = 65535; $ui.Port.Value = $opts.Port; $ui.Port.Width = S 100; $ui.Port.Font = New-Font
-  Add-Field $pAccess 'Port' $ui.Port 'Interner Port von Knowstead (Standard 3000).'
+  Add-Field $pAccess 'Port' $ui.Port (T 'Interner Port von Knowstead (Standard 3000).' 'Internal port of Knowstead (default 3000).')
   foreach ($radio in $ui.Access.Controls) {
     if ($radio -is [System.Windows.Forms.RadioButton]) {
       $radio.Add_CheckedChanged({
@@ -1063,50 +1095,50 @@ function Show-Wizard {
   $ui.ProxyAddress.Enabled = ($opts.Access -eq 'RemoteProxy')
 
   # --- Seite 4: Betrieb ---
-  $pService = New-Page 'Betrieb' 'Knowstead soll mit dem Server starten und nach einem Fehler von selbst wieder anlaufen.'
+  $pService = New-Page (T 'Betrieb' 'Operation') (T 'Knowstead soll mit dem Server starten und nach einem Fehler von selbst wieder anlaufen.' 'Knowstead should start with the server and come back up by itself after a failure.')
   $ui.Service = New-RadioGroup @(
-    @('Task', 'Autostart als geplante Aufgabe (empfohlen)', 'Ohne Zusatzsoftware: startet beim Systemstart unter dem Konto »Lokaler Dienst« und nach Fehlern neu. Protokoll unter <Datenverzeichnis>\logs.'),
-    @('Nssm', 'Windows-Dienst mit NSSM', 'Klassischer Dienst in der Diensteverwaltung. Benötigt nssm.exe (https://nssm.cc/download).'),
-    @('None', 'Kein Autostart', 'Start von Hand mit start.cmd – für Tests.')
+    @('Task', (T 'Autostart als geplante Aufgabe (empfohlen)' 'Autostart as a scheduled task (recommended)'), (T 'Ohne Zusatzsoftware: startet beim Systemstart unter dem Konto »Lokaler Dienst« und nach Fehlern neu. Protokoll unter <Datenverzeichnis>\logs.' 'No extra software: starts at system start under the Local Service account and restarts after failures. Log under <data directory>\logs.')),
+    @('Nssm', (T 'Windows-Dienst mit NSSM' 'Windows service with NSSM'), (T 'Klassischer Dienst in der Diensteverwaltung. Benötigt nssm.exe (https://nssm.cc/download).' 'Classic service in the Services console. Requires nssm.exe (https://nssm.cc/download).')),
+    @('None', (T 'Kein Autostart' 'No autostart'), (T 'Start von Hand mit start.cmd – für Tests.' 'Start by hand with start.cmd – for tests.'))
   ) $opts.Service
   $pService.Controls.Add($ui.Service)
   $ui.Nssm = New-PathRow $opts.NssmPath 'file'
-  Add-Field $pService 'Pfad zu nssm.exe' $ui.Nssm $null
+  Add-Field $pService (T 'Pfad zu nssm.exe' 'Path to nssm.exe') $ui.Nssm $null
   $ui.Nssm.Enabled = ($opts.Service -eq 'Nssm')
   foreach ($radio in $ui.Service.Controls) {
     if ($radio -is [System.Windows.Forms.RadioButton]) { $radio.Add_CheckedChanged({ if ($this.Checked) { $ui.Nssm.Enabled = ($this.Tag -eq 'Nssm') } }) }
   }
-  $ui.Firewall = New-CheckBox 'Firewall-Regel für Knowstead anlegen (nicht nötig beim Proxy auf diesem Server)' $opts.Firewall
-  $ui.Defender = New-CheckBox 'Datenbankdateien vom Echtzeit-Scan in Microsoft Defender ausnehmen' $opts.DefenderExclusion
+  $ui.Firewall = New-CheckBox (T 'Firewall-Regel für Knowstead anlegen (nicht nötig beim Proxy auf diesem Server)' 'Create a firewall rule for Knowstead (not needed with the proxy on this server)') $opts.Firewall
+  $ui.Defender = New-CheckBox (T 'Datenbankdateien vom Echtzeit-Scan in Microsoft Defender ausnehmen' 'Exclude the database files from real-time scanning in Microsoft Defender') $opts.DefenderExclusion
   $pService.Controls.Add($ui.Firewall)
   $pService.Controls.Add($ui.Defender)
-  $pService.Controls.Add((New-Label 'Anhänge werden weiterhin gescannt – ausgenommen sind nur knowstead.db, knowstead.db-wal und knowstead.db-shm.' 8.75 -Muted))
+  $pService.Controls.Add((New-Label (T 'Anhänge werden weiterhin gescannt – ausgenommen sind nur knowstead.db, knowstead.db-wal und knowstead.db-shm.' 'Attachments are still scanned – only knowstead.db, knowstead.db-wal and knowstead.db-shm are excluded.') 8.75 -Muted))
 
   # --- Seite 5: Zusatzfunktionen ---
-  $pExtras = New-Page 'Zusatzfunktionen' 'Optional: Programme, die Knowstead mitbenutzt. Fehlen sie, installiert der Assistent sie auf Wunsch mit winget. Beides lässt sich auch später unter Administration → KI & Dateien einschalten.'
+  $pExtras = New-Page (T 'Zusatzfunktionen' 'Extras') (T 'Optional: Programme, die Knowstead mitbenutzt. Fehlen sie, installiert der Assistent sie auf Wunsch mit winget. Beides lässt sich auch später unter Administration → KI & Dateien einschalten.' 'Optional: programs that Knowstead makes use of. If they are missing, the assistant installs them with winget on request. Both can also be enabled later under Administration → AI & files.')
   $winget = Test-Winget
   $tesseract = $opts.TesseractPath; if (-not $tesseract) { $tesseract = Find-Tesseract }
   $office = $opts.LibreOfficePath; if (-not $office) { $office = Find-LibreOffice }
-  $ui.UseOcr = New-CheckBox 'Texterkennung für eingescannte PDFs und Bilder (Tesseract)' ([bool]$tesseract)
+  $ui.UseOcr = New-CheckBox (T 'Texterkennung für eingescannte PDFs und Bilder (Tesseract)' 'Text recognition for scanned PDFs and images (Tesseract)') ([bool]$tesseract)
   $pExtras.Controls.Add($ui.UseOcr)
   $ui.Ocr = New-PathRow $tesseract 'file'
-  Add-Field $pExtras 'tesseract.exe' $ui.Ocr $(if ($tesseract) { 'Gefunden.' } elseif ($winget) { 'Nicht gefunden – unten ankreuzen, dann installiert der Assistent Tesseract samt deutschen und englischen Sprachdaten.' } else { 'Nicht gefunden – bei Bedarf installieren (https://github.com/UB-Mannheim/tesseract/wiki), deutsche Sprachdaten auswählen.' })
-  $ui.InstallOcr = New-CheckBox 'Tesseract jetzt installieren (winget, rund 80 MB)' $false
+  Add-Field $pExtras 'tesseract.exe' $ui.Ocr $(if ($tesseract) { (T 'Gefunden.' 'Found.') } elseif ($winget) { (T 'Nicht gefunden – unten ankreuzen, dann installiert der Assistent Tesseract samt deutschen und englischen Sprachdaten.' 'Not found – tick the box below and the assistant installs Tesseract including German and English language data.') } else { (T 'Nicht gefunden – bei Bedarf installieren (https://github.com/UB-Mannheim/tesseract/wiki), deutsche Sprachdaten auswählen.' 'Not found – install it if needed (https://github.com/UB-Mannheim/tesseract/wiki) and select the language data you need.') })
+  $ui.InstallOcr = New-CheckBox (T 'Tesseract jetzt installieren (winget, rund 80 MB)' 'Install Tesseract now (winget, about 80 MB)') $false
   $ui.InstallOcr.Enabled = (-not $tesseract) -and $winget
   $ui.InstallOcr.Margin = New-Object System.Windows.Forms.Padding(0, 0, 0, (S 14))
   $ui.InstallOcr.Add_CheckedChanged({ if ($this.Checked) { $ui.UseOcr.Checked = $true } })
   if (-not $tesseract) { $pExtras.Controls.Add($ui.InstallOcr) }
-  $ui.UseOffice = New-CheckBox 'Vorschau von Word-, Excel-, PowerPoint- und Visio-Dateien (LibreOffice)' ([bool]$office)
+  $ui.UseOffice = New-CheckBox (T 'Vorschau von Word-, Excel-, PowerPoint- und Visio-Dateien (LibreOffice)' 'Preview of Word, Excel, PowerPoint and Visio files (LibreOffice)') ([bool]$office)
   $pExtras.Controls.Add($ui.UseOffice)
   $ui.Office = New-PathRow $office 'file'
-  Add-Field $pExtras 'soffice.exe' $ui.Office $(if ($office) { 'Gefunden.' } elseif ($winget) { 'Nicht gefunden – unten ankreuzen, dann installiert der Assistent LibreOffice.' } else { 'Nicht gefunden – bei Bedarf LibreOffice installieren (https://www.libreoffice.org/).' })
-  $ui.InstallOffice = New-CheckBox 'LibreOffice jetzt installieren (winget, rund 350 MB Download)' $false
+  Add-Field $pExtras 'soffice.exe' $ui.Office $(if ($office) { (T 'Gefunden.' 'Found.') } elseif ($winget) { (T 'Nicht gefunden – unten ankreuzen, dann installiert der Assistent LibreOffice.' 'Not found – tick the box below and the assistant installs LibreOffice.') } else { (T 'Nicht gefunden – bei Bedarf LibreOffice installieren (https://www.libreoffice.org/).' 'Not found – install LibreOffice if needed (https://www.libreoffice.org/).') })
+  $ui.InstallOffice = New-CheckBox (T 'LibreOffice jetzt installieren (winget, rund 350 MB Download)' 'Install LibreOffice now (winget, about 350 MB download)') $false
   $ui.InstallOffice.Enabled = (-not $office) -and $winget
   $ui.InstallOffice.Add_CheckedChanged({ if ($this.Checked) { $ui.UseOffice.Checked = $true } })
   if (-not $office) { $pExtras.Controls.Add($ui.InstallOffice) }
 
   # --- Seite 6: Zusammenfassung ---
-  $pSummary = New-Page 'Zusammenfassung' 'Bitte prüfen – mit »Installieren« werden diese Schritte ausgeführt.'
+  $pSummary = New-Page (T 'Zusammenfassung' 'Summary') (T 'Bitte prüfen – mit »Installieren« werden diese Schritte ausgeführt.' 'Please check – the Install button carries out these steps.')
   $ui.Summary = New-Object System.Windows.Forms.TextBox
   $ui.Summary.Multiline = $true
   $ui.Summary.ReadOnly = $true
@@ -1118,7 +1150,7 @@ function Show-Wizard {
 
   # --- Seite 7: Installation ---
   $pRun = New-Page 'Installation' ''
-  $ui.Status = New-Label 'Bereit' 10 -Bold
+  $ui.Status = New-Label (T 'Bereit' 'Ready') 10 -Bold
   $pRun.Controls.Add($ui.Status)
   $ui.Progress = New-Object System.Windows.Forms.ProgressBar
   $ui.Progress.Size = New-Object System.Drawing.Size($ContentWidth, (S 18))
@@ -1136,11 +1168,11 @@ function Show-Wizard {
   $pRun.Controls.Add($ui.LogBox)
 
   # --- Seite 8: Fertig ---
-  $pDone = New-Page 'Fertig' ''
+  $pDone = New-Page (T 'Fertig' 'Done') ''
   $ui.DoneText = New-Label '' -Bottom 12
   $pDone.Controls.Add($ui.DoneText)
   $ui.OpenSetup = New-Object System.Windows.Forms.Button
-  $ui.OpenSetup.Text = 'Ersteinrichtung im Browser öffnen'
+  $ui.OpenSetup.Text = (T 'Ersteinrichtung im Browser öffnen' 'Open the first-time setup in the browser')
   $ui.OpenSetup.AutoSize = $true
   $ui.OpenSetup.BackColor = $AccentColor
   $ui.OpenSetup.ForeColor = [System.Drawing.Color]::White
@@ -1150,18 +1182,18 @@ function Show-Wizard {
   $pDone.Controls.Add($ui.OpenSetup)
   $ui.Checks = New-Label '' 9 -Bottom 12
   $pDone.Controls.Add($ui.Checks)
-  $pDone.Controls.Add((New-Label 'Nächste Schritte' 10.5 -Bold -Bottom 6))
-  $pDone.Controls.Add((New-Label "• HTTPS: Reverse-Proxy mit Zertifikat einrichten (Installationsanleitung, Abschnitt 7).`r`n• Nach der Ersteinrichtung führt Administration → Nächste Schritte durch E-Mail, Sicherung, Personen und Bereiche.`r`n• Steuern: Knowstead-Dienst.cmd start | stop | restart | status | log`r`n• Update: neue Programmdateien einspielen und diesen Assistenten erneut ausführen." 9 -Bottom 10))
+  $pDone.Controls.Add((New-Label (T 'Nächste Schritte' 'Next steps') 10.5 -Bold -Bottom 6))
+  $pDone.Controls.Add((New-Label (T "• HTTPS: Reverse-Proxy mit Zertifikat einrichten (Installationsanleitung, Abschnitt 7).`r`n• Nach der Ersteinrichtung führt Administration → Nächste Schritte durch E-Mail, Sicherung, Personen und Bereiche.`r`n• Steuern: Knowstead-Dienst.cmd start | stop | restart | status | log`r`n• Update: neue Programmdateien einspielen und diesen Assistenten erneut ausführen." "• HTTPS: set up a reverse proxy with a certificate (installation guide, section 7).`r`n• After the first-time setup, Administration → Next steps guides you through e-mail, backup, people and spaces.`r`n• Control: Knowstead-Dienst.cmd start | stop | restart | status | log`r`n• Update: copy in the new program files and run this assistant again.") 9 -Bottom 10))
 
   $pages = @(
-    @{ Name = 'Willkommen'; Panel = $pWelcome },
-    @{ Name = 'Datenverzeichnis'; Panel = $pData },
-    @{ Name = 'Erreichbarkeit'; Panel = $pAccess },
-    @{ Name = 'Betrieb'; Panel = $pService },
-    @{ Name = 'Zusatzfunktionen'; Panel = $pExtras },
-    @{ Name = 'Zusammenfassung'; Panel = $pSummary },
+    @{ Name = (T 'Willkommen' 'Welcome'); Panel = $pWelcome },
+    @{ Name = (T 'Datenverzeichnis' 'Data directory'); Panel = $pData },
+    @{ Name = (T 'Erreichbarkeit' 'Access'); Panel = $pAccess },
+    @{ Name = (T 'Betrieb' 'Operation'); Panel = $pService },
+    @{ Name = (T 'Zusatzfunktionen' 'Extras'); Panel = $pExtras },
+    @{ Name = (T 'Zusammenfassung' 'Summary'); Panel = $pSummary },
     @{ Name = 'Installation'; Panel = $pRun },
-    @{ Name = 'Fertig'; Panel = $pDone }
+    @{ Name = (T 'Fertig' 'Done'); Panel = $pDone }
   )
   $navLabels = @()
   for ($i = 0; $i -lt $pages.Count; $i++) {
@@ -1215,10 +1247,10 @@ function Show-Wizard {
       }
     }
     $back.Enabled = ($Index -gt 0 -and $Index -lt 6)
-    $next.Text = 'Weiter >'
-    if ($Index -eq 5) { $next.Text = 'Installieren' }
+    $next.Text = (T 'Weiter >' 'Next >')
+    if ($Index -eq 5) { $next.Text = (T 'Installieren' 'Install') }
     if ($Index -eq 6) { $next.Enabled = $false; $cancel.Enabled = $false }
-    if ($Index -eq 7) { $next.Text = 'Schließen'; $next.Enabled = $true; $cancel.Visible = $false; $back.Visible = $false }
+    if ($Index -eq 7) { $next.Text = (T 'Schließen' 'Close'); $next.Enabled = $true; $cancel.Visible = $false; $back.Visible = $false }
     if ($Index -eq 5) {
       & $collect
       $ui.Summary.Text = (Get-InstallPlan $opts) -join "`r`n"
@@ -1232,15 +1264,15 @@ function Show-Wizard {
     switch ($Index) {
       0 {
         $info = Get-NodeInfo
-        if (-not $info -or $info.Major -lt 24) { $problems += 'Bitte zuerst Node.js 24 oder neuer installieren.' }
+        if (-not $info -or $info.Major -lt 24) { $problems += (T 'Bitte zuerst Node.js 24 oder neuer installieren.' 'Please install Node.js 24 or newer first.') }
       }
-      1 { $problems += @(Test-InstallOptions $opts | Where-Object { $_ -match 'Datenverzeichnis' }) }
-      2 { $problems += @(Test-InstallOptions $opts | Where-Object { $_ -match 'Port|Adresse|Proxy' }) }
-      3 { $problems += @(Test-InstallOptions $opts | Where-Object { $_ -match 'nssm' }) }
-      4 { $problems += @(Test-InstallOptions $opts | Where-Object { $_ -match 'Tesseract|LibreOffice' }) }
+      1 { $problems += @(Test-InstallOptions $opts | Where-Object { $_.Area -eq 'data' } | ForEach-Object { $_.Text }) }
+      2 { $problems += @(Test-InstallOptions $opts | Where-Object { $_.Area -eq 'access' } | ForEach-Object { $_.Text }) }
+      3 { $problems += @(Test-InstallOptions $opts | Where-Object { $_.Area -eq 'service' } | ForEach-Object { $_.Text }) }
+      4 { $problems += @(Test-InstallOptions $opts | Where-Object { $_.Area -eq 'extras' } | ForEach-Object { $_.Text }) }
     }
     if ($problems.Count) {
-      [System.Windows.Forms.MessageBox]::Show(($problems -join "`r`n"), 'Bitte prüfen', 'OK', 'Warning') | Out-Null
+      [System.Windows.Forms.MessageBox]::Show(($problems -join "`r`n"), (T 'Bitte prüfen' 'Please check'), 'OK', 'Warning') | Out-Null
       return $false
     }
     return $true
@@ -1254,27 +1286,27 @@ function Show-Wizard {
       $state.Finished = $true
       $result = $state.Result
       if ($result.NeedsSetup) {
-        $ui.DoneText.Text = "Knowstead ist installiert$(if ($result.Started) { ' und läuft' }). Jetzt im Browser das erste Administratorkonto anlegen – auf diesem Server ohne Einrichtungscode."
+        $ui.DoneText.Text = (T "Knowstead ist installiert$(if ($result.Started) { ' und läuft' }). Jetzt im Browser das erste Administratorkonto anlegen – auf diesem Server ohne Einrichtungscode." "Knowstead is installed$(if ($result.Started) { ' and running' }). Now create the first administrator account in the browser – on this server no setup code is needed.")
       } else {
-        $ui.DoneText.Text = "Knowstead ist aktualisiert$(if ($result.Started) { ' und läuft wieder' })."
-        $ui.OpenSetup.Text = 'Knowstead im Browser öffnen'
+        $ui.DoneText.Text = (T "Knowstead ist aktualisiert$(if ($result.Started) { ' und läuft wieder' })." "Knowstead is updated$(if ($result.Started) { ' and running again' }).")
+        $ui.OpenSetup.Text = (T 'Knowstead im Browser öffnen' 'Open Knowstead in the browser')
       }
       $ui.OpenSetup.Tag = $(if ($result.NeedsSetup) { $result.SetupUrl } else { $result.LocalUrl })
       $ui.OpenSetup.Visible = $result.Started
       $notes = @($result.Warnings | ForEach-Object { "!  $_" })
       $notes += @($result.Checks | Where-Object { $_.status -ne 'ok' -and $_.id -ne 'setup' } | ForEach-Object { "!  $($_.title): $($_.message)" + $(if (Get-JsonValue $_ 'hint') { "`r`n    → $($_.hint)" } else { '' }) })
-      $ui.Checks.Text = $(if ($notes.Count) { "Hinweise:`r`n" + ($notes -join "`r`n") } else { '✔  Die Prüfung der Installation hat keine Probleme gefunden.' })
+      $ui.Checks.Text = $(if ($notes.Count) { (T "Hinweise:`r`n" "Notes:`r`n") + ($notes -join "`r`n") } else { (T '✔  Die Prüfung der Installation hat keine Probleme gefunden.' '✔  The installation check found no problems.') })
       & $showPage 7
     } catch {
       Write-Log ''
-      Write-Log "FEHLER: $($_.Exception.Message)"
-      $ui.Status.Text = 'Fehlgeschlagen'
+      Write-Log (T "FEHLER: $($_.Exception.Message)" "ERROR: $($_.Exception.Message)")
+      $ui.Status.Text = (T 'Fehlgeschlagen' 'Failed')
       $ui.Status.ForeColor = [System.Drawing.Color]::FromArgb(185, 28, 28)
-      [System.Windows.Forms.MessageBox]::Show("Die Installation ist fehlgeschlagen:`r`n$($_.Exception.Message)`r`n`r`nDas Protokoll im Fenster zeigt die Einzelheiten.", 'Knowstead', 'OK', 'Error') | Out-Null
+      [System.Windows.Forms.MessageBox]::Show((T "Die Installation ist fehlgeschlagen:`r`n$($_.Exception.Message)`r`n`r`nDas Protokoll im Fenster zeigt die Einzelheiten." "The installation failed:`r`n$($_.Exception.Message)`r`n`r`nThe log in the window shows the details."), 'Knowstead', 'OK', 'Error') | Out-Null
       $back.Enabled = $true
       $back.Visible = $true
       $cancel.Enabled = $true
-      $cancel.Text = 'Schließen'
+      $cancel.Text = (T 'Schließen' 'Close')
     } finally {
       $state.Running = $false
     }
@@ -1294,19 +1326,19 @@ function Show-Wizard {
       & $showPage ($state.Index + 1)
     })
   $back.Add_Click({
-      if ($state.Index -eq 6) { $ui.LogBox.Clear(); $ui.Progress.Value = 0; $cancel.Text = 'Abbrechen'; & $showPage 5; return }
+      if ($state.Index -eq 6) { $ui.LogBox.Clear(); $ui.Progress.Value = 0; $cancel.Text = (T 'Abbrechen' 'Cancel'); & $showPage 5; return }
       if ($state.Index -gt 0) { & $showPage ($state.Index - 1) }
     })
   $cancel.Add_Click({ $form.Close() })
   $ui.OpenSetup.Add_Click({ Start-Process $this.Tag })
   if ($ui.ContainsKey('Remove')) {
     $ui.Remove.Add_Click({
-        $answer = [System.Windows.Forms.MessageBox]::Show('Autostart, Firewall-Regel und Virenscanner-Ausnahmen entfernen? Programm und Daten bleiben erhalten.', 'Autostart entfernen', 'YesNo', 'Question')
+        $answer = [System.Windows.Forms.MessageBox]::Show((T 'Autostart, Firewall-Regel und Virenscanner-Ausnahmen entfernen? Programm und Daten bleiben erhalten.' 'Remove autostart, firewall rule and virus scanner exclusions? Program and data are kept.'), (T 'Autostart entfernen' 'Remove autostart'), 'YesNo', 'Question')
         if ($answer -ne 'Yes') { return }
         $script:Gui = @{ LogBox = $ui.LogBox; Progress = $ui.Progress; Status = $ui.Status }
         try {
           Invoke-KnowsteadUninstall
-          [System.Windows.Forms.MessageBox]::Show(($script:LogLines -join "`r`n"), 'Autostart entfernt', 'OK', 'Information') | Out-Null
+          [System.Windows.Forms.MessageBox]::Show(($script:LogLines -join "`r`n"), (T 'Autostart entfernt' 'Autostart removed'), 'OK', 'Information') | Out-Null
           $form.Close()
         } catch {
           [System.Windows.Forms.MessageBox]::Show($_.Exception.Message, 'Knowstead', 'OK', 'Error') | Out-Null
@@ -1316,7 +1348,7 @@ function Show-Wizard {
   $form.Add_FormClosing({
       param($sender, $e)
       if ($state.Running) {
-        [System.Windows.Forms.MessageBox]::Show('Die Installation läuft noch – bitte warten, bis sie abgeschlossen ist.', 'Knowstead', 'OK', 'Information') | Out-Null
+        [System.Windows.Forms.MessageBox]::Show((T 'Die Installation läuft noch – bitte warten, bis sie abgeschlossen ist.' 'The installation is still running – please wait until it has finished.'), 'Knowstead', 'OK', 'Information') | Out-Null
         $e.Cancel = $true
       }
     })
@@ -1329,26 +1361,32 @@ function Show-Wizard {
     $form.Location = New-Object System.Drawing.Point(-3000, -3000)
     $form.ShowInTaskbar = $false
     $form.Show()
-    $ui.LogBox.Text = "Knowstead – Installation`r`n  ▸ Node.js prüfen`r`n    Node.js v24.13.0`r`n  ▸ Abhängigkeiten und Oberfläche`r`n  [1/3] Abhängigkeiten aktuell."
+    $ui.LogBox.Text = (T "Knowstead – Installation`r`n  ▸ Node.js prüfen`r`n    Node.js v24.13.0`r`n  ▸ Abhängigkeiten und Oberfläche`r`n  [1/3] Abhängigkeiten aktuell." "Knowstead – installation`r`n  ▸ Checking Node.js`r`n    Node.js v24.13.0`r`n  ▸ Dependencies and interface`r`n  [1/3] Dependencies up to date.")
     $ui.Progress.Value = 45
-    $ui.Status.Text = 'Abhängigkeiten und Oberfläche'
-    $ui.DoneText.Text = 'Knowstead ist installiert und läuft. Jetzt im Browser das erste Administratorkonto anlegen – auf diesem Server ohne Einrichtungscode.'
-    $ui.Checks.Text = "Hinweise:`r`n!  Texterkennung: Sprachdaten fehlen für deu – erkannt wird vorerst nur eng.`r`n!  Adresse (BASE_URL): http://srv:3000 ohne HTTPS`r`n    → Einen Reverse-Proxy mit Zertifikat vorschalten (Installationsanleitung, Abschnitt 7)."
+    $ui.Status.Text = (T 'Abhängigkeiten und Oberfläche' 'Dependencies and interface')
+    $ui.DoneText.Text = (T 'Knowstead ist installiert und läuft. Jetzt im Browser das erste Administratorkonto anlegen – auf diesem Server ohne Einrichtungscode.' 'Knowstead is installed and running. Now create the first administrator account in the browser – on this server no setup code is needed.')
+    $ui.Checks.Text = (T "Hinweise:`r`n!  Texterkennung: Sprachdaten fehlen für deu – erkannt wird vorerst nur eng.`r`n!  Adresse (BASE_URL): http://srv:3000 ohne HTTPS`r`n    → Einen Reverse-Proxy mit Zertifikat vorschalten (Installationsanleitung, Abschnitt 7)." "Notes:`r`n!  Text recognition: language data is missing for deu – for now only eng is recognised.`r`n!  Address (BASE_URL): http://srv:3000 without HTTPS`r`n    → Put a reverse proxy with a certificate in front (installation guide, section 7).")
     for ($i = 0; $i -lt $pages.Count; $i++) {
       & $showPage $i
       [System.Windows.Forms.Application]::DoEvents()
       $bitmap = New-Object System.Drawing.Bitmap($form.Width, $form.Height)
       $form.DrawToBitmap($bitmap, (New-Object System.Drawing.Rectangle(0, 0, $form.Width, $form.Height)))
-      $file = Join-Path $SelfTest ('seite-{0}-{1}.png' -f ($i + 1), $pages[$i].Name.ToLower())
+      $file = Join-Path $SelfTest ('seite-{0}-{1}.png' -f ($i + 1), ($pages[$i].Name.ToLower() -replace '\s+', '-'))
       $bitmap.Save($file, [System.Drawing.Imaging.ImageFormat]::Png)
       $bitmap.Dispose()
-      Write-Host "Gespeichert: $file"
+      Write-Host (T "Gespeichert: $file" "Saved: $file")
     }
     $form.Close()
     return
   }
 
   [void]$form.ShowDialog()
+  if ($script:SwitchLanguage) {
+    $script:Lang = $script:SwitchLanguage
+    $script:SwitchLanguage = ''
+    $script:Gui = $null
+    Show-Wizard
+  }
 }
 
 # ------------------------------------------------------------------------------------------------
@@ -1368,7 +1406,7 @@ if (-not $SelfTest -and -not $WhatIfPreference -and -not $NoElevate -and -not (T
     $proc = Start-Process -FilePath (Get-Process -Id $PID).Path -ArgumentList $forward -Verb RunAs -PassThru -Wait
     exit $proc.ExitCode
   } catch {
-    Write-Host 'Administratorrechte wurden nicht erteilt – Abbruch.' -ForegroundColor Red
+    Write-Host (T 'Administratorrechte wurden nicht erteilt – Abbruch.' 'Administrator rights were not granted – aborting.') -ForegroundColor Red
     exit 1
   }
 }
@@ -1381,18 +1419,18 @@ try {
   $opts = New-InstallOptions
   $problems = @(Test-InstallOptions $opts)
   if ($problems.Count) {
-    foreach ($p in $problems) { Write-Host "[!] $p" -ForegroundColor Red }
+    foreach ($p in $problems) { Write-Host "[!] $($p.Text)" -ForegroundColor Red }
     exit 2
   }
   $result = Invoke-KnowsteadInstall $opts
   Write-Host ''
   if ($result.Warnings.Count) {
-    Write-Host 'Hinweise – Knowstead ist eingerichtet, bei den Zusatzprogrammen blieb etwas offen:' -ForegroundColor Yellow
+    Write-Host (T 'Hinweise – Knowstead ist eingerichtet, bei den Zusatzprogrammen blieb etwas offen:' 'Notes – Knowstead is set up, but something remained open with the additional programs:') -ForegroundColor Yellow
     foreach ($w in $result.Warnings) { Write-Host "  [!] $w" -ForegroundColor Yellow }
-    Write-Host '  → Nachholen: Administration → KI & Dateien, oder den Assistenten erneut ausführen.' -ForegroundColor Yellow
+    Write-Host (T '  → Nachholen: Administration → KI & Dateien, oder den Assistenten erneut ausführen.' '  → To catch up: Administration → AI & files, or run the assistant again.') -ForegroundColor Yellow
     Write-Host ''
   }
-  if ($result.NeedsSetup) { Write-Host "Ersteinrichtung auf diesem Server: $($result.SetupUrl)" -ForegroundColor Green }
+  if ($result.NeedsSetup) { Write-Host (T "Ersteinrichtung auf diesem Server: $($result.SetupUrl)" "First-time setup on this server: $($result.SetupUrl)") -ForegroundColor Green }
   else { Write-Host "Knowstead: $($opts.BaseUrl)" -ForegroundColor Green }
   if ($result.Started -and -not $NoBrowser -and -not $WhatIfPreference -and $result.NeedsSetup) { Start-Process $result.SetupUrl }
   exit 0

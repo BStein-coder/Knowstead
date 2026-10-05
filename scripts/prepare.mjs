@@ -9,12 +9,14 @@
  *
  *   node scripts/prepare.mjs            prüfen und nur Nötiges ausführen
  *   node scripts/prepare.mjs --force    Installation und Build erzwingen
+ *   node scripts/prepare.mjs --lang en  Meldungen auf Englisch (Standard: KNOWSTEAD_LANG, sonst Sprache des Systems)
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveLanguage, texts } from './lang.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const force = process.argv.includes('--force');
@@ -24,8 +26,18 @@ function fail(message) {
   process.exit(1);
 }
 
+const langOption = process.argv.indexOf('--lang');
+let L = texts('de');
+try {
+  L = texts(resolveLanguage(langOption >= 0 ? process.argv[langOption + 1] : undefined));
+} catch (err) {
+  fail(err instanceof Error ? err.message : String(err));
+}
+
 const major = Number(process.versions.node.split('.')[0]);
-if (major < 24) fail(`Node.js ${process.versions.node} ist zu alt – benötigt wird Version 24 oder neuer (https://nodejs.org/).`);
+if (major < 24) {
+  fail(L(`Node.js ${process.versions.node} ist zu alt – benötigt wird Version 24 oder neuer (https://nodejs.org/).`, `Node.js ${process.versions.node} is too old – version 24 or newer is required (https://nodejs.org/).`));
+}
 
 function run(args) {
   // Unter Windows ist npm ein .cmd-Skript – über cmd.exe starten statt mit `shell: true`
@@ -76,9 +88,14 @@ const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf
 // Installationspaket (scripts/package.mjs): Oberfläche fertig gebaut, nur Laufzeit-Abhängigkeiten
 const packageInfo = readStamp('.knowstead-package.json');
 if (packageInfo) {
-  console.log(`  Installationspaket ${packageInfo.version} (${packageInfo.platform}-${packageInfo.arch})`);
+  console.log(`  ${L('Installationspaket', 'Installation package')} ${packageInfo.version} (${packageInfo.platform}-${packageInfo.arch})`);
   if (packageInfo.platform !== process.platform || packageInfo.arch !== process.arch) {
-    console.log(`  Hinweis: Das Paket wurde für ${packageInfo.platform}-${packageInfo.arch} gebaut – die Abhängigkeiten werden für dieses System neu installiert (Internetzugang nötig).`);
+    console.log(
+      `  ${L(
+        `Hinweis: Das Paket wurde für ${packageInfo.platform}-${packageInfo.arch} gebaut – die Abhängigkeiten werden für dieses System neu installiert (Internetzugang nötig).`,
+        `Note: the package was built for ${packageInfo.platform}-${packageInfo.arch} – the dependencies are reinstalled for this system (internet access required).`,
+      )}`,
+    );
   }
 }
 
@@ -87,23 +104,29 @@ const installStamp = 'node_modules/.knowstead-install.json';
 const installed = fs.existsSync(path.join(root, 'node_modules')) ? readStamp(installStamp) : null;
 const platformChanged = !!packageInfo && (packageInfo.platform !== process.platform || packageInfo.arch !== process.arch) && installed?.platform !== process.platform;
 if (force || !installed || installed.lockHash !== lockHash || platformChanged) {
-  console.log(installed ? '  [1/3] Abhängigkeiten haben sich geändert – werden aktualisiert …' : '  [1/3] Abhängigkeiten werden installiert – das dauert beim ersten Mal ein paar Minuten …');
+  console.log(
+    installed
+      ? `  [1/3] ${L('Abhängigkeiten haben sich geändert – werden aktualisiert …', 'Dependencies have changed – updating …')}`
+      : `  [1/3] ${L('Abhängigkeiten werden installiert – das dauert beim ersten Mal ein paar Minuten …', 'Installing dependencies – this takes a few minutes the first time …')}`,
+  );
   const production = packageInfo ? ['--omit=dev', '--workspace=server', '--include-workspace-root'] : [];
   const ok = fs.existsSync(path.join(root, 'package-lock.json'))
     ? run(['ci', ...production, '--no-audit', '--no-fund']) || run(['install', ...production, '--no-audit', '--no-fund'])
     : run(['install', ...production, '--no-audit', '--no-fund']);
-  if (!ok) fail('Installation der Abhängigkeiten fehlgeschlagen. Bitte die Meldungen oben prüfen.');
+  if (!ok) fail(L('Installation der Abhängigkeiten fehlgeschlagen. Bitte die Meldungen oben prüfen.', 'Installing the dependencies failed. Please check the messages above.'));
   writeStamp(installStamp, { lockHash, version, production: !!packageInfo, platform: process.platform, installedAt: new Date().toISOString() });
 } else {
-  console.log('  [1/3] Abhängigkeiten aktuell.');
+  console.log(`  [1/3] ${L('Abhängigkeiten aktuell.', 'Dependencies up to date.')}`);
 }
 
 /* ------------------------------- Oberfläche ------------------------------- */
 
 if (!fs.existsSync(path.join(root, 'web/src'))) {
   // Paket ohne Quelltexte der Oberfläche: es gibt nichts zu bauen
-  if (!fs.existsSync(path.join(root, 'web/dist/index.html'))) fail('Die Oberfläche fehlt (web/dist) – bitte das Installationspaket vollständig entpacken.');
-  console.log('  [2/3] Oberfläche vorgebaut.');
+  if (!fs.existsSync(path.join(root, 'web/dist/index.html'))) {
+    fail(L('Die Oberfläche fehlt (web/dist) – bitte das Installationspaket vollständig entpacken.', 'The interface is missing (web/dist) – please extract the installation package completely.'));
+  }
+  console.log(`  [2/3] ${L('Oberfläche vorgebaut.', 'Interface prebuilt.')}`);
   process.exit(0);
 }
 
@@ -119,9 +142,9 @@ const sourceHash = hashFiles([
 const buildStamp = 'web/dist/.knowstead-build.json';
 const built = fs.existsSync(path.join(root, 'web/dist/index.html')) ? readStamp(buildStamp) : null;
 if (force || !built || built.sourceHash !== sourceHash) {
-  console.log(built ? '  [2/3] Oberfläche hat sich geändert – wird neu gebaut …' : '  [2/3] Oberfläche wird gebaut …');
-  if (!run(['run', 'build'])) fail('Bauen der Oberfläche fehlgeschlagen. Bitte die Meldungen oben prüfen.');
+  console.log(built ? `  [2/3] ${L('Oberfläche hat sich geändert – wird neu gebaut …', 'The interface has changed – rebuilding …')}` : `  [2/3] ${L('Oberfläche wird gebaut …', 'Building the interface …')}`);
+  if (!run(['run', 'build'])) fail(L('Bauen der Oberfläche fehlgeschlagen. Bitte die Meldungen oben prüfen.', 'Building the interface failed. Please check the messages above.'));
   writeStamp(buildStamp, { sourceHash, version, builtAt: new Date().toISOString() });
 } else {
-  console.log('  [2/3] Oberfläche aktuell.');
+  console.log(`  [2/3] ${L('Oberfläche aktuell.', 'Interface up to date.')}`);
 }

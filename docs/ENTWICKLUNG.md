@@ -27,7 +27,7 @@ führt der Einrichtungsassistent durch die Kontoanlage.
 | `node scripts/prepare.mjs` | Abhängigkeiten und Oberfläche nur bei Änderungen installieren bzw. bauen (nutzen `start.cmd`/`start.sh`) |
 | `node scripts/install.mjs --help` | Installationskern der Assistenten (`.env`, Verzeichnisse, Probestart, Prüfung) |
 | `node scripts/package.mjs` | Installationspaket nach `release/` bauen (vorher `npm run build`); `--target linux-x64` bzw. `windows-x64`/`linux-arm64` für ein anderes System – npm lädt dann die nativen Module des Zielsystems |
-| `node scripts/release-notes.mjs 2.0.1` | Versionshinweise einer Version aus `CHANGELOG.md` (nutzt der Release-Workflow) |
+| `node scripts/release-notes.mjs 2.1.0` | Versionshinweise einer Version aus `CHANGELOG.md` (nutzt der Release-Workflow) |
 | `node scripts/loadtest.mjs` | Lasttest mit Testdaten in einem temporären Verzeichnis |
 
 Ein einzelner Test:
@@ -293,6 +293,18 @@ unter Linux (Paketnamen je Distribution, Sprachdaten) steht in `scripts/install/
 `install.sh` einbindet – geprüft von `server/test/install-extras.test.ts` mit nachgestellter
 Paketverwaltung, also ohne Root-Rechte und ohne etwas zu installieren.
 
+**Zwei Sprachen.** Die Assistenten, der Installationskern, `scripts/prepare.mjs` und die Startskripte
+sprechen Deutsch und Englisch. Jeder Text steht an Ort und Stelle in beiden Sprachen:
+`L "deutsch" "english"` in den Bash-Skripten, `T 'deutsch' 'english'` in PowerShell, `L('deutsch',
+'english')` in den Node-Skripten – wer einen Text ändert oder ergänzt, schreibt beide Fassungen. Die Sprache
+bestimmt überall dieselbe Regel (`scripts/lang.mjs`): ausdrücklich gewählt (`--lang`, `-Language`), sonst
+`KNOWSTEAD_LANG`, sonst die Sprache des Systems – Deutsch, wenn sie mit »de« beginnt, sonst Englisch.
+Die Tests legen die Sprache fest (`KNOWSTEAD_LANG=de`) und prüfen Englisch ausdrücklich.
+Die Kommandozeile (`server/src/cli.ts`) bleibt dagegen bei Deutsch, solange niemand `--lang en` angibt:
+`update.sh` und der Installationskern werten Meldungen der Prüfung aus (»läuft«) – auch das `update.sh`
+einer älteren, schon installierten Version. Für englische PowerShell-Texte gilt dasselbe wie für
+deutsche: keine typografischen Anführungszeichen.
+
 Zwei Regeln für alles, was die Assistenten tun, **nachdem** sie ein laufendes Knowstead angehalten haben:
 
 - **Zusatzprogramme sind keine Voraussetzung.** Was sich nicht installieren oder eintragen lässt, wird
@@ -314,6 +326,8 @@ apt wirklich wählt – so fiel auf, dass die Teilpakete `-nogui` allein den Ker
 
 ```bash
 powershell -File scripts/install/windows/Install-Knowstead.ps1 -SelfTest ./assistent        # alle Seiten als PNG
+powershell -File scripts/install/windows/Install-Knowstead.ps1 -SelfTest ./assistent-en -Language en
 powershell -File scripts/install/windows/Install-Knowstead.ps1 -Unattended -WhatIf -NoElevate -SkipPrepare
 bash install.sh --unattended --dry-run --skip-prepare
+bash install.sh --lang en --unattended --dry-run --skip-prepare
 ```

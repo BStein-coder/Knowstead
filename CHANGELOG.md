@@ -9,6 +9,75 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [2.1.0] – 2026-10-05
+
+Die Installation gibt es jetzt auch auf Englisch: Der Assistent unter Windows, `install.sh` und die
+Startskripte sprechen Deutsch und Englisch und richten sich nach der Sprache des Systems. Dazu
+aktualisierte Abhängigkeiten.
+
+### Installation auf Englisch
+
+- **Eine Regel für alle Skripte**: ausdrücklich gewählt (`--lang de|en` unter Linux, `-Language de|en`
+  unter Windows), sonst die Umgebungsvariable `KNOWSTEAD_LANG`, sonst die Sprache des Systems – Deutsch,
+  wenn sie Deutsch ist, sonst Englisch.
+- **Windows**: Der grafische Assistent ist vollständig zweisprachig – alle acht Seiten, Plan, Protokoll,
+  Rückfragen und Fehlermeldungen. Auf der ersten Seite wechselt *In English* / *Auf Deutsch* die Sprache.
+  Dasselbe gilt für den Lauf ohne Rückfragen (`Knowstead-Installation.cmd -Unattended`) und für
+  `Knowstead-Dienst.cmd`.
+- **Linux**: `install.sh` fragt, meldet und hilft (`--help`) in beiden Sprachen – im Terminal wie in den
+  Dialogen mit `whiptail` –, ebenso die Hinweise zu Tesseract und LibreOffice. Wer die Sprache nicht
+  ausdrücklich gewählt hat, sieht zu Beginn, wie es in der anderen geht.
+- **Installationskern und Start**: `scripts/install.mjs`, `scripts/prepare.mjs`, `start.sh` und `start.cmd`
+  folgen derselben Regel. Die Assistenten reichen ihre Sprache an den Kern weiter.
+- **Prüfung der Installation**: `npm run cli -- doctor --lang en` gibt die Prüfung auf Englisch aus; der
+  englische Installer zeigt sie so an. Ohne `--lang` bleibt die Ausgabe deutsch – `update.sh` und der
+  Installationskern werten sie aus.
+- **Konfigurationsdatei**: Eine englische Installation legt die `.env` aus `.env.example.en` an – dieselben
+  Werte, Kommentare auf Englisch.
+- **Einrichtungscode**: Die Zeile im Serverprotokoll nennt ihn jetzt auch als „setup code“
+  (`journalctl -u knowstead | grep -i "setup code"`); `grep Einrichtungscode` findet sie wie bisher.
+- Weiterhin deutsch sind `update.sh`, die übrigen Befehle der Kommandozeile und das Serverprotokoll.
+
+### Sicherheit
+
+- **Abhängigkeiten aktualisiert** – `npm audit` meldete fünf Hinweise hoher Schwere, drei mittlere und
+  einen niedrigen: fastify 5.12.5, fast-uri 3.1.8 und 4.2.1, ip-address 10.7.3, dompurify 3.4.16,
+  brace-expansion 5.0.12. Das für alle Versionen gemeldete `braces` kam nur über
+  `@excalidraw/excalidraw → sass → chokidar 3` herein; `sass` ist jetzt auf 1.79.0 festgelegt und bringt
+  chokidar 4 ohne `braces` mit. Betroffen war davon nur die Entwicklung – `sass` läuft nicht zur Laufzeit
+  und gehört nicht zu den Installationspaketen. Danach meldet `npm audit` nichts mehr.
+
+### Dokumentation
+
+- `docs/QUICKSTART.md` und `docs/INSTALLATION.en.md` beschreiben die englischen Rückfragen und Seiten des
+  Assistenten statt der Übersetzungstabellen; `docs/INSTALLATION.md` und beide README nennen die Sprachwahl.
+- `docs/ENTWICKLUNG.md`: wie die zweisprachigen Texte in den Skripten gepflegt werden.
+
+### Tests
+
+- Sprachwahl (`server/test/install-language.test.ts`): gewählt, aus `KNOWSTEAD_LANG`, aus der Sprache des
+  Systems – in den Node-Skripten und in `install.sh`.
+- Installationskern auf Englisch: Schritte, Hinweise, Prüfung, Vorlage der `.env`; die Prüfung bleibt ohne
+  `--lang` deutsch, auch wenn die Umgebung Englisch nennt.
+- `install.sh` auf Englisch: Hilfe, Probelauf, Rückfragen, Hinweise zu den Zusatzprogrammen.
+- Windows-Assistent auf Englisch: Probelauf, Beanstandungen, Wiederanlauf nach einem Fehlschlag; der
+  CI-Lauf rendert alle acht Seiten in beiden Sprachen.
+- Inhalt der Installationspakete (`server/test/package-contents.test.ts`): Was die mitgelieferten Skripte
+  einbinden, steht in der Paketliste; beide Vorlagen der `.env` haben dieselben Einträge. Der Paketbau
+  prüft dasselbe am fertigen Paket und startet den Installationskern daraus einmal im Probelauf.
+
+### Update-Hinweise
+
+- Keine Migration, keine neuen Pflichteinstellungen. Update wie gewohnt mit dem installierten Skript:
+  `sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.1.0-linux-x64.tar.gz` – bei Installationen, die als
+  Doku eingerichtet wurden, `/opt/doku/update.sh` (in Containern als root ohne `sudo`).
+- **Sprache der Assistenten nach dem Update**: `install.sh`, der Windows-Assistent und die Startskripte
+  richten sich jetzt nach der Sprache des Systems. Auf einem Server mit englischer oder nicht gesetzter
+  Systemsprache (in Containern oft `LANG=C.UTF-8`) erscheinen sie auf Englisch. Bei Deutsch bleibt es mit
+  `--lang de`, `-Language de` oder `KNOWSTEAD_LANG=de`. `update.sh` ist unverändert deutsch.
+- Wer die Ausgabe von `install.sh` oder des Assistenten in eigenen Skripten auswertet, legt die Sprache
+  ausdrücklich fest.
+
 ## [2.0.1] – 2026-10-05
 
 Die englische Oberfläche ist jetzt durchgehend englisch: Stellen, die bisher fest in deutscher Schreibweise
