@@ -76,8 +76,13 @@ export async function expectAccessible(page: Page, include?: string): Promise<vo
   if (include) builder = builder.include(include);
   const result = await builder.analyze();
   const blocking = result.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious');
+  // Bei Kontrastfehlern die gemessenen Farben mit ausgeben – sonst lässt sich ein Befund nicht nachvollziehen
+  const measured = (n: (typeof result.violations)[number]['nodes'][number]) => {
+    const d = n.any[0]?.data as { fgColor?: string; bgColor?: string; contrastRatio?: number } | undefined;
+    return d?.contrastRatio ? ` [${d.fgColor} auf ${d.bgColor}: ${d.contrastRatio}]` : '';
+  };
   expect(
-    blocking.map((v) => `${v.impact}: ${v.id} – ${v.help} (${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')})`),
+    blocking.map((v) => `${v.impact}: ${v.id} – ${v.help} (${v.nodes.map((n) => n.target.join(' ') + measured(n)).slice(0, 3).join(' | ')})`),
     `Barrieren${include ? ` in ${include}` : ''}`,
   ).toEqual([]);
 }

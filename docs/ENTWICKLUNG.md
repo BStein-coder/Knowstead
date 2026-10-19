@@ -21,6 +21,7 @@ führt der Einrichtungsassistent durch die Kontoanlage.
 | `npm run typecheck` | TypeScript für Server, Plugins und Oberfläche |
 | `npm run test:e2e` | Oberfläche bauen und die Browsertests ausführen ([e2e/README.md](../e2e/README.md)) |
 | `npm run test:english` | Oberfläche bauen und die englische Oberfläche nach deutschen Resten absuchen – Wörter, Datums- und Zahlenschreibweise, Feldinhalte ([e2e/README.md](../e2e/README.md)) |
+| `npm run test:contrast` | Oberfläche bauen und den Kontrast jedes Textes gegen die gezeichneten Bildpunkte messen – klassisch, Glas und Papier, hell und dunkel ([e2e/README.md](../e2e/README.md)) |
 | `npm run build` | Oberfläche nach `web/dist` bauen |
 | `npm start` | Produktivstart aus dem Quelltext |
 | `npm run cli -- help` | Verwaltungswerkzeug (`status`, `backup`, `backup:list`, `restore`, Konten) |
@@ -236,7 +237,8 @@ Die **Layout-Messung** (`e2e/tests/sweep.spec.ts`) öffnet jede Seite aus `route
 820 und 400 px Breite und meldet überlappende oder verdeckte Bedienelemente, Elemente über dem
 Fensterrand, abgeschnittene Beschriftungen und seitliches Scrollen. Sie gehört wegen ihrer Dauer nicht
 zum normalen Lauf – vor einem Release und nach Änderungen an Layout oder Gestaltung ausführen. Einzelne
-Seiten: `npm --prefix e2e run sweep -- -g "Startseite"`; andere Breiten: `E2E_SWEEP_WIDTHS=1280,400`.
+Seiten: `npm --prefix e2e run sweep -- -g "Startseite"`; andere Breiten: `E2E_SWEEP_WIDTHS=1280,400`;
+anderes Aussehen: `E2E_APPEARANCE=glass` oder `paper` (dunkel: `E2E_SCHEME=dark`).
 Fälle, die dabei schon einmal aufgefallen sind, hält `layout.spec.ts` dauerhaft fest.
 
 Eine neue Ansicht gehört in `e2e/tests/support/routes.ts`, ein neuer Arbeitsablauf in die passende

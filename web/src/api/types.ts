@@ -47,6 +47,8 @@ export interface Preferences {
   editorWidth?: 'normal' | 'wide';
   /** Bewegung und 3D-Effekte: eigene Wahl; ohne Angabe gilt die Vorgabe der Installation */
   motion?: 'full' | 'reduced';
+  /** Aussehen der Oberfläche (unabhängig von hell/dunkel) */
+  appearance?: 'classic' | 'glass' | 'paper';
   sidebarCollapsed?: boolean;
   defaultContentType?: ContentType;
   [key: string]: unknown;

@@ -1,6 +1,7 @@
 // Startet die Layout-Messung über alle Seiten (tests/sweep.spec.ts). Sie gehört nicht zum normalen Testlauf,
 // weil sie einige Minuten dauert; dieses Skript schaltet sie über E2E_SWEEP frei – unter Windows wie Linux.
 // Aufruf: node sweep.mjs [weitere Playwright-Argumente, z. B. -g "Startseite"]
+// Anderes Aussehen: E2E_APPEARANCE=glass (oder paper); dunkel: E2E_SCHEME=dark
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

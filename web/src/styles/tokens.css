@@ -17,6 +17,14 @@
   --accent-2: color-mix(in srgb, var(--accent) 62%, #8b5cf6);
   --accent-3: color-mix(in srgb, var(--accent) 55%, #06b6d4);
   --accent-gradient: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 55%, var(--accent-3) 100%);
+  /* Verlauf unter weißer Schrift (gefüllte Schaltflächen): bleibt nah an der Akzentfarbe, damit die Schrift auf jedem
+     Punkt 4,5 : 1 erreicht – die hellen Endstufen von --accent-gradient liegen darunter (4,1 : 1 hell, 3,3 : 1 dunkel). */
+  --accent-gradient-solid: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent) 86%, var(--accent-2)) 55%,
+    color-mix(in srgb, var(--accent) 78%, var(--accent-3)) 100%
+  );
   --accent-glow: 0 8px 24px -8px color-mix(in srgb, var(--accent) 55%, transparent);
 
   --bg: #ffffff;

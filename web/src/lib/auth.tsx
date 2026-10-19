@@ -5,6 +5,7 @@ import type { Me, MeResponse, Preferences, PublicSettings } from '../api/types';
 import { storedLocale, useI18n } from '../i18n';
 import { applyAccent, applyTheme } from './theme';
 import { applyMotion, storedMotion } from './motion';
+import { applyAppearance, isAppearance } from './appearance';
 
 interface AuthValue {
   data: MeResponse | undefined;
@@ -66,6 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (pref === 'full' || pref === 'reduced') applyMotion(pref, true);
     else if (!storedMotion()) applyMotion(settings.uiMotion === 'reduced' ? 'reduced' : 'full');
   }, [data, user?.preferences?.motion, settings.uiMotion]);
+  // Aussehen: die Wahl des Kontos gilt auf allen Geräten und wird auf diesem gemerkt
+  useEffect(() => {
+    const pref = user?.preferences?.appearance;
+    if (isAppearance(pref)) applyAppearance(pref, true);
+  }, [user?.preferences?.appearance]);
   useEffect(() => {
     if (!data) return;
     const pref = user?.preferences?.locale as 'de' | 'en' | undefined;

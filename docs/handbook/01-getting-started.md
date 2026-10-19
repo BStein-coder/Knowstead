@@ -56,7 +56,19 @@ Via **Create → Daily note** Knowstead automatically creates a page for today �
 
 ## Appearance and language
 
-In the user menu you choose **Light**, **Dark** or **System** as well as the language (German/English). The settings are stored in your profile and apply on all devices – including emails and exports.
+In the user menu you choose **Light**, **Dark** or **System**, the **appearance** and the language (German/English). The settings are stored in your profile and apply on all devices – including emails and exports.
+
+### Appearance: Classic, Glass, Paper
+
+Besides the colour scheme (light/dark), the **appearance** decides how the interface is designed. It combines freely with Light and Dark, and your installation's accent colour is kept in every appearance.
+
+| Appearance | Character |
+| --- | --- |
+| **Classic** | The default: plain and practical, floating glass layers for navigation and the top bar, calm cards. |
+| **Glass** | Spacious and luminous: wide rounding, translucent cards with a bright edge in front of strong pools of light, large page titles, tabs as segments. |
+| **Paper** | Warm and calm: a warm gradient as the ground, flat cards on paper, **ink** instead of the accent colour for main actions, active entries and tabs; the home page without the 3D scene. |
+
+You choose the appearance in the user menu under **Appearance** or in the profile under *Settings → Appearance*. The choice applies to your account on all devices; before you sign in, the choice last made on this device applies. Every combination reaches a contrast of **4.5 : 1** (WCAG AA); with *Motion and effects → Reduced* or "Reduce transparency" in the operating system, the blur behind the glass is dropped.
 
 ### Motion and 3D effects
 

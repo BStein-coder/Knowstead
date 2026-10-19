@@ -7,8 +7,10 @@ import {
   FileText,
   FolderPlus,
   HelpCircle,
+  GlassWater,
   Keyboard,
   Languages,
+  LayoutDashboard,
   LogIn,
   LogOut,
   Menu as MenuIcon,
@@ -36,6 +38,7 @@ import { api } from '../api/client';
 import { useToast } from '../lib/toast';
 import { applyTheme, storedTheme } from '../lib/theme';
 import { applyMotion, useMotionMode } from '../lib/motion';
+import { applyAppearance, useAppearance, type Appearance } from '../lib/appearance';
 import { modKey } from '../lib/utils';
 
 interface Props {
@@ -83,6 +86,11 @@ export function TopBar({ onToggleSidebar, onOpenPalette, onOpenHelp }: Props) {
   };
 
   const theme = (user?.preferences.theme as 'light' | 'dark' | 'system' | undefined) ?? storedTheme();
+  const appearance = useAppearance();
+  const setAppearance = (next: Appearance) => {
+    applyAppearance(next);
+    if (user) void updatePreferences({ appearance: next });
+  };
   const motion = useMotionMode();
   const toggleMotion = () => {
     const next = motion === 'full' ? 'reduced' : 'full';
@@ -166,6 +174,11 @@ export function TopBar({ onToggleSidebar, onOpenPalette, onOpenHelp }: Props) {
               { label: t('app.themeLight'), icon: Sun, checked: theme === 'light', onClick: () => setTheme('light') },
               { label: t('app.themeDark'), icon: Moon, checked: theme === 'dark', onClick: () => setTheme('dark') },
               { label: t('app.themeSystem'), icon: Monitor, checked: theme === 'system', onClick: () => setTheme('system') },
+              { separator: true },
+              { heading: t('app.appearance') },
+              { label: t('app.appearanceClassic'), icon: LayoutDashboard, checked: appearance === 'classic', onClick: () => setAppearance('classic') },
+              { label: t('app.appearanceGlass'), icon: GlassWater, checked: appearance === 'glass', onClick: () => setAppearance('glass') },
+              { label: t('app.appearancePaper'), icon: FileText, checked: appearance === 'paper', onClick: () => setAppearance('paper') },
               { separator: true },
               { label: t('app.motion'), icon: Move3d, checked: motion === 'full', onClick: toggleMotion },
               {

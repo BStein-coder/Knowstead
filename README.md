@@ -53,7 +53,12 @@ no cache, no queue and no build toolchain on the server.
 | ![Editor in dark mode](docs/images/editor.png) **Editing** – rich-text editor with outline, live collaboration and change notes | ![Task planner timeline](docs/images/planner-timeline.png) **Planning** – boards, lists and a timeline with dependencies |
 | ![Administration overview](docs/images/admin.png) **Administration** – everything is configured in the browser | |
 
-Light and dark design are both shown; each user chooses their own.
+Light and dark design are both shown; each user chooses their own – and so the **appearance**: Classic (above), or
+**Glass** and **Paper** (below), each in light and dark.
+
+| | |
+| --- | --- |
+| ![Home page in the Glass appearance, dark](docs/images/appearance-glass.png) **Glass** – wide rounding, translucent cards, pools of light | ![Task board in the Paper appearance, light](docs/images/appearance-paper.png) **Paper** – warm ground, flat cards, ink for main actions |
 
 ---
 
@@ -76,7 +81,8 @@ Light and dark design are both shown; each user chooses their own.
 
 The interface comes with light and dark design, keyboard shortcuts, a command palette (`Ctrl`+`K`), a
 responsive layout for phones and tablets and is checked automatically against **WCAG 2.1 AA** on every
-page. Quality assurance: 452 server tests, 298 browser tests and a layout sweep over every page in five
+page – in three selectable appearances (Classic, Glass, Paper), each in light and dark, with the contrast measured
+against the pixels actually drawn. Quality assurance: 452 server tests, 298 browser tests and a layout sweep over every page in five
 window widths.
 
 ---
@@ -225,6 +231,7 @@ npm run typecheck    # TypeScript for server and UI
 npm test             # server tests (node:test)
 npm run test:e2e     # browser tests (Playwright, axe-core) – once: npm --prefix e2e ci
 npm run test:sweep   # layout sweep: every page in five window widths
+npm run test:contrast # text contrast measured against the drawn pixels, per appearance
 ```
 
 All UI texts live in `web/src/i18n/de.ts` and `en.ts`; server messages are translated via

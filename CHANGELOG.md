@@ -11,6 +11,29 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 
 ## [Unveröffentlicht]
 
+### Neu
+
+- **Aussehen „Glas“ und „Papier“** zur Wahl neben dem klassischen: Im Benutzermenü (Abschnitt **Aussehen**) und im
+  Profil (*Einstellungen → Aussehen*) lässt sich die Gestalt der Oberfläche unabhängig von Hell/Dunkel wählen.
+  - **Glas**: weite Rundungen, durchscheinende Karten mit heller Kante vor Lichtflecken in den Ecken, große
+    Seitentitel, Reiter als Segmente, leuchtende Hauptaktionen.
+  - **Papier**: warmer Farbverlauf als Grund, flache Karten mit feinem Rand, „Tinte“ statt Akzentfarbe für
+    Hauptaktionen, aktive Einträge und Reiter; die Startseite ohne 3D-Szene.
+  - Die Wahl gilt im Konto auf allen Geräten (`preferences.appearance`) und wird zusätzlich auf dem Gerät gemerkt,
+    damit schon die Anmeldeseite stimmt. **Klassisch** bleibt die Vorgabe und ist unverändert. Die Akzentfarbe der
+    Installation gilt in allen Aussehen; „Bewegung reduziert“ und „Transparenz reduzieren“ nehmen auch hier die
+    Unschärfe hinter dem Glas weg.
+  - Technisch eine eigene Achse `data-appearance` auf `<html>` (`web/src/lib/appearance.ts`) mit einem
+    Stylesheet (`web/src/styles/appearance.css`), das nur Token und wenige Flächen überschreibt.
+
+### Barrierefreiheit
+
+- **Weiße Schrift auf Hauptschaltflächen erreicht jetzt 4,5 : 1**: Der Akzentverlauf lief zum Ende hin in ein
+  helleres Blau (hell 4,1 : 1, dunkel 3,3 : 1). Gefüllte Schaltflächen nutzen den neuen, näher an der Akzentfarbe
+  liegenden Verlauf `--accent-gradient-solid`; das Aussehen ändert sich kaum.
+- **Kleine Avatare zeigen nur den Anfangsbuchstaben**: Unter 20 Pixel ragten zwei Buchstaben aus dem Kreis –
+  im dunklen Design dunkle Schrift auf dunklem Grund (Aktivitätsliste der Startseite).
+
 ### Dokumentation
 
 - **Sicherheitsrichtlinie, Hinweise zum Mitarbeiten und Verhaltenskodex auf Englisch**: `SECURITY.md`,
@@ -30,6 +53,16 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
   sich nichts.
 - Neu: `E2E_CPU_THROTTLE=<Faktor>` bremst den Browser der Oberflächentests künstlich und stellt so langsame
   Läufer nach (`e2e/README.md`).
+- **Kontrastprüfung gegen die gezeichneten Bildpunkte** (`npm run test:contrast`): axe-core misst Schrift nur gegen
+  die Hintergrundfarbe der Elemente und sieht Lichtflecken, Verläufe und Glas mit Unschärfe nicht. Das neue
+  Werkzeug blendet die Schrift aus, fotografiert die Seite und misst für jeden Text den ungünstigsten Bildpunkt
+  dahinter (17 Ansichten × Aussehen × hell/dunkel, rund 7 000 Texte). Es fand die beiden Befunde oben.
+- Neu: `e2e/tests/appearance.spec.ts` – Wahl im Menü und im Profil, Speicherung im Konto und auf dem Gerät,
+  Rückfälle bei reduzierter Bewegung, Barrierefreiheit (axe) jeder Kombination aus Aussehen und Farbschema auf
+  elf Seiten, kein seitlicher Überlauf.
+- Neu: `npm --prefix e2e run shots` (Bildschirmfotos je Aussehen und Farbschema in `e2e/reports/shots/`); die
+  Layout-Messung läuft mit `E2E_APPEARANCE=glass` bzw. `paper` (dunkel: `E2E_SCHEME=dark`). Der Wegwerf-Server mit
+  Beispieldaten steht jetzt in `e2e/support/instance.mjs` und dient auch der Suche nach deutschen Resten.
 
 ## [2.1.0] – 2026-10-05
 

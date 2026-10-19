@@ -22,6 +22,7 @@ nicht angefasst.
 | `startup.spec.ts` | Start der Anwendung: Startanzeige, Hinweis bei blockierten Programmdateien, 404 für veraltete Dateien |
 | `layout.spec.ts` | Festgehaltene Layoutfälle: Seitenränder, Brotkrumen auf dem Handy, Zeitstrahl, umbrechende Reiter, Aufgabendialog mit Chatspalte |
 | `motion.spec.ts` | 3D-Szene (reine Dekoration, nur `transform`/`opacity`), Stillstand bei reduzierter Bewegung, Einstellung im Benutzermenü, Neigung und Einblenden |
+| `appearance.spec.ts` | **Aussehen** „Glas“ und „Papier“: Wahl im Benutzermenü und im Profil, Speicherung im Konto und auf dem Gerät, Rückfälle bei reduzierter Bewegung, axe-Prüfung jeder Kombination aus Aussehen und Farbschema auf elf Seiten, kein seitlicher Überlauf |
 | `sweep.spec.ts` | **Layout-Messung** über alle Seiten in fünf Fensterbreiten: Überlappungen, verdeckte Bedienelemente, Überstände, abgeschnittene Beschriftungen, seitliches Scrollen – läuft nur auf Wunsch (`npm run test:sweep`) |
 
 Jeder Test schlägt zusätzlich fehl, wenn im Browser ein JavaScript-Fehler, eine Konsolen-Fehlermeldung
@@ -50,6 +51,8 @@ Testkonten und -inhalte an (`tests/global.setup.ts`). Die eigene Installation bl
 | `npx playwright test --project=mobile` | nur Smartphone-Ansicht |
 | `npm run sweep` | Layout-Messung über alle Seiten (einige Minuten); einzelne Seiten mit `npm run sweep -- -g "Startseite"` |
 | `npm run scan:english` | Englische Oberfläche nach deutschen Resten absuchen (siehe unten); einzelne Ansichten mit `npm run scan:english -- admin` |
+| `npm run scan:contrast` | Kontrast jedes Textes gegen die tatsächlich gezeichneten Bildpunkte messen (siehe unten); `-- --look glass --scheme dark --views home,board` schränkt ein |
+| `npm run shots` | Bildschirmfotos der Oberfläche je Aussehen und Farbschema nach `reports/shots/` (`-- --look glass,paper --scheme light,dark --views home,board --width 1440`) |
 | `npm run report` | HTML-Bericht mit Bildschirmfotos und Aufzeichnungen fehlgeschlagener Tests |
 | `npm run typecheck` | TypeScript der Tests prüfen |
 
@@ -74,6 +77,14 @@ eingerichteter Datenbank in einem Wegwerf-Ordner, geht rund 65 Ansichten durch u
 nach `reports/english-scan.txt`. Es gehört nicht zum normalen Lauf: Die Wortliste ist eine Heuristik, ein
 Befund braucht einen Blick. Bewusst Deutsches (Schlüssel `HANDBUCH`, „Deutsch“ in der Sprachwahl) steht im
 Skript unter `ERLAUBT`. Seiteninhalte und die Versionshinweise werden nicht durchsucht.
+
+**Kontrast.** axe-core misst Schrift gegen die Hintergrundfarbe der Elemente darüber – Lichtflecken, Verläufe und
+Glas mit Unschärfe dahinter sieht es nicht, weil ein Pseudo-Element für axe kein Hintergrund ist. `contrast-scan.mjs`
+macht deshalb das Gegenteil: Es blendet alle Schrift aus, fotografiert die Seite und misst für jeden Text den
+ungünstigsten Bildpunkt hinter seinem Rahmen gegen die tatsächliche Schriftfarbe (4,5 : 1, große Schrift 3 : 1).
+Gemessen wird, was im Fenster zu sehen ist: bei offenem Dialog nur der Dialog, ohne verdeckte oder abgeschnittene
+Texte und ohne deaktivierte Bedienelemente. Das Werkzeug gehört nicht zum normalen Lauf – nach Änderungen an Farben,
+Hintergründen oder Aussehen ausführen (`npm run test:contrast`, auch `-- --width 400 --height 800` für das Handy).
 
 ## Tests erweitern
 

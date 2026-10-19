@@ -11,6 +11,7 @@ import { useToast } from '../../lib/toast';
 import { useDialogs } from '../../lib/dialogs';
 import { applyTheme } from '../../lib/theme';
 import { applyMotion, useMotionMode } from '../../lib/motion';
+import { applyAppearance, isAppearance, useAppearance } from '../../lib/appearance';
 import { Alert, Avatar, Badge, Button, Card, Checkbox, CopyField, EmptyState, Field, Input, Loading, PageHeader, Select, Switch, TabLinks, Textarea, Time } from '../../components/ui';
 import { ColorPicker } from '../../components/Pickers';
 import { DeputiesTab } from './DeputiesTab';
@@ -119,6 +120,7 @@ function PreferencesTab() {
   const { t, setLocale } = useI18n();
   const toast = useToast();
   const motion = useMotionMode();
+  const appearance = useAppearance();
   if (!user) return null;
   const prefs = user.preferences;
   const save = async (patch: Record<string, unknown>) => {
@@ -143,6 +145,20 @@ function PreferencesTab() {
             <option value="system">{t('app.themeSystem')}</option>
             <option value="light">{t('app.themeLight')}</option>
             <option value="dark">{t('app.themeDark')}</option>
+          </Select>
+        </Field>
+        <Field label={t('profile.appearance')} help={t('profile.appearanceHelp')}>
+          <Select
+            value={appearance}
+            onChange={(e) => {
+              const next = isAppearance(e.target.value) ? e.target.value : 'classic';
+              applyAppearance(next);
+              void save({ appearance: next });
+            }}
+          >
+            <option value="classic">{t('app.appearanceClassic')}</option>
+            <option value="glass">{t('app.appearanceGlass')}</option>
+            <option value="paper">{t('app.appearancePaper')}</option>
           </Select>
         </Field>
         <Field label={t('profile.language')}>

@@ -356,6 +356,8 @@ export function readableTextColor(background: string): string {
 export function Avatar({ user, size = 28, title }: { user: { displayName: string; avatarColor?: string | null } | null | undefined; size?: number; title?: string }) {
   const name = user?.displayName ?? '?';
   const background = user?.avatarColor ?? '#64748b';
+  // Zwei Buchstaben passen erst ab etwa 20 px in den Kreis; in kleineren ragten sie heraus (dunkle Schrift auf dunklem Grund)
+  const text = size < 20 ? initials(name).slice(0, 1) : initials(name);
   return (
     <span
       className="avatar"
@@ -364,7 +366,7 @@ export function Avatar({ user, size = 28, title }: { user: { displayName: string
       role="img"
       aria-label={name}
     >
-      {initials(name)}
+      {text}
     </span>
   );
 }

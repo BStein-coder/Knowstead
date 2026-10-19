@@ -61,7 +61,19 @@ Jede Person kann einen **persönlichen Bereich** nutzen (Benutzermenü → „Pe
 
 ## Darstellung und Sprache
 
-Im Benutzermenü wählst du **Hell**, **Dunkel** oder **System** sowie die Sprache (Deutsch/Englisch). Die Einstellungen werden in deinem Profil gespeichert und gelten auf allen Geräten.
+Im Benutzermenü wählst du **Hell**, **Dunkel** oder **System**, das **Aussehen** sowie die Sprache (Deutsch/Englisch). Die Einstellungen werden in deinem Profil gespeichert und gelten auf allen Geräten.
+
+### Aussehen: Klassisch, Glas, Papier
+
+Neben dem Farbschema (hell/dunkel) bestimmt das **Aussehen**, wie die Oberfläche gestaltet ist. Es lässt sich mit Hell und Dunkel beliebig kombinieren; die Akzentfarbe deiner Installation bleibt in allen Aussehen erhalten.
+
+| Aussehen | Charakter |
+| --- | --- |
+| **Klassisch** | Die Vorgabe: sachlich, schwebende Glasebenen für Navigation und Kopfleiste, ruhige Karten. |
+| **Glas** | Großzügig und leuchtend: weite Rundungen, durchscheinende Karten mit heller Kante vor kräftigen Lichtflecken, große Seitentitel, Reiter als Segmente. |
+| **Papier** | Warm und ruhig: warmer Farbverlauf als Grund, flache Karten auf Papier, **Tinte** statt Akzentfarbe für Hauptaktionen, aktive Einträge und Reiter; die Startseite ohne 3D-Szene. |
+
+Das Aussehen wählst du im Benutzermenü unter **Aussehen** oder im Profil unter *Einstellungen → Aussehen*. Die Wahl gilt für dein Konto auf allen Geräten; vor der Anmeldung gilt die Wahl, die auf diesem Gerät zuletzt getroffen wurde. Alle Kombinationen erreichen den Kontrast **4,5 : 1** (WCAG AA); mit *Bewegung und Effekte → Reduziert* oder „Transparenz reduzieren“ im Betriebssystem entfällt die Unschärfe hinter dem Glas.
 
 ### Bewegung und 3D-Effekte
 

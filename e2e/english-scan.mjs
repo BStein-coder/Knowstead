@@ -16,105 +16,17 @@
  * sie auch dort leer, sieht sie die Seiten nicht mehr (Anmeldung, Selektoren) und ein leeres Ergebnis der
  * eigentlichen Suche wäre nichts wert.
  */
-import crypto from 'node:crypto';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { startInstance } from './support/instance.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, '..');
-const port = process.env.E2E_SCAN_PORT ?? '3898';
-const base = `http://127.0.0.1:${port}`;
 const channel = process.env.E2E_CHANNEL ?? (process.platform === 'win32' ? 'msedge' : undefined);
 const only = process.argv[2] ? new RegExp(process.argv[2]) : null;
 /** Sprache der Oberfläche: Englisch – oder Deutsch für die Gegenprobe */
 const ui = process.env.E2E_SCAN_UI === 'de' ? 'de' : 'en';
-
-if (!fs.existsSync(path.join(root, 'web', 'dist', 'index.html'))) {
-  console.error('Die Oberfläche ist nicht gebaut – bitte zuerst im Projektordner „npm run build“ ausführen.');
-  process.exit(1);
-}
-
-/* ---------- Server mit eigener, englisch eingerichteter Datenbank ---------- */
-
-const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'knowstead-english-'));
-const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^(DOKU_|KNOWSTEAD_)/.test(key)));
-Object.assign(env, {
-  NODE_ENV: 'production',
-  KNOWSTEAD_SKIP_ENV_FILE: '1',
-  DATA_DIR: dataDir,
-  PORT: port,
-  HOST: '127.0.0.1',
-  BASE_URL: base,
-  WEB_DIST_DIR: path.join(root, 'web', 'dist'),
-  PLUGINS_DIR: path.join(root, 'plugins'),
-  LOG_LEVEL: 'warn',
-  TRUST_PROXY: 'false',
-  COOKIE_SECURE: 'false',
-});
-const server = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(root, 'server', 'src', 'index.ts')], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
-let serverLog = '';
-server.stdout.on('data', (chunk) => (serverLog += chunk));
-server.stderr.on('data', (chunk) => (serverLog += chunk));
-
-let cookie = '';
-async function call(method, url, body) {
-  const res = await fetch(base + url, {
-    method,
-    headers: { 'X-Knowstead-Client': 'english-scan', 'X-Knowstead-Locale': 'en', ...(cookie ? { cookie } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`${method} ${url} → ${res.status} ${text.slice(0, 300)}`);
-  try {
-    return { json: JSON.parse(text), headers: res.headers };
-  } catch {
-    return { json: null, headers: res.headers };
-  }
-}
-
-async function waitForServer() {
-  for (let i = 0; i < 120; i++) {
-    if (server.exitCode !== null) throw new Error(`Der Server ist nicht gestartet:\n${serverLog.slice(-800)}`);
-    try {
-      if ((await fetch(`${base}/api/v1/health`)).ok) return;
-    } catch {
-      /* noch nicht bereit */
-    }
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  throw new Error('Der Server antwortet nicht.');
-}
-
-const day = (offset) => new Date(Date.now() + offset * 86400_000).toISOString().slice(0, 10);
-
-/** Einrichten wie eine englischsprachige Installation; dazu ein Plan mit Terminen, damit Datumsangaben vorkommen. */
-async function seed() {
-  // Das Kennwort der Wegwerf-Installation entsteht zufällig und wird nirgends ausgegeben
-  const setup = await call('POST', '/api/v1/setup', {
-    siteName: 'Knowstead',
-    username: 'alex',
-    displayName: 'Alex Morgan',
-    email: 'alex@example.com',
-    password: crypto.randomBytes(18).toString('base64url'),
-    locale: 'en',
-    sampleContent: true,
-  });
-  cookie = (setup.headers.get('set-cookie') ?? '').split(';')[0];
-  // Ohne die Einführung, die sich sonst über jede Seite legt; die Sprache der Oberfläche folgt dem Profil
-  await call('PATCH', '/api/v1/me/preferences', { onboarding: { tourDone: true, dismissed: true }, locale: ui });
-  const tree = (await call('GET', '/api/v1/spaces/TEAM/tree')).json;
-  const page = tree.find((entry) => entry.parentId) ?? tree[0];
-  const board = (await call('POST', '/api/v1/spaces/TEAM/boards', { name: 'Intranet launch', description: 'From content migration to go-live' })).json;
-  const task = (body) => call('POST', `/api/v1/boards/${board.id}/tasks`, body);
-  await task({ title: 'Migrate the old wiki', startDate: day(-9), dueDate: day(-2), priority: 'high', labels: ['migration'] });
-  await task({ title: 'Review permissions per space', startDate: day(1), dueDate: day(6), labels: ['security'] });
-  await task({ title: 'Write the onboarding handbook', startDate: day(5), dueDate: day(20), labels: ['content'] });
-  return { pageId: page.id, boardId: board.id };
-}
 
 /* ---------- Seiten ---------- */
 
@@ -258,9 +170,10 @@ function collect() {
 const findings = [];
 let visited = 0;
 let browser = null;
+let instance = null;
 try {
-  await waitForServer();
-  const ids = await seed();
+  instance = await startInstance({ port: process.env.E2E_SCAN_PORT ?? 3898, ui });
+  const { base, cookie, ids } = instance;
   browser = await chromium.launch(channel ? { channel } : {});
   const name = cookie.slice(0, cookie.indexOf('='));
   const value = cookie.slice(cookie.indexOf('=') + 1);
@@ -296,9 +209,7 @@ try {
   findings.push(`Abbruch: ${err instanceof Error ? err.message : String(err)}`);
 } finally {
   await browser?.close();
-  server.kill();
-  await new Promise((resolve) => (server.exitCode === null ? server.once('exit', resolve) : resolve()));
-  fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  await instance?.stop();
 }
 
 const unique = [...new Set(findings)];

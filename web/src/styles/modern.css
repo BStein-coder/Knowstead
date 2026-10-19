@@ -63,14 +63,14 @@ body {
 }
 
 .btn-primary {
-  background: var(--accent-gradient);
+  background: var(--accent-gradient-solid);
   border-color: transparent;
   box-shadow: var(--accent-glow);
 }
 
 .btn-primary:hover:not(:disabled) {
   filter: brightness(1.06);
-  background: var(--accent-gradient);
+  background: var(--accent-gradient-solid);
 }
 
 .btn-danger {
