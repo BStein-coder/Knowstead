@@ -60,6 +60,12 @@ Light and dark design are both shown; each user chooses their own – and so the
 | --- | --- |
 | ![Home page in the Glass appearance, dark](docs/images/appearance-glass.png) **Glass** – wide rounding, translucent cards, pools of light | ![Task board in the Paper appearance, light](docs/images/appearance-paper.png) **Paper** – warm ground, flat cards, ink for main actions |
 
+Plans come as **projects** – every plan of your spaces with progress ring, next date and the people involved – and as a **calendar** of due dates:
+
+| | |
+| --- | --- |
+| ![Projects overview](docs/images/projects.png) **Projects** – status, progress, next date and people per plan | ![Calendar of due dates](docs/images/calendar.png) **Calendar** – month or week, with the list of the day and everything overdue |
+
 ---
 
 ## Features
@@ -71,12 +77,12 @@ Light and dark design are both shown; each user chooses their own – and so the
 | **Quality and compliance** | Editorial review, **multi-stage approval workflows** with escalation and **absence deputies**, **read confirmations** with audience, deadline, reminders and an evidence list, **review schedule** with content owners, one-click undo of recent changes, audit log |
 | **Finding things** | Full-text search with filters, **search inside attachments** (PDF, Office) with optional **OCR** for scans, tags, properties, backlinks, link map, journal, favourites |
 | **Files** | PDF viewer, video and audio playback, preview of Word, Excel, PowerPoint and Visio files (with LibreOffice), **draw.io** diagrams and a **whiteboard** (Excalidraw) |
-| **Planning** | **Task planner**: board, list and **timeline** with **dependencies**, lag and automatic rescheduling, assignees, checklists, a **chat per task**, recurring tasks, reminders, CSV export, **calendar subscription (ICS)** |
+| **Planning** | **Task planner**: board, list, **timeline** and **calendar** (month and week, per plan or across all spaces) with **dependencies**, lag and automatic rescheduling, assignees, checklists, a **chat per task**, recurring tasks, reminders, CSV export, **calendar subscription (ICS)**, a **projects overview** of every plan with progress ring, next date and people, and lively ticking off and moving of cards |
 | **Content analytics** | Most read, never read, orphaned pages, broken links, searches without results – a work list for editors |
 | **Sign-in and permissions** | Local accounts, **Active Directory/LDAP**, **Microsoft Entra ID / OpenID Connect**, **SAML 2.0**, Windows-integrated sign-in (Kerberos) through a reverse proxy; groups are mapped from the directory; permissions per space **and** per page |
 | **AI (optional)** | Improve, shorten, translate, summarise, outline, derive tasks and tags, ask questions about a page – with Claude, OpenAI, Azure OpenAI or a local model via Ollama; per-group enablement, daily limits, audit |
 | **Import and export** | **PDF and Word with a corporate template**, Markdown, HTML, ZIP archive per space; importers for **Confluence, MediaWiki, DokuWiki and XWiki** (hierarchy, files and version history), Markdown/HTML/ZIP |
-| **Integration** | REST API with OpenAPI UI at `/api/docs` (272 operations), API tokens with scopes, signed webhooks, API connectors for live data, plugins with server and browser parts |
+| **Integration** | REST API with OpenAPI UI at `/api/docs` (273 operations), API tokens with scopes, signed webhooks, API connectors for live data, plugins with server and browser parts |
 | **Operation** | Installer for Windows and Linux (systemd, also Proxmox LXC), Docker, nightly backups, **one-command update with automatic rollback**, e-mail alerts for administrators, health and monitoring endpoints, a built-in handbook |
 
 The interface comes with light and dark design, keyboard shortcuts, a command palette (`Ctrl`+`K`), a

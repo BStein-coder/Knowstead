@@ -411,6 +411,10 @@
 :root[data-appearance='glass'] .card,
 :root[data-appearance='glass'] .stat,
 :root[data-appearance='glass'] .quick-action,
+:root[data-appearance='glass'] .plan-stat,
+:root[data-appearance='glass'] .project-card,
+:root[data-appearance='glass'] .cal-main,
+:root[data-appearance='glass'] .cal-panel,
 :root[data-appearance='glass'] .editor-sheet {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
@@ -426,6 +430,7 @@
 
 :root[data-appearance='glass'] .card.interactive:hover,
 :root[data-appearance='glass'] a.card:hover,
+:root[data-appearance='glass'] .project-card:hover,
 :root[data-appearance='glass'] .quick-action:hover {
   background: var(--glass-bg-strong);
   box-shadow: var(--panel-shadow-lift), var(--shadow-ring);
@@ -454,7 +459,8 @@
   display: none;
 }
 
-:root[data-appearance='glass'] .tab.active {
+:root[data-appearance='glass'] .tab.active,
+:root[data-appearance='glass'] .cal-mode.active {
   background: var(--glass-bg-strong);
   color: var(--text-strong);
   box-shadow:
@@ -512,6 +518,7 @@
 /* Aktive Einträge und Reiter als Tinten-Pille */
 :root[data-appearance='paper'] .nav-link.active,
 :root[data-appearance='paper'] .tree-row.active,
+:root[data-appearance='paper'] .cal-mode.active,
 :root[data-appearance='paper'] .tab.active {
   background: var(--ink);
   color: var(--ink-text);
@@ -537,6 +544,10 @@
 :root[data-appearance='paper'] .card,
 :root[data-appearance='paper'] .stat,
 :root[data-appearance='paper'] .quick-action,
+:root[data-appearance='paper'] .plan-stat,
+:root[data-appearance='paper'] .project-card,
+:root[data-appearance='paper'] .cal-main,
+:root[data-appearance='paper'] .cal-panel,
 :root[data-appearance='paper'] .editor-sheet {
   background: var(--bg-elevated);
   border-color: var(--border-soft);
@@ -547,6 +558,7 @@
 
 :root[data-appearance='paper'] .card.interactive:hover,
 :root[data-appearance='paper'] a.card:hover,
+:root[data-appearance='paper'] .project-card:hover,
 :root[data-appearance='paper'] .quick-action:hover {
   box-shadow: var(--shadow);
 }
@@ -569,9 +581,41 @@
   background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
 }
 
+/* Aufgabenplaner: Kennzahlen, Projektkarten und Kalender runden wie die übrigen Flächen; der Haken folgt der Tinte */
+:root:is([data-appearance='glass'], [data-appearance='paper']) .plan-stat {
+  padding: 0.85rem 1.2rem;
+}
+
+:root:is([data-appearance='glass'], [data-appearance='paper']) .plan-stat-value {
+  font-size: 1.9rem;
+}
+
+:root:is([data-appearance='glass'], [data-appearance='paper']) .cal-cell {
+  border-radius: calc(var(--radius) + 2px);
+}
+
+:root[data-appearance='paper'] .task-check {
+  --check-bg: var(--ink);
+  --check-ink: var(--ink-text);
+}
+
+:root[data-appearance='paper'] .ring-arc {
+  stroke: var(--ink);
+}
+
+:root[data-appearance='paper'] .cal-cell.today .cal-num {
+  background: var(--ink);
+  color: var(--ink-text);
+}
+
+:root[data-appearance='paper'] .cal-cell.selected {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
 /* Kontrastmodus des Betriebssystems: Flächen entfallen – der aktive Reiter (ohne Unterstreichung) bekommt einen Rahmen */
 @media (forced-colors: active) {
-  :root:is([data-appearance='glass'], [data-appearance='paper']) .tab.active {
+  :root:is([data-appearance='glass'], [data-appearance='paper']) .tab.active,
+  .cal-mode.active {
     outline: 2px solid Highlight;
     outline-offset: -2px;
   }

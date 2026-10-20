@@ -26,6 +26,26 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
   - Technisch eine eigene Achse `data-appearance` auf `<html>` (`web/src/lib/appearance.ts`) mit einem
     Stylesheet (`web/src/styles/appearance.css`), das nur Token und wenige Flächen überschreibt.
 
+- **Aufgaben in Bewegung**: Der Kreis auf der Karte schließt eine Aufgabe ab – der Haken zeichnet sich nach, der Titel
+  wird durchgestrichen, die Karte **gleitet in die letzte Spalte** (die übrigen rücken nach), Zähler und Kennzahlen
+  leuchten auf. Beim Ziehen wird die Karte abgedunkelt und gekippt, die Zielspalte leuchtet, eine **Einfügemarke** zeigt
+  die Stelle. Verschieben und Abhaken erscheinen sofort (Vorschau vor der Antwort des Servers) und kehren bei einem
+  Fehler zurück. Karten und Zeilen erscheinen beim Öffnen nacheinander, Fortschrittsbalken wachsen von null, der
+  Wechsel zwischen den Ansichten gleitet. Unter **Meine Aufgaben** streicht sich die Zeile durch, gleitet hinaus und die
+  übrigen rücken nach. Über dem Plan stehen vier **Kennzahlen** (offen, diese Woche fällig, überfällig, diese Woche
+  erledigt), deren Zahlen hochzählen. Bei reduzierter Bewegung springen die Karten wie zuvor (`web/src/lib/flip.ts`,
+  `web/src/styles/planner.css`).
+- **Kalender**: Fälligkeiten als **Monat** oder **Woche** mit der Liste des gewählten Tages (heute samt allem
+  Überfälligen), Blättern mit Gleiten, Abhaken in der Liste. Als vierte **Ansicht im Plan** (neben Board, Liste und
+  Zeitachse) und als eigene Seite **Kalender** über alle Bereiche, mit **Meine** und **Alle**. Auf dem Handy zeigt das
+  Raster Punkte, die Liste darunter nennt die Aufgaben.
+- **Projekte**: Neue Übersicht aller Pläne der sichtbaren Bereiche als Karten – Status (in Planung, in Arbeit,
+  abgeschlossen), Fortschrittsring, **nächster Termin**, Beteiligte, erledigte von allen Aufgaben, spätestes
+  Fälligkeitsdatum; Kennzahlen, Filter und Suche; **Neuer Plan** fragt nach dem Bereich. Beide Seiten stehen in der
+  Navigation und in der Befehlspalette.
+- Schnittstelle: `GET /api/v1/projects` (Pläne mit `summary`: in Arbeit, nächste Aufgabe, Beginn, Ende, Beteiligte) und
+  der Filter `dueFrom` für `GET /api/v1/tasks` (zusammen mit `dueBefore` ein Zeitraum). Jetzt 273 Operationen.
+
 ### Barrierefreiheit
 
 - **Weiße Schrift auf Hauptschaltflächen erreicht jetzt 4,5 : 1**: Der Akzentverlauf lief zum Ende hin in ein
@@ -60,6 +80,10 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 - Neu: `e2e/tests/appearance.spec.ts` – Wahl im Menü und im Profil, Speicherung im Konto und auf dem Gerät,
   Rückfälle bei reduzierter Bewegung, Barrierefreiheit (axe) jeder Kombination aus Aussehen und Farbschema auf
   elf Seiten, kein seitlicher Überlauf.
+- Neu: `e2e/tests/planner.spec.ts` – Abhaken und Gleiten der Karten, Ziehen mit Einfügemarke, reduzierte Bewegung,
+  Meine Aufgaben, Kalender (Seite und Ansicht im Plan), Projekte; dazu `server/test/task-projects.test.ts`. Die neuen
+  Seiten stehen in Rundgang, Barrierefreiheitsprüfung (hell, dunkel, Glas, Papier), Layout-Messung, Kontrastprüfung und der
+  Suche nach deutschen Resten.
 - Neu: `npm --prefix e2e run shots` (Bildschirmfotos je Aussehen und Farbschema in `e2e/reports/shots/`); die
   Layout-Messung läuft mit `E2E_APPEARANCE=glass` bzw. `paper` (dunkel: `E2E_SCHEME=dark`). Der Wegwerf-Server mit
   Beispieldaten steht jetzt in `e2e/support/instance.mjs` und dient auch der Suche nach deutschen Resten.

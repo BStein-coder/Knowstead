@@ -12,6 +12,29 @@ export function views({ pageId, boardId }) {
   };
   return [
     ['home', '/'],
+    ['projects', '/projects'],
+    ['calendar', '/calendar'],
+    [
+      'calendar-all',
+      '/calendar',
+      null,
+      async (page) => {
+        await page.getByRole('button', { name: 'All', exact: true }).click();
+        await page.waitForTimeout(700);
+      },
+    ],
+    [
+      'calendar-week',
+      '/calendar',
+      null,
+      async (page) => {
+        await page.getByRole('button', { name: 'All', exact: true }).click();
+        await page.getByRole('button', { name: 'Week', exact: true }).click();
+        await page.waitForTimeout(700);
+      },
+    ],
+    ['my-tasks', '/tasks'],
+    ['plan-calendar', plan, { 'knowstead.tasks.view': 'calendar' }],
     ['spaces', '/spaces'],
     ['space', '/s/TEAM'],
     ['page', `/s/TEAM/p/${pageId}`],

@@ -78,6 +78,15 @@ export async function taskRoutes(app: App, s: Services): Promise<void> {
 
   app.get('/api/v1/boards', { schema: { tags, summary: 'Alle sichtbaren Pläne' } }, async (req) => ({ items: s.tasks.allBoards(req.auth) }));
 
+  app.get(
+    '/api/v1/projects',
+    { schema: { tags, summary: 'Projekte: Pläne aller sichtbaren Bereiche mit Fortschritt, nächstem Termin und Beteiligten' } },
+    async (req) => {
+      requireUser(req);
+      return { items: s.tasks.projects(req.auth) };
+    },
+  );
+
   app.get('/api/v1/boards/:id', { schema: { tags, summary: 'Plan mit Aufgaben', params: IdParam } }, async (req) => {
     const board = s.tasks.boardDto(req.auth, s.tasks.boardRow(req.params.id));
     return { board, tasks: s.tasks.list(req.auth, req.params.id) };
@@ -137,6 +146,7 @@ export async function taskRoutes(app: App, s: Services): Promise<void> {
         querystring: Type.Object({
           assignee: Type.Optional(Type.String({ maxLength: 20 })),
           status: Type.Optional(Type.String({ maxLength: 20 })),
+          dueFrom: Type.Optional(Type.String({ maxLength: 30 })),
           dueBefore: Type.Optional(Type.String({ maxLength: 30 })),
           space: Type.Optional(Type.String({ maxLength: 40 })),
           board: Type.Optional(Type.Integer()),
@@ -154,6 +164,7 @@ export async function taskRoutes(app: App, s: Services): Promise<void> {
         items: s.tasks.query(req.auth, {
           assignee,
           status,
+          dueFrom: q.dueFrom,
           dueBefore: q.dueBefore,
           spaceKey: q.space,
           boardId: q.board,

@@ -149,8 +149,8 @@
   background: var(--warning);
 }
 
+/* Die Linie zeichnet planner.css am Titeltext (sie blendet ein, wenn die Aufgabe erledigt wird) */
 .task-card.done .task-card-title {
-  text-decoration: line-through;
   color: var(--text-muted);
 }
 

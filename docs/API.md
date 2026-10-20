@@ -646,6 +646,16 @@ curl -X PATCH https://knowstead.example.com/api/v1/tasks/15 \
 # Filtern über alle sichtbaren Bereiche – z. B. meine offenen, bis Monatsende fälligen Aufgaben
 curl -H "Authorization: Bearer $KNOWSTEAD_TOKEN" \
   "https://knowstead.example.com/api/v1/tasks?assignee=me&status=open-all&dueBefore=2026-10-31"
+# Zeitraum (beide Grenzen einschließlich; Aufgaben ohne Fälligkeit gehören nie dazu) – so lädt der Kalender seinen Monat
+curl -H "Authorization: Bearer $KNOWSTEAD_TOKEN" \
+  "https://knowstead.example.com/api/v1/tasks?dueFrom=2026-10-01&dueBefore=2026-10-31&limit=500"
+
+# Projekte: alle Pläne der sichtbaren Bereiche mit Kennzahlen, nächstem Termin und Beteiligten (Übersicht „Projekte“)
+curl -H "Authorization: Bearer $KNOWSTEAD_TOKEN" https://knowstead.example.com/api/v1/projects
+# { "items": [ { …Plan…, "spaceIcon": "🚀", "spaceColor": "#2563eb",
+#     "summary": { "doing": 2, "nextTask": { "id": 15, "title": "…", "dueDate": "2026-10-15" },
+#                  "startDate": "2026-09-01", "dueDate": "2026-12-18",
+#                  "assignees": [ { "id": 7, … } ], "assigneeCount": 4, "updatedAt": "…" } } ] }
 ```
 
 | Feld | Werte |

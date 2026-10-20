@@ -17,6 +17,8 @@ const AUDITED = [
   'Seite (Rich-Text mit Makros)',
   'Editor',
   'Aufgabenplaner des Bereichs',
+  'Projekte',
+  'Kalender',
   'Suche',
   'Profil – Einstellungen',
   'Administration – Übersicht',

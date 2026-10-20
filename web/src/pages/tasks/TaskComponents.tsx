@@ -11,6 +11,7 @@ import { Avatar, Badge, Button, Field, IconButton, Input, Modal, Popover, Select
 import { PagePicker, TagInput, useUserSearch } from '../../components/Pickers';
 import { BlockedBadge, DependencyBadge, DependencyEditor } from './TaskDependencies';
 import { TaskChat } from './TaskChat';
+import { TaskCheck } from './TaskCheck';
 
 export const PRIORITY_COLORS: Record<TaskPriority, string> = { low: 'gray', normal: 'blue', high: 'yellow', urgent: 'red' };
 
@@ -68,6 +69,9 @@ export function TaskCard({
   onDragStart,
   onDragEnd,
   selected,
+  index = 0,
+  dragging,
+  onToggleDone,
 }: {
   task: Task;
   /** `multi` = mit Strg/Cmd oder Umschalt geklickt: auswählen statt öffnen */
@@ -76,12 +80,20 @@ export function TaskCard({
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: (e: React.DragEvent) => void;
   selected?: boolean;
+  /** Platz in der Spalte – staffelt den Auftritt beim Öffnen der Ansicht (höchstens zwölf Stufen) */
+  index?: number;
+  /** Wird gerade gezogen */
+  dragging?: boolean;
+  /** Haken auf der Karte; ohne Angabe fehlt er (keine Schreibrechte) */
+  onToggleDone?: (task: Task) => void;
 }) {
   const { t } = useI18n();
   const done = task.checklist.filter((c) => c.done).length;
   return (
     <article
-      className={cx('task-card', task.status === 'done' && 'done', task.overdue && 'overdue', selected && 'selected')}
+      className={cx('task-card', task.status === 'done' && 'done', task.overdue && 'overdue', selected && 'selected', dragging && 'is-dragging')}
+      style={{ ['--i' as string]: Math.min(index, 12) }}
+      data-flip={`task-${task.id}`}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -104,8 +116,13 @@ export function TaskCard({
         </div>
       )}
       <div className="task-card-title">
-        {task.title}
-        {task.recurrence && <Repeat size={12} className="task-card-repeat" aria-label={t('tasks.repeat')} />}
+        {onToggleDone && (
+          <TaskCheck done={task.status === 'done'} size={20} label={`${task.status === 'done' ? t('tasks.reopen') : t('tasks.complete')}: ${task.title}`} onToggle={() => onToggleDone(task)} />
+        )}
+        <span className="task-card-title-text">
+          {task.title}
+          {task.recurrence && <Repeat size={12} className="task-card-repeat" aria-label={t('tasks.repeat')} />}
+        </span>
       </div>
       {task.progress > 0 && task.status !== 'done' && (
         <div className="task-progress" aria-label={`${task.progress} %`}>

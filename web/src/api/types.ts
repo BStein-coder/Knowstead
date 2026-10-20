@@ -747,6 +747,21 @@ export interface Board {
   createdAt: string;
 }
 
+/** Ein Plan als Projekt (Übersicht „Projekte“): Kennzahlen, nächster Termin und Beteiligte */
+export interface Project extends Board {
+  spaceIcon: string | null;
+  spaceColor: string | null;
+  summary: {
+    doing: number;
+    nextTask: { id: number; title: string; dueDate: string } | null;
+    startDate: string | null;
+    dueDate: string | null;
+    assignees: UserRef[];
+    assigneeCount: number;
+    updatedAt: string | null;
+  };
+}
+
 /** FS: Ende → Anfang, SS: Anfang → Anfang, FF: Ende → Ende, SF: Anfang → Ende */
 export type DependencyType = 'FS' | 'SS' | 'FF' | 'SF';
 

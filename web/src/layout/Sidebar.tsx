@@ -7,12 +7,14 @@ import {
   Bell,
   BookOpen,
   BrainCircuit,
+  CalendarDays,
   ClipboardCheck,
   Database,
   FileClock,
   FileOutput,
   FileSignature,
   FileText,
+  FolderKanban,
   FolderOpen,
   History,
   Home,
@@ -89,6 +91,8 @@ function GlobalNav() {
           <NavItem to="/activity" icon={Activity} label={t('nav.activity')} />
           <NavItem to="/tags" icon={Tag} label={t('tags.title')} />
           {user && <NavItem to="/tasks" icon={ListChecks} label={t('tasks.myTitle')} count={data?.openTasks} />}
+          {user && <NavItem to="/projects" icon={FolderKanban} label={t('nav.projects')} />}
+          {user && <NavItem to="/calendar" icon={CalendarDays} label={t('nav.calendar')} />}
           {user && <NavItem to="/content-reviews" icon={ShieldCheck} label={t('reviewCycle.overviewTitle')} count={data?.dueReviews} />}
           {user && <NavItem to="/read-confirmations" icon={FileSignature} label={t('reads.pageTitle')} count={data?.openReads} />}
           {user && <NavItem to="/changes" icon={History} label={t('changes.title')} />}

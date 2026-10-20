@@ -87,7 +87,12 @@ function collect() {
     if (color[3] === 0) continue; // Verlaufsschrift u. Ä.: nicht messbar
     const range = document.createRange();
     range.selectNodeContents(node);
-    for (const r of range.getClientRects()) {
+    const box = el.getBoundingClientRect();
+    for (const full of range.getClientRects()) {
+      // Abgeschnittener Text (Auslassungspunkte): sein Rahmen reicht über das Element hinaus, sichtbar ist nur der Teil darin
+      const r = { left: Math.max(full.left, box.left), top: Math.max(full.top, box.top), right: Math.min(full.right, box.right), bottom: Math.min(full.bottom, box.bottom) };
+      r.width = r.right - r.left;
+      r.height = r.bottom - r.top;
       if (r.width < 2 || r.height < 4 || r.right < 0 || r.bottom < 0 || r.left > window.innerWidth || r.top > window.innerHeight) continue;
       // Abgeschnitten (in einem scrollenden Bereich) oder verdeckt: Was an dieser Stelle nicht dieses Element zeigt, sieht niemand
       const top = document.elementFromPoint(Math.min(window.innerWidth - 1, Math.max(0, r.left + r.width / 2)), Math.min(window.innerHeight - 1, Math.max(0, r.top + r.height / 2)));

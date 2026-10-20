@@ -1,16 +1,29 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarPlus, CheckCircle2, Circle, ListChecks } from 'lucide-react';
+import { CalendarPlus, CheckCircle2, ListChecks } from 'lucide-react';
 import { api } from '../../api/client';
 import type { Board, Task } from '../../api/types';
 import { useI18n } from '../../i18n';
 import { useToast } from '../../lib/toast';
+import { useFlash, useFlip } from '../../lib/flip';
+import { motionReduced } from '../../lib/motion';
 import { Badge, Button, EmptyState, ErrorView, Loading, PageHeader, Tabs, cx } from '../../components/ui';
 import { ChatBadge, DueBadge, PriorityBadge, TaskDialog } from './TaskComponents';
 import { CalendarDialog } from './CalendarDialog';
+import { TaskCheck } from './TaskCheck';
 
 type Group = { key: string; title: string; items: Task[] };
+
+/** Zähler an der Gruppenüberschrift: leuchtet kurz auf, wenn sich die Zahl ändert. */
+function GroupCount({ n, red }: { n: number; red: boolean }) {
+  const flash = useFlash(n);
+  return (
+    <Badge color={red ? 'red' : 'gray'} className={flash}>
+      {n}
+    </Badge>
+  );
+}
 
 /** „Meine Aufgaben“: alles, was mir zugewiesen ist – nach Fälligkeit gruppiert. */
 export default function MyTasksPage() {
@@ -26,14 +39,42 @@ export default function MyTasksPage() {
     queryFn: () => api.get<{ items: Task[] }>('/api/v1/tasks', { assignee: 'me', status: scope === 'open' ? 'open-all' : 'done', limit: 300 }),
   });
 
+  // Aufgaben, die gerade abgehakt werden: Haken und Durchstreichen laufen, dann gleitet die Zeile hinaus – erst danach geht die Anfrage los
+  const [completing, setCompleting] = useState<number[]>([]);
+  const listRef = useRef<HTMLDivElement>(null);
+  useFlip(listRef, [data]);
+
   const toggle = useMutation({
     mutationFn: (task: Task) => api.patch<Task>(`/api/v1/tasks/${task.id}`, { status: task.status === 'done' ? 'open' : 'done' }),
-    onSuccess: () => {
+    // Die Zeile verschwindet sofort aus der Liste (die übrigen rücken gleitend nach); bei einem Fehler kommt sie zurück
+    onMutate: async (task) => {
+      await qc.cancelQueries({ queryKey: ['tasks', 'mine', scope] });
+      const previous = qc.getQueryData<{ items: Task[] }>(['tasks', 'mine', scope]);
+      if (previous) qc.setQueryData(['tasks', 'mine', scope], { items: previous.items.filter((x) => x.id !== task.id) });
+      return { previous };
+    },
+    onError: (err, task, context) => {
+      setCompleting((ids) => ids.filter((id) => id !== task.id));
+      if (context?.previous) qc.setQueryData(['tasks', 'mine', scope], context.previous);
+      toast.error(err);
+    },
+    onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['tasks'] });
       void qc.invalidateQueries({ queryKey: ['me'] });
     },
-    onError: (err) => toast.error(err),
   });
+
+  const check = (task: Task) => {
+    if (motionReduced()) {
+      toggle.mutate(task);
+      return;
+    }
+    setCompleting((ids) => [...ids, task.id]);
+    window.setTimeout(() => {
+      toggle.mutate(task);
+      setCompleting((ids) => ids.filter((id) => id !== task.id));
+    }, 640);
+  };
 
   const groups = useMemo<Group[]>(() => {
     const items = data?.items ?? [];
@@ -91,46 +132,56 @@ export default function MyTasksPage() {
       ) : !groups.length ? (
         <EmptyState icon={CheckCircle2} title={t('tasks.myEmpty')} text={t('tasks.myEmptyHint')} />
       ) : (
-        groups.map((group) => (
-          <section key={group.key} className="my-task-group">
-            <h3 className={cx('space-group-title', group.key === 'overdue' && 'danger')}>
-              {group.title} <Badge color={group.key === 'overdue' ? 'red' : 'gray'}>{group.items.length}</Badge>
-            </h3>
-            <ul className="my-task-list">
-              {group.items.map((task) => (
-                <li key={task.id} className={cx('my-task', task.status === 'done' && 'done')}>
-                  <button
-                    type="button"
-                    className="icon-btn"
-                    onClick={() => toggle.mutate(task)}
-                    aria-label={task.status === 'done' ? t('tasks.reopen') : t('tasks.complete')}
-                  >
-                    {task.status === 'done' ? <CheckCircle2 size={18} className="success" /> : <Circle size={18} />}
-                  </button>
-                  <button type="button" className="my-task-main" onClick={() => void openTask(task)}>
-                    <span className="my-task-title">{task.title}</span>
-                    <span className="my-task-meta">
-                      <Link to={`/s/${encodeURIComponent(task.spaceKey)}/tasks?board=${task.boardId}`} onClick={(e) => e.stopPropagation()}>
-                        {task.spaceName} · {task.boardName}
-                      </Link>
-                      {task.page && (
-                        <>
-                          {' · '}
-                          <Link to={task.page.url} onClick={(e) => e.stopPropagation()}>
-                            {task.page.title}
+        <div ref={listRef}>
+          {groups.map((group) => (
+            <section key={group.key} className="my-task-group" data-flip={`group-${group.key}`}>
+              <h3 className={cx('space-group-title', group.key === 'overdue' && 'danger')}>
+                {group.title} <GroupCount n={group.items.length} red={group.key === 'overdue'} />
+              </h3>
+              <ul className="my-task-list">
+                {group.items.map((task, index) => {
+                  const leaving = completing.includes(task.id);
+                  // Während des Abhakens zeigt die Zeile schon den neuen Zustand
+                  const showDone = (task.status === 'done') !== leaving;
+                  return (
+                    <li
+                      key={task.id}
+                      className={cx('my-task', showDone && 'done', leaving && 'is-completing')}
+                      data-flip={`task-${task.id}`}
+                      style={{ ['--i' as string]: Math.min(index, 10) }}
+                    >
+                      <TaskCheck
+                        done={showDone}
+                        label={`${task.status === 'done' ? t('tasks.reopen') : t('tasks.complete')}: ${task.title}`}
+                        disabled={leaving}
+                        onToggle={() => check(task)}
+                      />
+                      <button type="button" className="my-task-main" onClick={() => void openTask(task)}>
+                        <span className="my-task-title">{task.title}</span>
+                        <span className="my-task-meta">
+                          <Link to={`/s/${encodeURIComponent(task.spaceKey)}/tasks?board=${task.boardId}`} onClick={(e) => e.stopPropagation()}>
+                            {task.spaceName} · {task.boardName}
                           </Link>
-                        </>
-                      )}
-                    </span>
-                  </button>
-                  <ChatBadge task={task} />
-                  <PriorityBadge priority={task.priority} />
-                  <DueBadge task={task} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
+                          {task.page && (
+                            <>
+                              {' · '}
+                              <Link to={task.page.url} onClick={(e) => e.stopPropagation()}>
+                                {task.page.title}
+                              </Link>
+                            </>
+                          )}
+                        </span>
+                      </button>
+                      <ChatBadge task={task} />
+                      <PriorityBadge priority={task.priority} />
+                      <DueBadge task={task} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
       {open && <TaskDialog board={open.board} task={open.task} onClose={() => setOpen(null)} />}
     </div>

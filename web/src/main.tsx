@@ -17,6 +17,7 @@ import './styles/shell.css';
 import './styles/features.css';
 import './styles/motion.css';
 import './styles/scene.css';
+import './styles/planner.css';
 // Zuletzt: Die Aussehen „Glas“ und „Papier“ überschreiben Token und einzelne Flächen der übrigen Stylesheets
 import './styles/appearance.css';
 import { I18nProvider } from './i18n';

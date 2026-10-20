@@ -146,6 +146,26 @@ export interface BoardDto {
   createdAt: string;
 }
 
+/** Ein Plan als Projekt: Fortschritt, nächster Termin und Beteiligte auf einen Blick (Übersicht „Projekte“). */
+export interface ProjectDto extends BoardDto {
+  spaceIcon: string | null;
+  spaceColor: string | null;
+  summary: {
+    /** Aufgaben in Arbeit */
+    doing: number;
+    /** Nächste offene Aufgabe mit Termin – der „nächste Meilenstein“ */
+    nextTask: { id: number; title: string; dueDate: string } | null;
+    /** Frühester Beginn und spätester Termin aller Aufgaben */
+    startDate: string | null;
+    dueDate: string | null;
+    /** Wer die meisten Aufgaben hat (höchstens fünf) und wie viele Menschen insgesamt beteiligt sind */
+    assignees: UserRef[];
+    assigneeCount: number;
+    /** Letzte Änderung an einer Aufgabe */
+    updatedAt: string | null;
+  };
+}
+
 export interface TaskInput {
   title?: string;
   notes?: string;
@@ -244,6 +264,46 @@ export class TaskService {
     return this.s.db
       .all<BoardRow>(`SELECT * FROM task_boards WHERE space_id IN (${spaceIds.map(() => '?').join(',')}) ORDER BY name COLLATE NOCASE`, ...spaceIds)
       .map((r) => this.boardDto(auth, r));
+  }
+
+  /** Übersicht „Projekte“: die Pläne aller sichtbaren Bereiche mit Kennzahlen, nächstem Termin und Beteiligten. */
+  projects(auth: AuthContext): ProjectDto[] {
+    this.s.perms.requireUser(auth);
+    return this.allBoards(auth).map((board) => {
+      const space = this.s.spaces.require(board.spaceId);
+      const agg = this.s.db.get<{ doing: number; start_date: string | null; due_date: string | null; updated_at: string | null }>(
+        `SELECT COALESCE(SUM(CASE WHEN status = 'doing' THEN 1 ELSE 0 END), 0) AS doing,
+                MIN(start_date) AS start_date, MAX(due_date) AS due_date, MAX(updated_at) AS updated_at
+           FROM tasks WHERE board_id = ? AND deleted_at IS NULL`,
+        board.id,
+      );
+      const next = this.s.db.get<{ id: number; title: string; due_date: string }>(
+        `SELECT id, title, due_date FROM tasks
+          WHERE board_id = ? AND deleted_at IS NULL AND status != 'done' AND due_date IS NOT NULL
+          ORDER BY due_date, position LIMIT 1`,
+        board.id,
+      );
+      const people = this.s.db.all<{ assignee_id: number }>(
+        `SELECT assignee_id FROM tasks WHERE board_id = ? AND deleted_at IS NULL AND assignee_id IS NOT NULL
+          GROUP BY assignee_id ORDER BY COUNT(*) DESC, assignee_id`,
+        board.id,
+      );
+      const refs = people.map((p) => this.s.users.refOf(p.assignee_id)).filter((u): u is UserRef => !!u);
+      return {
+        ...board,
+        spaceIcon: space.icon,
+        spaceColor: space.color,
+        summary: {
+          doing: agg?.doing ?? 0,
+          nextTask: next ? { id: next.id, title: next.title, dueDate: next.due_date } : null,
+          startDate: agg?.start_date ?? null,
+          dueDate: agg?.due_date ?? null,
+          assignees: refs.slice(0, 5),
+          assigneeCount: refs.length,
+          updatedAt: agg?.updated_at ?? null,
+        },
+      };
+    });
   }
 
   private defaultBuckets(auth: AuthContext): Bucket[] {
@@ -468,7 +528,7 @@ export class TaskService {
   /** Aufgaben über Bereiche hinweg – für „Meine Aufgaben“ und Makros. */
   query(
     auth: AuthContext,
-    filter: { assignee?: 'me' | number; status?: TaskRow['status'] | 'open-all'; dueBefore?: string; spaceKey?: string; boardId?: number; pageId?: number; limit?: number },
+    filter: { assignee?: 'me' | number; status?: TaskRow['status'] | 'open-all'; dueFrom?: string; dueBefore?: string; spaceKey?: string; boardId?: number; pageId?: number; limit?: number },
   ): TaskDto[] {
     this.s.perms.requireUser(auth);
     const spaceIds = filter.spaceKey ? [this.s.spaces.requireViewable(auth, filter.spaceKey).id] : this.s.perms.viewableSpaceIds(auth);
@@ -491,6 +551,10 @@ export class TaskService {
     else if (filter.status) {
       where.push('t.status = ?');
       params.push(filter.status);
+    }
+    if (filter.dueFrom) {
+      where.push('t.due_date IS NOT NULL AND t.due_date >= ?');
+      params.push(filter.dueFrom);
     }
     if (filter.dueBefore) {
       where.push('t.due_date IS NOT NULL AND t.due_date <= ?');

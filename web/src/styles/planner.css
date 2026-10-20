@@ -1,0 +1,1022 @@
+/* ------------------------------------------------------------------
+ * Aufgabenplaner in Bewegung: Haken, Karten, Kalender, Projekte.
+ *
+ * Was sich ändert, soll man sehen: Wer eine Aufgabe abhakt, sieht den Haken zeichnen, den Titel durchstreichen und
+ * die Karte in die letzte Spalte gleiten; Zähler leuchten kurz auf, Fortschritt wächst von null, Karten erscheinen
+ * nacheinander. Alles hängt an den Token – „Glas“ und „Papier“ (appearance.css) färben und runden es um.
+ *
+ * Regeln wie in motion.css: nur `transform` und `opacity` (Ausnahme: Strichlänge der Ringe und Haken, die der
+ * Browser ohnehin auf der Grafikkarte zeichnet); bei reduzierter Bewegung stehen alle Dauern auf null (tokens.css),
+ * und das Gleiten der Karten (lib/flip.ts) bleibt aus.
+ * ------------------------------------------------------------------ */
+
+@keyframes task-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.985);
+  }
+}
+
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+}
+
+@keyframes task-leave {
+  to {
+    opacity: 0;
+    transform: translate3d(18px, 0, 0) scale(0.98);
+  }
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(1);
+  }
+  32% {
+    transform: scale(0.8);
+  }
+  68% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes check-ring {
+  from {
+    opacity: 0.85;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes flash-ring {
+  from {
+    opacity: 0.9;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes value-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes ring-draw {
+  from {
+    stroke-dashoffset: 132;
+  }
+}
+
+@keyframes drop-line-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.6);
+  }
+}
+
+/* Ansichtswechsel (Board, Liste, Zeitachse, Kalender): die neue Ansicht gleitet kurz herein */
+.view-enter {
+  animation: view-in var(--dur-enter) var(--ease-out);
+}
+
+/* ------------------------------ Haken ------------------------------ */
+
+.task-check {
+  --check-bg: var(--success);
+  --check-ink: #fff;
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.75px solid var(--text-faint);
+  background: transparent;
+  color: var(--check-ink);
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    transform var(--dur-slow) var(--ease-spring);
+}
+
+:root[data-theme='dark'] .task-check {
+  --check-ink: #052e16;
+}
+
+.task-check svg {
+  width: 84%;
+  height: 84%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Der Haken zeichnet sich nach: Strichlänge von „unsichtbar“ bis „ganz“ */
+.task-check path {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  transition: stroke-dashoffset 0.34s var(--ease-out) 0.06s;
+}
+
+.task-check:hover:not(:disabled) {
+  border-color: var(--check-bg);
+  transform: scale(1.1);
+}
+
+.task-check:disabled {
+  cursor: default;
+}
+
+.task-check.is-done {
+  background: var(--check-bg);
+  border-color: var(--check-bg);
+}
+
+.task-check.is-done path {
+  stroke-dashoffset: 0;
+}
+
+.task-check.is-pop {
+  animation: check-pop 0.5s var(--ease-spring);
+}
+
+/* Ein Ring schwingt vom Haken aus */
+.task-check.is-pop::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--check-bg);
+  pointer-events: none;
+  animation: check-ring 0.62s var(--ease-out) forwards;
+}
+
+/* ------------------------------ Karten im Plan ------------------------------ */
+
+.task-card {
+  animation: task-in 0.5s var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 34ms);
+}
+
+.task-card[draggable='true'] {
+  cursor: grab;
+}
+
+.task-card-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.task-card-title > .task-check {
+  margin-top: 1px;
+}
+
+/* Durchgestrichen wird sanft: Die Linie blendet ein, wenn die Aufgabe erledigt ist (nicht beim Laden) */
+.task-card-title-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-decoration: line-through;
+  text-decoration-color: transparent;
+  transition:
+    color var(--dur-slow) var(--ease),
+    text-decoration-color var(--dur-slow) var(--ease) 0.08s;
+}
+
+.task-card.done .task-card-title-text {
+  color: var(--text-muted);
+  text-decoration-color: currentColor;
+}
+
+/* Gezogen: die Karte hebt ab, wird leiser und kippt leicht – die Einfügemarke zeigt, wo sie landet */
+.task-card.is-dragging {
+  opacity: 0.55;
+  transform: scale(0.97) rotate(-1.4deg);
+  box-shadow: var(--shadow-lg);
+}
+
+.board-cards {
+  position: relative;
+}
+
+.drop-line {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--accent-gradient);
+  box-shadow: var(--accent-glow);
+  pointer-events: none;
+  z-index: 2;
+  transform-origin: left center;
+  animation: drop-line-in var(--dur) var(--ease-out);
+}
+
+.board-column.drop {
+  box-shadow: inset 0 0 0 2px var(--accent-border);
+}
+
+/* Fortschrittsbalken wachsen von null und folgen Änderungen sanft */
+.task-progress > span {
+  transform-origin: left center;
+  animation: grow-x 0.8s var(--ease-out) backwards;
+  transition: width var(--dur-reveal) var(--ease-out);
+}
+
+/* Zähler und Kennzahlen leuchten kurz auf, wenn sich ihr Wert ändert (useFlash) */
+.is-flash {
+  position: relative;
+}
+
+.is-flash::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 2px solid var(--accent);
+  pointer-events: none;
+  animation: flash-ring 0.95s var(--ease-out) forwards;
+}
+
+/* ------------------------------ Kennzahlen ------------------------------ */
+
+.plan-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+
+.plan-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.75rem 1.05rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+}
+
+.plan-stat-label {
+  font-size: 12px;
+  font-weight: 620;
+  color: var(--text-muted);
+}
+
+.plan-stat-value {
+  align-self: flex-start;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 740;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+  transform-origin: left center;
+}
+
+.plan-stat-value.danger {
+  color: var(--danger-fg);
+}
+
+/* Bei den Kennzahlen federt die Zahl statt eines Rings */
+.plan-stat-value.is-flash {
+  animation: value-pop 0.6s var(--ease-spring);
+}
+
+.plan-stat-value.is-flash::after {
+  display: none;
+}
+
+/* ------------------------------ Meine Aufgaben ------------------------------ */
+
+.my-task {
+  animation: task-in 0.45s var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+.my-task-title {
+  text-decoration: line-through;
+  text-decoration-color: transparent;
+  transition:
+    color var(--dur-slow) var(--ease),
+    text-decoration-color var(--dur-slow) var(--ease) 0.08s;
+}
+
+.my-task.done .my-task-title {
+  text-decoration-color: currentColor;
+}
+
+/* Abgehakt: Haken und Durchstreichen laufen, dann gleitet die Zeile hinaus (die Anfrage folgt nach 640 ms) */
+.my-task.is-completing {
+  animation: task-leave 0.26s var(--ease) 0.38s forwards;
+  pointer-events: none;
+}
+
+/* ------------------------------ Kalender ------------------------------ */
+
+.cal {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.cal-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.8rem;
+}
+
+.cal-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.cal-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 740;
+  letter-spacing: -0.025em;
+  text-transform: capitalize;
+}
+
+/* Umschalter in Segmenten (Monat/Woche, Meine/Alle, Filter der Projekte) */
+.cal-modes {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-muted) 72%, transparent);
+}
+
+.cal-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.85rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.cal-mode:hover {
+  color: var(--text);
+}
+
+.cal-mode.active {
+  background: var(--bg-elevated);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-mode-count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.cal-mode.active .cal-mode-count {
+  color: inherit;
+}
+
+.cal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 1rem;
+  align-items: start;
+}
+
+.cal-main {
+  min-width: 0;
+  padding: 0.4rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.cal-grid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 4px;
+}
+
+.cal-grid th {
+  padding: 0.4rem 0.5rem 0.2rem;
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cal-cell {
+  position: relative;
+  height: 104px;
+  padding: 0.35rem;
+  vertical-align: top;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--bg-soft) 70%, transparent);
+  transition:
+    background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.cal-grid.week .cal-cell {
+  height: 300px;
+}
+
+.cal-cell:hover {
+  background: var(--bg-soft);
+}
+
+.cal-cell.selected {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.cal-num {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+  cursor: pointer;
+}
+
+.cal-cell.outside .cal-num {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.cal-cell.today .cal-num {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.cal-chips {
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
+  min-width: 0;
+}
+
+.cal-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--accent-fg);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 620;
+  text-align: left;
+  cursor: pointer;
+  animation: task-in 0.45s var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 24ms);
+  transition: transform var(--dur) var(--ease-spring);
+}
+
+.cal-chip:hover {
+  transform: translate3d(0, -1px, 0);
+}
+
+.cal-chip-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cal-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-chip[data-priority='high'] {
+  background: var(--warning-soft);
+  color: var(--warning-fg);
+}
+
+.cal-chip[data-priority='urgent'],
+.cal-chip.overdue {
+  background: var(--danger-soft);
+  color: var(--danger-fg);
+}
+
+.cal-chip.done {
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.cal-more {
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  text-align: left;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.cal-more:hover {
+  color: var(--text-strong);
+}
+
+.cal-note {
+  margin: 0.5rem 0.6rem 0.3rem;
+}
+
+/* Blättern: das neue Raster gleitet aus der Richtung herein, in die man blättert */
+@keyframes cal-next {
+  from {
+    opacity: 0;
+    transform: translate3d(22px, 0, 0);
+  }
+}
+
+@keyframes cal-prev {
+  from {
+    opacity: 0;
+    transform: translate3d(-22px, 0, 0);
+  }
+}
+
+.cal-slide.next {
+  animation: cal-next var(--dur-enter) var(--ease-out);
+}
+
+.cal-slide.prev {
+  animation: cal-prev var(--dur-enter) var(--ease-out);
+}
+
+/* Liste des gewählten Tages */
+.cal-panel {
+  position: sticky;
+  top: 1rem;
+  padding: 1rem 1.1rem 1.1rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-panel-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 740;
+  letter-spacing: -0.025em;
+  text-transform: capitalize;
+}
+
+.cal-panel-group:not(:first-of-type) {
+  margin-top: 0.4rem;
+}
+
+.cal-panel-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.9rem 0 0.4rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cal-panel-sub.danger {
+  color: var(--danger-fg);
+}
+
+.cal-list {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cal-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.6rem;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius);
+  animation: task-in 0.45s var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 30ms);
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.cal-item:hover {
+  background: var(--bg-hover);
+}
+
+.cal-item[data-priority='high'] {
+  border-left-color: var(--warning);
+}
+
+.cal-item[data-priority='urgent'] {
+  border-left-color: var(--danger);
+}
+
+.cal-item-main {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cal-item-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  transition: color var(--dur-slow) var(--ease);
+}
+
+.cal-item.done .cal-item-title {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.cal-item-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 1000px) {
+  .cal-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cal-panel {
+    position: static;
+  }
+}
+
+/* Schmal: Das Raster zeigt nur noch, an welchen Tagen etwas ansteht; die Liste darunter nennt es */
+@media (max-width: 640px) {
+  .cal-grid {
+    border-spacing: 2px;
+  }
+
+  .cal-grid th {
+    padding-inline: 0.15rem;
+    text-align: center;
+    letter-spacing: 0;
+  }
+
+  .cal-cell,
+  .cal-grid.week .cal-cell {
+    height: 52px;
+    padding: 0.15rem;
+    text-align: center;
+  }
+
+  .cal-num {
+    margin-inline: auto;
+  }
+
+  .cal-chips {
+    display: none;
+  }
+
+  .cal-cell.busy::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+}
+
+/* ------------------------------ Projekte ------------------------------ */
+
+.projects-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+
+.projects-search {
+  display: flex;
+  align-items: center;
+  flex: 1 1 240px;
+  max-width: 360px;
+  gap: 0.4rem;
+  padding-left: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-input);
+  color: var(--text-muted);
+}
+
+.projects-search .input {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: 1rem;
+}
+
+.project-card {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 1.1rem 1.15rem;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  animation: task-in 0.55s var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+  transition:
+    transform 0.3s var(--ease-spring),
+    box-shadow var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.project-card:hover {
+  transform: translate3d(0, -3px, 0);
+  box-shadow: var(--shadow);
+  border-color: var(--accent-border);
+  text-decoration: none;
+}
+
+.project-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.project-icon {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  font-size: 22px;
+  background: color-mix(in srgb, var(--space-color, var(--accent)) 16%, var(--bg-soft));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--space-color, var(--accent)) 30%, transparent);
+}
+
+.project-title {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.project-name {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.55rem;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.project-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  font-weight: 650;
+}
+
+.project-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.project-status.status-active {
+  background: var(--success-soft);
+  color: var(--success-fg);
+}
+
+.project-status.status-planning {
+  background: var(--info-soft);
+  color: var(--accent-fg);
+}
+
+.project-desc {
+  display: -webkit-box;
+  margin: 0;
+  min-height: 2.9em;
+  overflow: hidden;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-soft);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.project-next {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-soft) 80%, transparent);
+}
+
+.project-next-body {
+  display: grid;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.project-next-label {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+.project-next-title {
+  font-weight: 650;
+  color: var(--text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-next-title.muted {
+  color: var(--text-muted);
+  font-weight: 560;
+}
+
+.project-next-date {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.project-next-date.danger {
+  color: var(--danger-fg);
+}
+
+.project-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* Die Avatare überlappen nur wenig: Der Ring des Nachbarn soll die Initialen nicht anschneiden */
+.project-foot .avatar-stack .avatar + .avatar {
+  margin-left: -2px;
+}
+
+.project-count {
+  margin-left: auto;
+  font-weight: 650;
+  color: var(--text-soft);
+}
+
+.project-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Fortschrittsring: der Bogen zeichnet sich beim Erscheinen */
+.ring {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 52px;
+}
+
+.ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ring-track {
+  fill: none;
+  stroke: var(--bg-muted);
+  stroke-width: 5;
+}
+
+.ring-arc {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  animation: ring-draw 1s var(--ease-out) backwards;
+  transition: stroke-dashoffset var(--dur-reveal) var(--ease-out);
+}
+
+.ring.is-done .ring-arc {
+  stroke: var(--success);
+}
+
+.ring-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 740;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+}

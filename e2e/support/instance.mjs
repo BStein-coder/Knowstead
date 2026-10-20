@@ -118,6 +118,26 @@ export async function startInstance({ port = 3898, ui = 'en' } = {}) {
     await task({ title: 'Approval workflow for policies', bucket: todo, assigneeId: people.lena, startDate: day(10), dueDate: day(17), labels: ['quality'], predecessors: [{ taskId: t4.id, type: 'FS' }] });
     await task({ title: 'Pilot with the IT department', bucket: todo, assigneeId: people.priya, startDate: day(15), dueDate: day(22), labels: ['rollout'], priority: 'high', predecessors: [{ taskId: t5.id, type: 'FS' }] });
     await call('POST', `/api/v1/tasks/${t2.id}/comments`, { body: '<p>Two spaces are imported, history included. The attachments of the third one are still running.</p>' });
+
+    // Weitere Pläne in verschiedenen Zuständen, damit „Projekte“ und „Kalender“ etwas zu zeigen haben
+    const plan = async (name, description, items) => {
+      const created = (await call('POST', '/api/v1/spaces/TEAM/boards', { name, description })).json;
+      for (const item of items) await call('POST', `/api/v1/boards/${created.id}/tasks`, item);
+      return created;
+    };
+    await plan('Customer portal 2.0', 'Self-service portal for support requests and status updates', [
+      { title: 'Design the ticket overview', status: 'done', assigneeId: people.lena, startDate: day(-20), dueDate: day(-12), labels: ['design'] },
+      { title: 'Build the status page', status: 'done', assigneeId: people.tom, startDate: day(-12), dueDate: day(-3), labels: ['frontend'] },
+      { title: 'Connect the ticket system', status: 'doing', progress: 50, assigneeId: people.tom, startDate: day(-4), dueDate: day(3), priority: 'high', labels: ['integration'] },
+      { title: 'Usability test with five customers', assigneeId: people.priya, startDate: day(4), dueDate: day(9), labels: ['research'] },
+      { title: 'Roll out to the first region', assigneeId: me, dueDate: day(21), priority: 'urgent' },
+    ]);
+    await plan('Security review', 'Yearly review of access rights and backups', [
+      { title: 'Review administrator accounts', status: 'done', assigneeId: me, dueDate: day(-18) },
+      { title: 'Test a restore from backup', status: 'done', assigneeId: people.tom, dueDate: day(-9) },
+      { title: 'Document the findings', status: 'done', assigneeId: people.lena, dueDate: day(-5) },
+    ]);
+    await plan('Handbook rollout', 'Introduce the new handbook to every department', []);
     return { base, cookie, ids: { pageId: page.id, boardId: board.id, taskId: t2.id }, call, stop };
   } catch (err) {
     await stop();

@@ -78,7 +78,8 @@ Aufgabe öffnest, gilt der Chat als gelesen; eigene Nachrichten zählen nie als 
 
 ## Steuern und koordinieren
 
-- **Ziehen und ablegen** verschiebt Karten zwischen Spalten und ändert die Reihenfolge.
+- **Ziehen und ablegen** verschiebt Karten zwischen Spalten und ändert die Reihenfolge. Beim Ziehen wird die Karte abgedunkelt und leicht gekippt, die Zielspalte leuchtet, und eine Linie zeigt, wo die Karte landet; beim Ablegen gleitet sie an ihren Platz, die übrigen rücken gleitend nach.
+- **Abhaken auf der Karte**: Der Kreis links vom Titel schließt die Aufgabe ab – der Haken zeichnet sich nach, der Titel wird durchgestrichen und die Karte gleitet in die letzte Spalte. Ein zweiter Klick öffnet sie wieder (zurück in die erste Spalte). Die Zähler der Spalten und die Kennzahlen darüber leuchten dabei kurz auf. Den Kreis sehen nur Personen, die im Bereich bearbeiten dürfen.
 - **Mehrere Karten auf einmal**: Mit gedrückter **Strg**- oder **Umschalttaste** anklicken. Oben erscheint
   eine Leiste, die für alle ausgewählten Karten Verantwortliche, Spalte, Fälligkeit und Priorität setzt,
   sie auf *erledigt* stellt oder in den Papierkorb legt (höchstens 100 auf einmal).
@@ -92,8 +93,8 @@ Aufgabe öffnest, gilt der Chat als gelesen; eigene Nachrichten zählen nie als 
   (Titel, Spalte, Status, Fortschritt, Verantwortliche, Termine, Priorität, Stichwörter, Checkliste,
   Vorgängerinnen, Beschreibung, Anzahl der Nachrichten) – für Besprechungen und Berichte.
 - **Filter** oben: *Alle*, *Meine*, *Offen*, *Überfällig*.
-- **Board, Liste oder Zeitachse**: Die Liste zeigt alle Aufgaben mit Spalte, Verantwortlichen, Fälligkeit, Priorität und Fortschritt in einer Tabelle – praktisch für Besprechungen. Die Zeitachse zeigt die Termine im Überblick (siehe unten).
-- Der Kopf des Plans zeigt die Anzahl der Aufgaben, den **Anteil erledigter** und die **überfälligen** Aufgaben.
+- **Board, Liste, Zeitachse oder Kalender**: Die Liste zeigt alle Aufgaben mit Spalte, Verantwortlichen, Fälligkeit, Priorität und Fortschritt in einer Tabelle – praktisch für Besprechungen. Die Zeitachse und der Kalender zeigen die Termine im Überblick (siehe unten).
+- Über dem Plan stehen vier **Kennzahlen**: *Offen*, *Diese Woche fällig*, *Überfällig* und *Diese Woche erledigt*. Die Zahlen zählen beim Öffnen hoch und leuchten auf, wenn sie sich ändern. Die Zeile darunter nennt die Anzahl der Aufgaben, den **Anteil erledigter** und die **überfälligen** Aufgaben.
 
 ## Zeitachse
 
@@ -103,6 +104,39 @@ Die **Zeitachse** (Symbol neben Board und Liste) stellt jede Aufgabe mit Beginn 
 - Der **Maßstab** lässt sich zwischen Tagen, Wochen und Monaten umschalten; eine Linie markiert heute.
 - Die Aufgaben sind nach Spalten gruppiert und in deren Farbe dargestellt, überfällige rot. Aufgaben nur mit Fälligkeit erscheinen als Markierung am Fälligkeitstag.
 - Die Filter oben (Alle, Meine, Offen, Überfällig) gelten auch hier. Aufgaben ohne Termin stehen darunter; ein Klick auf eine Aufgabe öffnet sie.
+
+## Kalender
+
+Der **Kalender** (Symbol neben der Zeitachse) stellt die Aufgaben an ihrem **Fälligkeitstag** dar – als **Monat** oder als **Woche**:
+
+- Die Pfeile blättern, **Heute** springt zurück; das neue Raster gleitet aus der Richtung herein, in die du blätterst.
+- Aufgaben stehen als Marken im Tag: rot, wenn sie überfällig oder dringend sind, gelb bei hoher Priorität, grau und durchgestrichen, wenn sie erledigt sind. Hat ein Tag mehr als drei, öffnet **+n weitere** die Liste dieses Tages.
+- Rechts steht die **Liste des gewählten Tages** – zunächst heute, mit allem, was **überfällig** ist. Der Kreis davor schließt die Aufgabe ab, ein Klick auf den Titel öffnet sie.
+- Aufgaben **ohne Fälligkeit** erscheinen nicht im Kalender; ein Hinweis darunter nennt ihre Zahl. Die Filter des Plans gelten auch hier.
+- Auf dem Handy zeigt das Raster nur einen Punkt an Tagen mit Terminen; die Liste darunter nennt sie.
+
+**Über alle Bereiche:** Unter **Kalender** (linke Navigation) steht dieselbe Darstellung für alle Aufgaben. **Meine** zeigt, was dir zugewiesen ist, **Alle** alles, was du sehen darfst. Das Überfällige in der Liste von heute stammt aus allen Monaten. **Kalender abonnieren** (oben rechts) bringt die Fälligkeiten in dein Kalenderprogramm (siehe unten).
+
+## Projekte
+
+Unter **Projekte** (linke Navigation) liegen **alle Pläne** aller Bereiche, die du sehen darfst, als Karten – ein Überblick darüber, was läuft:
+
+| Auf der Karte | Bedeutung |
+| --- | --- |
+| **Status** | *In Planung* (keine Aufgaben oder noch nichts begonnen), *In Arbeit* oder *Abgeschlossen* (alle Aufgaben erledigt) |
+| **Ring** | Anteil erledigter Aufgaben; der Bogen zeichnet sich beim Öffnen |
+| **Nächster Termin** | Die früheste offene Aufgabe mit Fälligkeit – mit dem Abstand in Tagen, rot, wenn der Termin verstrichen ist |
+| **Beteiligte** | Wer die meisten Aufgaben hat, zuerst; „+n“ für weitere |
+| **Zeile unten** | Erledigte von allen Aufgaben und das späteste Fälligkeitsdatum |
+
+Oben stehen die Kennzahlen *Aktiv*, *Abgeschlossen*, *Im Plan* (Anteil der laufenden Projekte ohne überfällige Aufgabe) und *Diesen Monat fällig*. Die Filter (*Alle*, *Aktiv*, *In Planung*, *Abgeschlossen*) und das Suchfeld engen die Karten ein; die Suche schaut auf Planname, Bereich und Beschreibung. Ein Klick auf die Karte öffnet den Plan. **Neuer Plan** fragt zuerst nach dem Bereich und öffnet dort den Dialog.
+
+> [!NOTE]
+> Ein „Projekt“ ist hier ein Plan im Aufgabenbereich eines Bereichs – dieselben Pläne, die du dort anlegst. Pläne in Bereichen, die du nicht sehen darfst, erscheinen nicht.
+
+## Bewegung
+
+Haken, Karten und Zähler sind bewusst lebendig: Abgehakte Karten gleiten in die letzte Spalte, Kennzahlen zählen hoch, Fortschrittsbalken und -ringe wachsen von null, Karten und Zeilen erscheinen beim Öffnen nacheinander. Wem das zu unruhig ist, wählt im Benutzermenü **Animationen und 3D-Effekte** aus (oder im Betriebssystem „Bewegung reduzieren“) – dann steht alles sofort an seinem Platz.
 
 ## Abhängigkeiten
 
@@ -175,7 +209,7 @@ Der Kalender aktualisiert sich etwa stündlich; Aufgaben erscheinen als ganztäg
 
 ## Meine Aufgaben
 
-Unter **Meine Aufgaben** (linke Navigation, mit Zähler) siehst du alles, was dir zugewiesen ist – über alle Bereiche hinweg und nach Dringlichkeit gruppiert: *Überfällig*, *Heute*, *Nächste 7 Tage*, *Später*, *Ohne Frist*. Ein Klick auf den Kreis hakt die Aufgabe ab.
+Unter **Meine Aufgaben** (linke Navigation, mit Zähler) siehst du alles, was dir zugewiesen ist – über alle Bereiche hinweg und nach Dringlichkeit gruppiert: *Überfällig*, *Heute*, *Nächste 7 Tage*, *Später*, *Ohne Frist*. Ein Klick auf den Kreis hakt die Aufgabe ab: Der Haken zeichnet sich nach, der Titel wird durchgestrichen, die Zeile gleitet hinaus und die übrigen rücken nach. Dieselben Aufgaben stehen im **Kalender** (linke Navigation) an ihrem Fälligkeitstag, die Pläne im Überblick unter **Projekte**.
 
 ## Aufgaben in Seiten zeigen
 

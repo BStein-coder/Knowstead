@@ -36,6 +36,8 @@ const AnalyticsPage = lazyPage(() => import('./pages/AnalyticsPage'));
 const ReadConfirmationsPage = lazyPage(() => import('./pages/ReadConfirmationsPage'));
 const MyTasksPage = lazyPage(() => import('./pages/tasks/MyTasksPage'));
 const BoardPage = lazyPage(() => import('./pages/tasks/BoardPage'));
+const CalendarPage = lazyPage(() => import('./pages/tasks/CalendarPage'));
+const ProjectsPage = lazyPage(() => import('./pages/tasks/ProjectsPage'));
 const AdminRoutes = lazyPage(() => import('./pages/admin/AdminRoutes'));
 
 const RELOAD_KEY = 'knowstead.reloadedForUpdate';
@@ -126,6 +128,8 @@ export const router = createBrowserRouter([
       { path: 'reviews', element: <Lazy><Guard requireUser><ReviewsPage /></Guard></Lazy> },
       { path: 'changes', element: <Lazy><Guard requireUser><ChangesPage /></Guard></Lazy> },
       { path: 'tasks', element: <Lazy><Guard requireUser><MyTasksPage /></Guard></Lazy> },
+      { path: 'projects', element: <Lazy><Guard requireUser><ProjectsPage /></Guard></Lazy> },
+      { path: 'calendar', element: <Lazy><Guard requireUser><CalendarPage /></Guard></Lazy> },
       { path: 'content-reviews', element: <Lazy><Guard requireUser><ContentReviewsPage /></Guard></Lazy> },
       { path: 'analytics', element: <Lazy><Guard requireUser><AnalyticsPage /></Guard></Lazy> },
       { path: 'read-confirmations', element: <Lazy><Guard requireUser><ReadConfirmationsPage /></Guard></Lazy> },

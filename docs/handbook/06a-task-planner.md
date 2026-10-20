@@ -76,15 +76,16 @@ your own messages never count as unread.
 
 ## Steering and coordinating
 
-- **Drag and drop** moves cards between columns and changes the order.
+- **Drag and drop** moves cards between columns and changes the order. While dragging, the card is dimmed and tilts slightly, the target column lights up and a line shows where the card will land; when dropped it glides into place and the others slide up.
+- **Ticking off on the card**: the circle left of the title completes the task – the tick draws itself, the title is struck through and the card glides into the last column. A second click reopens it (back to the first column). The column counters and the key figures above flash briefly. Only people who may edit in the space see the circle.
 - **Several cards at once**: click them while holding **Ctrl** or **Shift**. A bar appears that sets the assignee, column, due date and priority for all selected cards, marks them done or moves them to the trash (at most 100 at a time).
 - **Live**: if someone else changes something in the same board, it appears without reloading.
 - **Search**: the normal search also finds tasks – by title, description, labels and the **messages in the chat**. The hit opens the card in its board; if the term is in the chat, the hit shows the excerpt with the person's name under *In the chat* and jumps to exactly that message.
 - **Trash**: deleted tasks stay in the space trash and can be restored together with their dependencies. Maintenance removes them after the configured retention time.
 - **Export**: the **Download plan as CSV** icon creates a table with all columns (title, column, status, progress, assignee, dates, priority, labels, checklist, predecessors, description, number of messages) – for meetings and reports.
 - **Filters** at the top: *All*, *Mine*, *Open*, *Overdue*.
-- **Board, list or timeline**: the list shows all tasks with column, assignee, due date, priority and progress in a table – handy for meetings. The timeline gives an overview of the dates (see below).
-- The board header shows the number of tasks, the **share completed** and the **overdue** tasks.
+- **Board, list, timeline or calendar**: the list shows all tasks with column, assignee, due date, priority and progress in a table – handy for meetings. The timeline and the calendar give an overview of the dates (see below).
+- Above the plan are four **key figures**: *Open*, *Due this week*, *Overdue* and *Done this week*. The numbers count up when the plan opens and flash when they change. The line below shows the number of tasks, the **share completed** and the **overdue** tasks.
 
 ## Timeline
 
@@ -94,6 +95,39 @@ The **timeline** (icon next to board and list) shows every task with a start or 
 - The **scale** can be switched between days, weeks and months; a line marks today.
 - Tasks are grouped by column and shown in its colour, overdue ones in red. Tasks with only a due date appear as a marker on the due day.
 - The filters at the top (All, Mine, Open, Overdue) apply here too. Tasks without dates are listed below; clicking a task opens it.
+
+## Calendar
+
+The **calendar** (icon next to the timeline) shows tasks on their **due date** – as a **month** or a **week**:
+
+- The arrows page through, **Today** jumps back; the new grid slides in from the direction you page.
+- Tasks appear as marks within the day: red if overdue or urgent, yellow for high priority, grey and struck through when done. If a day has more than three, **+n more** opens that day's list.
+- On the right is the **list of the selected day** – today at first, including everything that is **overdue**. The circle in front completes the task, a click on the title opens it.
+- Tasks **without a due date** do not appear in the calendar; a note below gives their number. The plan's filters apply here too.
+- On a phone the grid shows only a dot on days with dates; the list below names them.
+
+**Across all spaces:** under **Calendar** (left navigation) the same view shows all tasks. **Mine** shows what is assigned to you, **All** everything you may see. The overdue tasks in today's list come from every month. **Subscribe to calendar** (top right) brings the due dates into your calendar app (see below).
+
+## Projects
+
+Under **Projects** (left navigation) you find **all plans** of all spaces you may see, as cards – an overview of what is running:
+
+| On the card | Meaning |
+| --- | --- |
+| **Status** | *Planning* (no tasks or nothing started yet), *In progress* or *Completed* (all tasks done) |
+| **Ring** | Share of completed tasks; the arc draws itself when the page opens |
+| **Next date** | The earliest open task with a due date – with the distance in days, red if the date has passed |
+| **People** | Whoever has the most tasks first; "+n" for more |
+| **Bottom line** | Completed out of all tasks and the latest due date |
+
+At the top are the key figures *Active*, *Completed*, *On track* (share of running projects without overdue tasks) and *Due this month*. The filters (*All*, *Active*, *Planning*, *Completed*) and the search box narrow the cards; the search looks at plan name, space and description. A click on the card opens the plan. **New plan** first asks for the space and opens the dialog there.
+
+> [!NOTE]
+> A "project" here is a plan in the task area of a space – the same plans you create there. Plans in spaces you may not see do not appear.
+
+## Motion
+
+Ticks, cards and counters are deliberately lively: ticked cards glide into the last column, key figures count up, progress bars and rings grow from zero, cards and rows appear one after another. If that is too restless, switch off **Animations and 3D effects** in the user menu (or choose "Reduce motion" in the operating system) – everything is then in place immediately.
 
 ## Dependencies
 
@@ -147,7 +181,7 @@ The calendar updates roughly every hour; tasks appear as all-day events with a l
 
 ## My tasks
 
-Under **My tasks** (left navigation, with counter) you see everything assigned to you – across all spaces and grouped by urgency: *Overdue*, *Today*, *Next 7 days*, *Later*, *No due date*. Clicking the circle ticks off the task.
+Under **My tasks** (left navigation, with counter) you see everything assigned to you – across all spaces and grouped by urgency: *Overdue*, *Today*, *Next 7 days*, *Later*, *No due date*. Clicking the circle ticks off the task: the tick draws itself, the title is struck through, the row glides out and the others move up. The same tasks appear in the **calendar** (left navigation) on their due date, and the plans at a glance under **Projects**.
 
 ## Showing tasks in pages
 

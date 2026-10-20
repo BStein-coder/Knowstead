@@ -7,6 +7,7 @@ import {
   CalendarDays,
   FilePlus2,
   FileText,
+  FolderKanban,
   FolderOpen,
   Home,
   type LucideIcon,
@@ -82,6 +83,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         ? [
             { id: 'c-drafts', group: 'commands' as const, label: t('nav.drafts'), icon: FileText, run: () => go('/drafts') },
             { id: 'c-journal', group: 'commands' as const, label: t('app.today'), icon: CalendarDays, run: () => go('/journal') },
+            { id: 'c-projects', group: 'commands' as const, label: t('nav.projects'), icon: FolderKanban, run: () => go('/projects') },
+            { id: 'c-calendar', group: 'commands' as const, label: t('nav.calendar'), icon: CalendarDays, run: () => go('/calendar') },
             { id: 'c-profile', group: 'commands' as const, label: t('app.profile'), icon: User, run: () => go('/profile') },
           ]
         : []),
