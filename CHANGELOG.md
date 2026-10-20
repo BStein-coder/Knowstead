@@ -9,7 +9,10 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
-## [Unveröffentlicht]
+## [2.2.0] – 2026-10-20
+
+Zwei neue Aussehen („Glas“ und „Papier“), ein Aufgabenplaner in Bewegung mit Kalender, eine Übersicht aller Projekte
+und eine Kontrastprüfung, die auch Lichtflecken und Glas hinter Text misst.
 
 ### Neu
 
