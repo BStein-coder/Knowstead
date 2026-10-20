@@ -117,3 +117,40 @@ test('Aufgaben im Zeitraum: dueFrom und dueBefore begrenzen nach unten und oben'
     await ctx.close();
   }
 });
+
+test('Aufgaben im Kalender: spanFrom und spanTo finden alles, dessen Zeitraum den Ausschnitt berührt', async () => {
+  const ctx = await createTestApp();
+  const admin = new Client(ctx.app);
+  try {
+    await admin.post('/api/v1/setup', { siteName: 'Test', username: 'admin', displayName: 'Ada', password: 'geheim-geheim', sampleContent: false });
+    assert.equal((await admin.post('/api/v1/spaces', { key: 'ZEIT', name: 'Zeit', preset: 'open' })).status, 200);
+    const boardId = (await admin.post('/api/v1/spaces/ZEIT/boards', { name: 'Zeiträume' })).body.id as number;
+    const make = async (title: string, startDate: string | null, dueDate: string | null) => {
+      const res = await admin.post(`/api/v1/boards/${boardId}/tasks`, { title, startDate, dueDate });
+      assert.equal(res.status, 200, res.raw);
+    };
+    await make('Davor', '2099-02-01', '2099-02-10');
+    await make('Beginnt davor, endet drin', '2099-02-25', '2099-03-05');
+    await make('Mittendrin', '2099-03-10', '2099-03-12');
+    await make('Überspannt alles', '2099-02-20', '2099-04-10');
+    await make('Beginnt drin, endet danach', '2099-03-28', '2099-04-05');
+    await make('Danach', '2099-04-10', '2099-04-20');
+    await make('Nur Beginn', '2099-03-15', null);
+    await make('Nur Fälligkeit', null, '2099-03-31');
+    await make('Ohne Termin', null, null);
+    const titles = async (query: string) => ((await admin.get(`/api/v1/tasks?board=${boardId}&${query}`)).body.items as { title: string }[]).map((x) => x.title).sort();
+    assert.deepEqual(await titles('spanFrom=2099-03-01&spanTo=2099-03-31'), [
+      'Beginnt davor, endet drin',
+      'Beginnt drin, endet danach',
+      'Mittendrin',
+      'Nur Beginn',
+      'Nur Fälligkeit',
+      'Überspannt alles',
+    ]);
+    assert.deepEqual(await titles('spanFrom=2099-03-05&spanTo=2099-03-05'), ['Beginnt davor, endet drin', 'Überspannt alles'], 'ein einzelner Tag, Grenzen eingeschlossen');
+    assert.deepEqual(await titles('spanFrom=2099-04-11'), ['Danach'], 'nur eine untere Grenze: alles, was dann noch läuft oder beginnt');
+    assert.ok(!(await titles('spanFrom=2099-01-01&spanTo=2099-12-31')).includes('Ohne Termin'), 'ohne Beginn und Fälligkeit nie dabei');
+  } finally {
+    await ctx.close();
+  }
+});

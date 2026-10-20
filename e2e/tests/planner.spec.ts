@@ -128,7 +128,7 @@ test.describe('Plan: Haken und Karten in Bewegung', () => {
     await expect(calendar).toBeVisible();
     const chip = calendar.locator('.cal-cell.today .cal-chip', { hasText: 'Heute dran' });
     await expect(chip).toBeVisible();
-    await expect(calendar.getByText('1 ohne Fälligkeit – nicht im Kalender')).toBeVisible();
+    await expect(calendar.getByText('1 ohne Termin – nicht im Kalender')).toBeVisible();
     await expectAccessible(page, '.cal');
     await chip.click();
     await expect(page.getByRole('dialog', { name: 'Aufgabe' })).toBeVisible();
@@ -211,6 +211,57 @@ test.describe('Meine Aufgaben und Kalender', () => {
     await page.getByRole('button', { name: 'Monat', exact: true }).click();
     await page.getByRole('button', { name: 'Zurück' }).click();
     await expect(title).toHaveText(monthName(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)));
+    await expectAccessible(page, '.cal');
+  });
+});
+
+test.describe('Kalender: Aufgaben mit Zeitraum', () => {
+  test.use({ storageState: AUTH.editor });
+
+  test('Beginn bis Fälligkeit ergibt einen durchgehenden Balken; ein einzelner Beginn steht an seinem Tag', async ({ page, seed }) => {
+    // Diese Woche, Montag bis Mittwoch – liegt immer im sichtbaren Monat, auch am Monatsrand
+    const now = new Date();
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+    const at = (days: number) => ymd(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + days));
+    await createPlan(page, seed, [
+      { title: 'Mehrtägig', body: { assigneeId: seed.editorId, startDate: at(0), dueDate: at(2) } },
+      { title: 'Nur Beginn', body: { assigneeId: seed.editorId, startDate: at(4) } },
+      { title: 'Langläufer', body: { assigneeId: seed.editorId, startDate: ymd(new Date(now.getTime() - 40 * 86400000)), dueDate: ymd(new Date(now.getTime() + 40 * 86400000)) } },
+    ]);
+    await page.goto('/calendar');
+    await ready(page);
+
+    // Ein Balken über drei Zellen – nicht drei Marken
+    const bar = page.locator('.cal-chip', { hasText: 'Mehrtägig' });
+    await expect(bar).toHaveCount(1);
+    const cell = (await bar.locator('xpath=ancestor::td').boundingBox())!;
+    const width = (await bar.boundingBox())!.width;
+    expect(width, 'reicht über drei Tage').toBeGreaterThan(cell.width * 2.5);
+    expect(width, 'und nicht darüber hinaus').toBeLessThan(cell.width * 3.2);
+    await expect(bar).toHaveAttribute('aria-label', /Mehrtägig · .+ – .+/);
+
+    // Ein einzelner Beginn steht an diesem Tag (Freitag der Woche)
+    const row = bar.locator('xpath=ancestor::tr');
+    await expect(row.locator('td').nth(4).locator('.cal-chip', { hasText: 'Nur Beginn' })).toBeVisible();
+
+    // Wer den Zeitraum nur berührt oder ganz überspannt, wird geladen: der Langläufer steht in jeder Wochenzeile des Monats
+    expect(await page.locator('.cal-chip', { hasText: 'Langläufer' }).count()).toBeGreaterThanOrEqual(4);
+
+    // Liste eines Tages mitten im Zeitraum (Dienstag): „läuft bis …“
+    await row.locator('td').nth(1).locator('.cal-num').click();
+    const item = page.locator('.cal-panel .cal-item', { hasText: 'Mehrtägig' });
+    await expect(item).toBeVisible();
+    await expect(item).toContainText('läuft bis');
+    // Am ersten Tag: „Beginn · bis …“
+    await row.locator('td').nth(0).locator('.cal-num').click();
+    await expect(page.locator('.cal-panel .cal-item', { hasText: 'Mehrtägig' })).toContainText('Beginn · bis');
+    // Am Freitag steht der einzelne Beginn in der Liste
+    await row.locator('td').nth(4).locator('.cal-num').click();
+    await expect(page.locator('.cal-panel .cal-item', { hasText: 'Nur Beginn' })).toContainText('Beginn');
+
+    // Wochenansicht: derselbe Balken, einmal
+    await page.getByRole('button', { name: 'Woche', exact: true }).click();
+    await expect(page.locator('.cal-grid.week .cal-chip', { hasText: 'Mehrtägig' })).toHaveCount(1);
     await expectAccessible(page, '.cal');
   });
 });

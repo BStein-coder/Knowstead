@@ -38,8 +38,9 @@ und eine Kontrastprüfung, die auch Lichtflecken und Glas hinter Text misst.
   übrigen rücken nach. Über dem Plan stehen vier **Kennzahlen** (offen, diese Woche fällig, überfällig, diese Woche
   erledigt), deren Zahlen hochzählen. Bei reduzierter Bewegung springen die Karten wie zuvor (`web/src/lib/flip.ts`,
   `web/src/styles/planner.css`).
-- **Kalender**: Fälligkeiten als **Monat** oder **Woche** mit der Liste des gewählten Tages (heute samt allem
-  Überfälligen), Blättern mit Gleiten, Abhaken in der Liste. Als vierte **Ansicht im Plan** (neben Board, Liste und
+- **Kalender**: Termine als **Monat** oder **Woche** – eine Aufgabe mit Beginn und Fälligkeit steht als **durchgehender
+  Balken über ihren ganzen Zeitraum**, mit nur einem der beiden Termine an diesem Tag – mit der Liste des gewählten
+  Tages (fällig, läuft, heute samt allem Überfälligen), Blättern mit Gleiten, Abhaken in der Liste. Als vierte **Ansicht im Plan** (neben Board, Liste und
   Zeitachse) und als eigene Seite **Kalender** über alle Bereiche, mit **Meine** und **Alle**. Auf dem Handy zeigt das
   Raster Punkte, die Liste darunter nennt die Aufgaben.
 - **Projekte**: Neue Übersicht aller Pläne der sichtbaren Bereiche als Karten – Status (in Planung, in Arbeit,
@@ -47,7 +48,8 @@ und eine Kontrastprüfung, die auch Lichtflecken und Glas hinter Text misst.
   Fälligkeitsdatum; Kennzahlen, Filter und Suche; **Neuer Plan** fragt nach dem Bereich. Beide Seiten stehen in der
   Navigation und in der Befehlspalette.
 - Schnittstelle: `GET /api/v1/projects` (Pläne mit `summary`: in Arbeit, nächste Aufgabe, Beginn, Ende, Beteiligte) und
-  der Filter `dueFrom` für `GET /api/v1/tasks` (zusammen mit `dueBefore` ein Zeitraum). Jetzt 273 Operationen.
+  die Filter `dueFrom` (zusammen mit `dueBefore` ein Zeitraum der Fälligkeiten) sowie `spanFrom`/`spanTo` (Aufgaben, deren
+  Zeitraum Beginn–Fälligkeit den Ausschnitt berührt oder ganz überspannt) für `GET /api/v1/tasks`. Jetzt 273 Operationen.
 
 ### Barrierefreiheit
 

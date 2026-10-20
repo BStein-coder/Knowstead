@@ -528,7 +528,7 @@ export class TaskService {
   /** Aufgaben über Bereiche hinweg – für „Meine Aufgaben“ und Makros. */
   query(
     auth: AuthContext,
-    filter: { assignee?: 'me' | number; status?: TaskRow['status'] | 'open-all'; dueFrom?: string; dueBefore?: string; spaceKey?: string; boardId?: number; pageId?: number; limit?: number },
+    filter: { assignee?: 'me' | number; status?: TaskRow['status'] | 'open-all'; dueFrom?: string; dueBefore?: string; spanFrom?: string; spanTo?: string; spaceKey?: string; boardId?: number; pageId?: number; limit?: number },
   ): TaskDto[] {
     this.s.perms.requireUser(auth);
     const spaceIds = filter.spaceKey ? [this.s.spaces.requireViewable(auth, filter.spaceKey).id] : this.s.perms.viewableSpaceIds(auth);
@@ -559,6 +559,19 @@ export class TaskService {
     if (filter.dueBefore) {
       where.push('t.due_date IS NOT NULL AND t.due_date <= ?');
       params.push(filter.dueBefore);
+    }
+    // Zeitraum einer Aufgabe = Beginn bis Fälligkeit; fehlt eines von beiden, zählt das andere als einziger Tag.
+    // Gefragt sind Aufgaben, deren Zeitraum den angegebenen berührt (auch solche, die ihn ganz überspannen).
+    if (filter.spanFrom || filter.spanTo) {
+      where.push('(t.start_date IS NOT NULL OR t.due_date IS NOT NULL)');
+      if (filter.spanTo) {
+        where.push('MIN(COALESCE(t.start_date, t.due_date), COALESCE(t.due_date, t.start_date)) <= ?');
+        params.push(filter.spanTo);
+      }
+      if (filter.spanFrom) {
+        where.push('MAX(COALESCE(t.start_date, t.due_date), COALESCE(t.due_date, t.start_date)) >= ?');
+        params.push(filter.spanFrom);
+      }
     }
     const rows = this.s.db.all<TaskRow & { board_name: string }>(
       `SELECT t.*, b.name AS board_name FROM tasks t JOIN task_boards b ON b.id = t.board_id

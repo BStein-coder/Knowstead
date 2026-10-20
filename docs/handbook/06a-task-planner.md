@@ -98,12 +98,12 @@ The **timeline** (icon next to board and list) shows every task with a start or 
 
 ## Calendar
 
-The **calendar** (icon next to the timeline) shows tasks on their **due date** – as a **month** or a **week**:
+The **calendar** (icon next to the timeline) shows tasks with their **dates** – as a **month** or a **week**:
 
 - The arrows page through, **Today** jumps back; the new grid slides in from the direction you page.
-- Tasks appear as marks within the day: red if overdue or urgent, yellow for high priority, grey and struck through when done. If a day has more than three, **+n more** opens that day's list.
-- On the right is the **list of the selected day** – today at first, including everything that is **overdue**. The circle in front completes the task, a click on the title opens it.
-- Tasks **without a due date** do not appear in the calendar; a note below gives their number. The plan's filters apply here too.
+- A task with **start and due date** appears as a **continuous bar** across its whole period; a period across the weekend continues in the next row. With only one of the two dates it appears on that day. The colour shows the state: red if overdue or urgent, yellow for high priority, grey and struck through when done. If a day has more than three bars, **+n more** opens that day's list.
+- On the right is the **list of the selected day** – today at first, including everything that is **overdue**. It tells apart what is **due** that day and what is **ongoing** ("until 23 Oct", on the first day "Starts · until …"). The circle in front completes the task, a click on the title opens it.
+- Tasks **without a start and without a due date** do not appear in the calendar; a note below gives their number. The plan's filters apply here too.
 - On a phone the grid shows only a dot on days with dates; the list below names them.
 
 **Across all spaces:** under **Calendar** (left navigation) the same view shows all tasks. **Mine** shows what is assigned to you, **All** everything you may see. The overdue tasks in today's list come from every month. **Subscribe to calendar** (top right) brings the due dates into your calendar app (see below).

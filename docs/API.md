@@ -649,6 +649,10 @@ curl -H "Authorization: Bearer $KNOWSTEAD_TOKEN" \
 # Zeitraum (beide Grenzen einschließlich; Aufgaben ohne Fälligkeit gehören nie dazu) – so lädt der Kalender seinen Monat
 curl -H "Authorization: Bearer $KNOWSTEAD_TOKEN" \
   "https://knowstead.example.com/api/v1/tasks?dueFrom=2026-10-01&dueBefore=2026-10-31&limit=500"
+# Terminzeitraum (Beginn bis Fälligkeit; fehlt eines, zählt das andere als einziger Tag): alles, was den Ausschnitt berührt
+# oder ganz überspannt – so lädt der Kalender seinen Monat, damit auch lange Aufgaben als Balken erscheinen
+curl -H "Authorization: Bearer $KNOWSTEAD_TOKEN" \
+  "https://knowstead.example.com/api/v1/tasks?spanFrom=2026-10-01&spanTo=2026-10-31&limit=500"
 
 # Projekte: alle Pläne der sichtbaren Bereiche mit Kennzahlen, nächstem Termin und Beteiligten (Übersicht „Projekte“)
 curl -H "Authorization: Bearer $KNOWSTEAD_TOKEN" https://knowstead.example.com/api/v1/projects

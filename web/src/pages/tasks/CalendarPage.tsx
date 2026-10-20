@@ -26,7 +26,8 @@ export default function CalendarPage() {
 
   const tasks = useQuery({
     queryKey: ['tasks', 'calendar', scope, range?.from, range?.to],
-    queryFn: () => api.get<{ items: Task[] }>('/api/v1/tasks', { assignee, dueFrom: range?.from, dueBefore: range?.to, limit: 500 }),
+    // Zeitraum: alles, dessen Beginn-bis-Fälligkeit den sichtbaren Ausschnitt berührt – auch was ihn ganz überspannt
+    queryFn: () => api.get<{ items: Task[] }>('/api/v1/tasks', { assignee, spanFrom: range?.from, spanTo: range?.to, limit: 500 }),
     enabled: !!range,
     // Beim Blättern bleibt der alte Monat stehen, bis der neue da ist – das Raster flackert nicht leer
     placeholderData: (previous) => previous,

@@ -468,7 +468,7 @@
 }
 
 .cal-grid.week .cal-cell {
-  height: 300px;
+  height: 240px;
 }
 
 .cal-cell:hover {
@@ -505,22 +505,36 @@
   color: var(--accent-text);
 }
 
+/* Bahnen untereinander; ein Balken (`lead`) reicht über die Zellen, die sein Zeitraum umfasst */
 .cal-chips {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 3px;
   margin-top: 4px;
   min-width: 0;
 }
 
+.cal-gap {
+  flex: none;
+  height: 22px;
+}
+
 .cal-chip {
+  position: relative;
+  z-index: 1;
+  flex: none;
   display: flex;
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
-  padding: 2px 6px;
+  height: 22px;
+  padding: 0 8px;
   border: 0;
   border-radius: 7px;
-  background: var(--accent-soft);
+  /* Deckend: Die Tönung liegt über einem festen Grund, sonst scheint der Rahmen des gewählten Tages durch die Schrift */
+  --chip-tint: var(--accent-soft);
+  background: linear-gradient(var(--chip-tint), var(--chip-tint)), var(--bg-elevated);
   color: var(--accent-fg);
   font: inherit;
   font-size: 11.5px;
@@ -534,6 +548,23 @@
 
 .cal-chip:hover {
   transform: translate3d(0, -1px, 0);
+}
+
+/* Breite = Zellen des Zeitraums samt Zwischenraum (Zellrand 0,35 rem, Abstand 4 px), an den echten Enden 2 px Abstand */
+.cal-chip.lead {
+  width: calc(var(--span, 1) * (100% + 0.7rem) + (var(--span, 1) - 1) * 4px - var(--inset-l, 0px) - var(--inset-r, 0px));
+  margin-left: calc(-0.35rem + var(--inset-l, 0px));
+}
+
+/* Läuft der Zeitraum aus der Vorwoche herein oder in die nächste weiter, bleibt die Kante gerade */
+.cal-chip.from-before {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.cal-chip.to-after {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .cal-chip-dot {
@@ -552,18 +583,18 @@
 }
 
 .cal-chip[data-priority='high'] {
-  background: var(--warning-soft);
+  --chip-tint: var(--warning-soft);
   color: var(--warning-fg);
 }
 
 .cal-chip[data-priority='urgent'],
 .cal-chip.overdue {
-  background: var(--danger-soft);
+  --chip-tint: var(--danger-soft);
   color: var(--danger-fg);
 }
 
 .cal-chip.done {
-  background: var(--bg-muted);
+  --chip-tint: var(--bg-muted);
   color: var(--text-muted);
   text-decoration: line-through;
 }

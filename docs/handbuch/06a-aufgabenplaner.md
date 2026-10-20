@@ -107,12 +107,12 @@ Die **Zeitachse** (Symbol neben Board und Liste) stellt jede Aufgabe mit Beginn 
 
 ## Kalender
 
-Der **Kalender** (Symbol neben der Zeitachse) stellt die Aufgaben an ihrem **Fälligkeitstag** dar – als **Monat** oder als **Woche**:
+Der **Kalender** (Symbol neben der Zeitachse) stellt die Aufgaben mit ihren **Terminen** dar – als **Monat** oder als **Woche**:
 
 - Die Pfeile blättern, **Heute** springt zurück; das neue Raster gleitet aus der Richtung herein, in die du blätterst.
-- Aufgaben stehen als Marken im Tag: rot, wenn sie überfällig oder dringend sind, gelb bei hoher Priorität, grau und durchgestrichen, wenn sie erledigt sind. Hat ein Tag mehr als drei, öffnet **+n weitere** die Liste dieses Tages.
-- Rechts steht die **Liste des gewählten Tages** – zunächst heute, mit allem, was **überfällig** ist. Der Kreis davor schließt die Aufgabe ab, ein Klick auf den Titel öffnet sie.
-- Aufgaben **ohne Fälligkeit** erscheinen nicht im Kalender; ein Hinweis darunter nennt ihre Zahl. Die Filter des Plans gelten auch hier.
+- Eine Aufgabe mit **Beginn und Fälligkeit** steht als **durchgehender Balken** über ihren ganzen Zeitraum; bei einem Zeitraum über das Wochenende setzt sich der Balken in der nächsten Zeile fort. Hat sie nur einen der beiden Termine, steht sie an diesem Tag. Die Farbe zeigt den Zustand: rot, wenn sie überfällig oder dringend ist, gelb bei hoher Priorität, grau und durchgestrichen, wenn sie erledigt ist. Hat ein Tag mehr als drei Balken, öffnet **+n weitere** die Liste dieses Tages.
+- Rechts steht die **Liste des gewählten Tages** – zunächst heute, mit allem, was **überfällig** ist. Sie unterscheidet, was an dem Tag **fällig** ist und was **läuft** („läuft bis 23. Okt.“, am ersten Tag „Beginn · bis …“). Der Kreis davor schließt die Aufgabe ab, ein Klick auf den Titel öffnet sie.
+- Aufgaben **ohne Beginn und ohne Fälligkeit** erscheinen nicht im Kalender; ein Hinweis darunter nennt ihre Zahl. Die Filter des Plans gelten auch hier.
 - Auf dem Handy zeigt das Raster nur einen Punkt an Tagen mit Terminen; die Liste darunter nennt sie.
 
 **Über alle Bereiche:** Unter **Kalender** (linke Navigation) steht dieselbe Darstellung für alle Aufgaben. **Meine** zeigt, was dir zugewiesen ist, **Alle** alles, was du sehen darfst. Das Überfällige in der Liste von heute stammt aus allen Monaten. **Kalender abonnieren** (oben rechts) bringt die Fälligkeiten in dein Kalenderprogramm (siehe unten).
