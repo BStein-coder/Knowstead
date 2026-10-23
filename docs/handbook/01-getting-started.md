@@ -58,7 +58,7 @@ Via **Create → Daily note** Knowstead automatically creates a page for today �
 
 In the user menu you choose **Light**, **Dark** or **System**, the **appearance** and the language (German/English). The settings are stored in your profile and apply on all devices – including emails and exports.
 
-### Appearance: Classic, Glass, Paper
+### Appearance: Classic, Glass, Paper, Frost
 
 Besides the colour scheme (light/dark), the **appearance** decides how the interface is designed. It combines freely with Light and Dark, and your installation's accent colour is kept in every appearance.
 
@@ -67,8 +67,12 @@ Besides the colour scheme (light/dark), the **appearance** decides how the inter
 | **Classic** | The default: plain and practical, floating glass layers for navigation and the top bar, calm cards. |
 | **Glass** | Spacious and luminous: wide rounding, translucent cards with a bright edge in front of strong pools of light, large page titles, tabs as segments. |
 | **Paper** | Warm and calm: a warm gradient as the ground, flat cards on paper, **ink** instead of the accent colour for main actions, active entries and tabs; the home page without the 3D scene. |
+| **Frost** | Looks like glass but needs hardly any processing power: opaque surfaces with a bright edge and small shadows, a calm colour gradient as the ground, main actions with a solid edge at the bottom like a key. No blur, no 3D scene, no tilt towards the mouse pointer. Meant for older devices, terminal servers and virtual machines. |
 
 You choose the appearance in the user menu under **Appearance** or in the profile under *Settings → Appearance*. The choice applies to your account on all devices; before you sign in, the choice last made on this device applies. Every combination reaches a contrast of **4.5 : 1** (WCAG AA); with *Motion and effects → Reduced* or "Reduce transparency" in the operating system, the blur behind the glass is dropped.
+
+> [!TIP]
+> **Does Knowstead feel sluggish** – in a terminal server, over remote access, on an older computer? Choose **Frost**. In measurements without a graphics card (software rendering), Frost needed about a sixth of Glass's processing work when scrolling the home page and stayed smooth where Classic and Glass stuttered – and nothing keeps running when idle. If you only want to get rid of the motion, switch off **Animations and 3D effects** in the user menu.
 
 ### Motion and 3D effects
 

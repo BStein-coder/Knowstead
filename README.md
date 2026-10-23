@@ -87,7 +87,7 @@ Plans come as **projects** – every plan of your spaces with progress ring, nex
 
 The interface comes with light and dark design, keyboard shortcuts, a command palette (`Ctrl`+`K`), a
 responsive layout for phones and tablets and is checked automatically against **WCAG 2.1 AA** on every
-page – in three selectable appearances (Classic, Glass, Paper), each in light and dark, with the contrast measured
+page – in four selectable appearances (Classic, Glass, Paper and the resource-saving Frost), each in light and dark, with the contrast measured
 against the pixels actually drawn. Quality assurance: 452 server tests, 298 browser tests and a layout sweep over every page in five
 window widths.
 

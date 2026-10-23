@@ -29,7 +29,7 @@ const option = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 };
-const looks = option('look', 'classic,glass,paper').split(',');
+const looks = option('look', 'classic,glass,paper,frost').split(',');
 const schemes = option('scheme', 'light,dark').split(',');
 const width = Number(option('width', 1440));
 const height = Number(option('height', 900));

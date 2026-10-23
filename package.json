@@ -21,6 +21,7 @@
     "test:sweep": "npm run build && npm --prefix e2e run sweep",
     "test:english": "npm run build && npm --prefix e2e run scan:english",
     "test:contrast": "npm run build && npm --prefix e2e run scan:contrast",
+    "test:perf": "npm run build && npm --prefix e2e run scan:perf",
     "lint": "eslint . && node --disable-warning=ExperimentalWarning scripts/check-i18n.mjs && node scripts/check-docs.mjs",
     "typecheck": "tsc -p server/tsconfig.json && tsc -p web/tsconfig.json"
   },

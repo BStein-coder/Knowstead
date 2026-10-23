@@ -22,6 +22,7 @@ führt der Einrichtungsassistent durch die Kontoanlage.
 | `npm run test:e2e` | Oberfläche bauen und die Browsertests ausführen ([e2e/README.md](../e2e/README.md)) |
 | `npm run test:english` | Oberfläche bauen und die englische Oberfläche nach deutschen Resten absuchen – Wörter, Datums- und Zahlenschreibweise, Feldinhalte ([e2e/README.md](../e2e/README.md)) |
 | `npm run test:contrast` | Oberfläche bauen und den Kontrast jedes Textes gegen die gezeichneten Bildpunkte messen – klassisch, Glas und Papier, hell und dunkel ([e2e/README.md](../e2e/README.md)) |
+| `npm run test:perf` | Oberfläche bauen und messen, was Klassisch, Glas, Papier und Frost kosten – Leerlauf, Bilder je Sekunde, CPU- und Grafikarbeit; mit `-- --software` ohne Grafikkarte ([e2e/README.md](../e2e/README.md)) |
 | `npm run build` | Oberfläche nach `web/dist` bauen |
 | `npm start` | Produktivstart aus dem Quelltext |
 | `npm run cli -- help` | Verwaltungswerkzeug (`status`, `backup`, `backup:list`, `restore`, Konten) |

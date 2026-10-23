@@ -22,6 +22,11 @@ und eine Kontrastprüfung, die auch Lichtflecken und Glas hinter Text misst.
     Seitentitel, Reiter als Segmente, leuchtende Hauptaktionen.
   - **Papier**: warmer Farbverlauf als Grund, flache Karten mit feinem Rand, „Tinte“ statt Akzentfarbe für
     Hauptaktionen, aktive Einträge und Reiter; die Startseite ohne 3D-Szene.
+  - **Frost**: die Glasoptik ohne Glas, für schwache Rechner, Terminalserver und virtuelle Maschinen. Deckende Flächen mit
+    hellem Rand und kleinen Schatten, ein ruhiger Verlauf als Grund, Hauptaktionen mit festem Rand unten; ohne
+    Unschärfe, ohne Masken, ohne Lichtschleier, ohne 3D-Szene, ohne Neigung zum Zeiger. Ohne Grafikkarte brauchte es beim
+    Scrollen der Startseite in der Messung rund ein Sechstel der CPU-Arbeit von Glas (206 gegen 1 234 ms je Sekunde) und
+    etwa ein Zwölftel der Grafikarbeit, bei 60 statt 30 Bildern je Sekunde; im Leerlauf läuft nichts mit.
   - Die Wahl gilt im Konto auf allen Geräten (`preferences.appearance`) und wird zusätzlich auf dem Gerät gemerkt,
     damit schon die Anmeldeseite stimmt. **Klassisch** bleibt die Vorgabe und ist unverändert. Die Akzentfarbe der
     Installation gilt in allen Aussehen; „Bewegung reduziert“ und „Transparenz reduzieren“ nehmen auch hier die
@@ -89,6 +94,9 @@ und eine Kontrastprüfung, die auch Lichtflecken und Glas hinter Text misst.
   Meine Aufgaben, Kalender (Seite und Ansicht im Plan), Projekte; dazu `server/test/task-projects.test.ts`. Die neuen
   Seiten stehen in Rundgang, Barrierefreiheitsprüfung (hell, dunkel, Glas, Papier), Layout-Messung, Kontrastprüfung und der
   Suche nach deutschen Resten.
+- Neu: `npm run test:perf` (`e2e/perf-probe.mjs`) misst, was ein Aussehen kostet – Leerlauf, Bilder je Sekunde beim
+  Scrollen, CPU- und Grafikarbeit laut Ablaufprotokoll –, auf Wunsch mit gebremstem Browser und ohne Grafikkarte
+  (`--software`). Damit lassen sich Klassisch, Glas, Papier und Frost vergleichen.
 - Neu: `npm --prefix e2e run shots` (Bildschirmfotos je Aussehen und Farbschema in `e2e/reports/shots/`); die
   Layout-Messung läuft mit `E2E_APPEARANCE=glass` bzw. `paper` (dunkel: `E2E_SCHEME=dark`). Der Wegwerf-Server mit
   Beispieldaten steht jetzt in `e2e/support/instance.mjs` und dient auch der Suche nach deutschen Resten.

@@ -9,6 +9,7 @@
     "sweep": "node sweep.mjs",
     "scan:english": "node english-scan.mjs",
     "scan:contrast": "node contrast-scan.mjs",
+    "scan:perf": "node perf-probe.mjs",
     "shots": "node shots.mjs",
     "report": "playwright show-report reports/html",
     "typecheck": "node ../node_modules/typescript/bin/tsc -p tsconfig.json",

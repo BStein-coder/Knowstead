@@ -6,14 +6,15 @@ import { useSyncExternalStore } from 'react';
  *  - `classic`: das bisherige, sachliche Aussehen (Vorgabe)
  *  - `glass`:   große Rundungen, tiefes Glas mit Lichtkanten, Pillen und leuchtende Schaltflächen
  *  - `paper`:   warmes Papier, flache Karten mit feinen Rändern, Tinte statt Akzentfarbe für Hauptaktionen
+ *  - `frost`:   die Glasoptik ohne Glas – deckende Flächen, keine Unschärfe, keine 3D-Szene; für schwache Rechner
  *
  * Gesetzt wird `data-appearance` auf <html>; alles Weitere steht in styles/appearance.css. Die Wahl liegt im
  * Konto (`preferences.appearance`, gilt auf allen Geräten) und zusätzlich auf diesem Gerät – so stimmt die erste
  * Darstellung schon vor der Anmeldung.
  */
-export type Appearance = 'classic' | 'glass' | 'paper';
+export type Appearance = 'classic' | 'glass' | 'paper' | 'frost';
 
-export const APPEARANCES: readonly Appearance[] = ['classic', 'glass', 'paper'];
+export const APPEARANCES: readonly Appearance[] = ['classic', 'glass', 'paper', 'frost'];
 
 const KEY = 'knowstead.appearance';
 const EVENT = 'knowstead:appearance';

@@ -23,6 +23,7 @@ import {
   Search,
   Settings,
   Shield,
+  Snowflake,
   Sun,
   User,
 } from 'lucide-react';
@@ -179,6 +180,7 @@ export function TopBar({ onToggleSidebar, onOpenPalette, onOpenHelp }: Props) {
               { label: t('app.appearanceClassic'), icon: LayoutDashboard, checked: appearance === 'classic', onClick: () => setAppearance('classic') },
               { label: t('app.appearanceGlass'), icon: GlassWater, checked: appearance === 'glass', onClick: () => setAppearance('glass') },
               { label: t('app.appearancePaper'), icon: FileText, checked: appearance === 'paper', onClick: () => setAppearance('paper') },
+              { label: t('app.appearanceFrost'), icon: Snowflake, checked: appearance === 'frost', onClick: () => setAppearance('frost') },
               { separator: true },
               { label: t('app.motion'), icon: Move3d, checked: motion === 'full', onClick: toggleMotion },
               {

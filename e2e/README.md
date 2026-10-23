@@ -51,6 +51,7 @@ Testkonten und -inhalte an (`tests/global.setup.ts`). Die eigene Installation bl
 | `npx playwright test --project=mobile` | nur Smartphone-Ansicht |
 | `npm run sweep` | Layout-Messung über alle Seiten (einige Minuten); einzelne Seiten mit `npm run sweep -- -g "Startseite"` |
 | `npm run scan:english` | Englische Oberfläche nach deutschen Resten absuchen (siehe unten); einzelne Ansichten mit `npm run scan:english -- admin` |
+| `npm run scan:perf` | Was kostet ein Aussehen? Leerlauf, Bilder je Sekunde, CPU- und Grafikarbeit beim Scrollen je Aussehen (siehe unten); `-- --software` ohne Grafikkarte, `-- --throttle 6` stärker gebremst |
 | `npm run scan:contrast` | Kontrast jedes Textes gegen die tatsächlich gezeichneten Bildpunkte messen (siehe unten); `-- --look glass --scheme dark --views home,board` schränkt ein |
 | `npm run shots` | Bildschirmfotos der Oberfläche je Aussehen und Farbschema nach `reports/shots/` (`-- --look glass,paper --scheme light,dark --views home,board --width 1440`) |
 | `npm run report` | HTML-Bericht mit Bildschirmfotos und Aufzeichnungen fehlgeschlagener Tests |
@@ -85,6 +86,12 @@ ungünstigsten Bildpunkt hinter seinem Rahmen gegen die tatsächliche Schriftfar
 Gemessen wird, was im Fenster zu sehen ist: bei offenem Dialog nur der Dialog, ohne verdeckte oder abgeschnittene
 Texte und ohne deaktivierte Bedienelemente. Das Werkzeug gehört nicht zum normalen Lauf – nach Änderungen an Farben,
 Hintergründen oder Aussehen ausführen (`npm run test:contrast`, auch `-- --width 400 --height 800` für das Handy).
+
+**Kosten eines Aussehens.** `perf-probe.mjs` lädt Startseite, Plan und Seite je Aussehen, misst 3 Sekunden Leerlauf und 3 Sekunden Scrollen und wertet
+den Ablauf des Browsers aus: Hauptthread-Last im Leerlauf (Dauerbewegung wie die 3D-Szene fällt hier auf), Bilder je Sekunde,
+Anteil der Bilder über 33 ms und die Arbeit (alle Threads bzw. Grafikprozess) je Sekunde Scrollen. Die Zahlen sind
+Vergleichswerte; auf einem Rechner mit Grafikkarte liegen die Aussehen eng beieinander – ohne (`--software`, wie im
+Terminalserver) zeigen Unschärfe, Masken und große Schatten, was sie kosten.
 
 ## Tests erweitern
 

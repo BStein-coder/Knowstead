@@ -3,11 +3,11 @@ import { AUTH, VIEWER } from './support/data';
 import { adminRoutes } from './support/routes';
 
 /**
- * Aussehen der Oberfläche („Klassisch“, „Glas“, „Papier“): Wahl im Benutzermenü und im Profil, Speicherung im Konto
+ * Aussehen der Oberfläche („Klassisch“, „Glas“, „Papier“, „Frost“): Wahl im Benutzermenü und im Profil, Speicherung im Konto
  * und auf dem Gerät, Rückfälle bei reduzierter Bewegung – und Barrierefreiheit (Kontrast!) jeder Kombination aus
  * Aussehen und Farbschema auf den wichtigsten Seiten.
  */
-const LOOKS = ['glass', 'paper'] as const;
+const LOOKS = ['glass', 'paper', 'frost'] as const;
 const SCHEMES = ['light', 'dark'] as const;
 
 /** Seiten mit unterschiedlichen Bausteinen: Karten, Tabellen, Reiter, Tafel, Editor, Formulare, Verwaltung */
@@ -69,11 +69,22 @@ test.describe('Wahl des Aussehens', () => {
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()), 'Papier bringt die Tintenfarbe mit').not.toBe('');
     expect(await html.getAttribute('data-theme')).toBe(scheme);
 
+    // Frost: die Glasoptik ohne Glas – keine Unschärfe hinter den Flächen, keine 3D-Szene, deckende Kopfleiste
+    await choose('Frost');
+    await expect(html).toHaveAttribute('data-appearance', 'frost');
+    const lean = await page.evaluate(() => ({
+      topbarBlur: getComputedStyle(document.querySelector('.topbar')!).backdropFilter,
+      cardBlur: getComputedStyle(document.querySelector('.card')!).backdropFilter,
+      scene: getComputedStyle(document.querySelector('.hero .scene')!).display,
+      ring: getComputedStyle(document.querySelector('.topbar')!, '::before').display,
+    }));
+    expect(lean, 'Frost zeichnet ohne Unschärfe, Maske und Szene').toEqual({ topbarBlur: 'none', cardBlur: 'none', scene: 'none', ring: 'none' });
+
     // Dieselbe Wahl im Profil
     await page.goto('/profile/preferences');
     await ready(page);
     const select = page.getByLabel('Aussehen');
-    await expect(select).toHaveValue('paper');
+    await expect(select).toHaveValue('frost');
     const done = saved();
     await select.selectOption({ label: 'Glas' });
     expect((await done).ok()).toBe(true);

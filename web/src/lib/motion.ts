@@ -126,7 +126,8 @@ function initPointerEffects(): void {
   document.addEventListener(
     'pointermove',
     (e) => {
-      if (e.pointerType === 'touch' || !fine.matches || motionReduced()) {
+      // „Frost“ verzichtet auf Neigung und Lichtkegel – jede Zeigerbewegung würde sonst Layout und Zeichnen anstoßen
+      if (e.pointerType === 'touch' || !fine.matches || motionReduced() || document.documentElement.dataset.appearance === 'frost') {
         if (current) {
           release(current);
           current = null;

@@ -12,6 +12,8 @@
  *  Glas   – Weite Rundungen, tiefes Glas mit Lichtkanten, Segmente und Pillen, leuchtende Hauptaktionen.
  *  Papier – Warmes Papier, flache Karten mit feinen Rändern, „Tinte“ statt Akzentfarbe für Hauptaktionen
  *           und aktive Einträge, ein warmer Farbverlauf als Grund.
+ *  Frost  – Die Glasoptik ohne Glas: deckende Flächen mit hellem Rand und kleinen Schatten, ohne Unschärfe, Masken,
+ *           Lichtschleier und 3D-Szene. Gedacht für schwache Rechner, Terminalserver und virtuelle Maschinen.
  * ------------------------------------------------------------------ */
 
 /* ====================================================================
@@ -262,6 +264,132 @@
 }
 
 /* ====================================================================
+ * Token: Frost – hell
+ *
+ * Glasoptik ohne Glas: deckende Flächen in kühlem Weiß, ein heller Rand oben und feine Linien statt Unschärfe,
+ * Masken und weiter Schatten. Alles, was bei „Glas“ Rechenzeit kostet (backdrop-filter, mask-composite, Lichtschleier mit
+ * Weichzeichner, 3D-Szene), entfällt; gezeichnet wird nur mit Flächen, Verläufen und kleinen Schatten.
+ * ==================================================================== */
+:root[data-appearance='frost']:not([data-theme='dark']) {
+  --bg-app: #e7eef9;
+  --bg: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-sidebar: #f8fbff;
+  --bg-soft: #eff4fb;
+  --bg-muted: #dfe7f3;
+  --bg-hover: rgba(40, 80, 140, 0.07);
+  --bg-code: #e7edf7;
+  --bg-code-block: #f3f6fb;
+  --bg-input: #ffffff;
+  --bg-overlay: rgba(14, 24, 48, 0.46);
+
+  --glass-bg: #fbfdff;
+  --glass-bg-strong: #ffffff;
+  --glass-border: #d5e0f0;
+  --glass-blur: none;
+  --aura-1: transparent;
+  --aura-2: transparent;
+  --aura-3: transparent;
+
+  --text: #1c2438;
+  --text-strong: #090f20;
+  --text-soft: #3f4a63;
+  --text-muted: #4a5570;
+  --text-faint: #4f5a74;
+  --accent-fg: color-mix(in srgb, var(--accent) 70%, #000);
+  --text-link: var(--accent-fg);
+
+  --border: #d3deee;
+  --border-soft: #e2eaf6;
+  --border-strong: #bccae1;
+
+  --shadow-sm: 0 1px 2px rgba(25, 45, 90, 0.07);
+  --shadow: 0 1px 2px rgba(25, 45, 90, 0.07), 0 4px 10px -6px rgba(25, 45, 90, 0.2);
+  --shadow-lg: 0 8px 24px -10px rgba(25, 45, 90, 0.34), 0 2px 6px rgba(25, 45, 90, 0.1);
+  --shadow-ring: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+  --panel-shadow: 0 1px 2px rgba(25, 45, 90, 0.08), 0 5px 12px -8px rgba(25, 45, 90, 0.26);
+  --panel-shadow-lift: 0 2px 4px rgba(25, 45, 90, 0.09), 0 8px 16px -8px rgba(25, 45, 90, 0.3);
+  /* Hauptaktionen: ein fester Rand unten wie bei einer Taste, kein Leuchten */
+  --accent-glow: 0 2px 0 rgba(12, 28, 70, 0.28);
+
+  /* Heller Rand oben und feine Linie ringsum – der „Frost“ der Flächen */
+  --frost-rim: inset 0 1px 0 #ffffff, inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  --frost-sheen: rgba(255, 255, 255, 0.85);
+
+  --nav-active-bg: var(--accent-soft);
+  --nav-active-ring: transparent;
+  --nav-mark-glow: none;
+
+  --hl-keyword: #6d2fd6;
+  --hl-string: #12692f;
+  --hl-number: #96400a;
+  --hl-attr: #96400a;
+  --hl-comment: #566070;
+  --hl-meta: #53607a;
+}
+
+/* ====================================================================
+ * Token: Frost – dunkel
+ * ==================================================================== */
+:root[data-appearance='frost'][data-theme='dark'] {
+  --bg-app: #0c111f;
+  --bg: #121a2c;
+  --bg-elevated: #172036;
+  --bg-sidebar: #111829;
+  --bg-soft: #1a2438;
+  --bg-muted: #26324b;
+  --bg-hover: rgba(255, 255, 255, 0.07);
+  --bg-code: #212c44;
+  --bg-code-block: #141c2f;
+  --bg-input: #141c2f;
+  --bg-overlay: rgba(2, 4, 10, 0.7);
+
+  --glass-bg: #141c2f;
+  --glass-bg-strong: #172036;
+  --glass-border: rgba(150, 175, 220, 0.18);
+  --glass-blur: none;
+  --aura-1: transparent;
+  --aura-2: transparent;
+  --aura-3: transparent;
+
+  --text: #e9edf6;
+  --text-strong: #ffffff;
+  --text-soft: #c6cedd;
+  --text-muted: #9aa4ba;
+  --text-faint: #8f99b0;
+
+  --border: rgba(150, 175, 220, 0.2);
+  --border-soft: rgba(150, 175, 220, 0.11);
+  --border-strong: rgba(150, 175, 220, 0.32);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 5px 12px -6px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 28px -10px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-ring: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --panel-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 14px -8px rgba(0, 0, 0, 0.65);
+  --panel-shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.5), 0 9px 18px -8px rgba(0, 0, 0, 0.7);
+  --accent-glow: 0 2px 0 rgba(0, 0, 0, 0.45);
+
+  --frost-rim: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 1px rgba(150, 175, 220, 0.08);
+  --frost-sheen: rgba(150, 175, 230, 0.1);
+
+  --nav-active-bg: var(--accent-soft);
+  --nav-active-ring: transparent;
+  --nav-mark-glow: none;
+
+  --hl-comment: #8d97a8;
+}
+
+:root[data-appearance='frost'] {
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --shell-gap: 12px;
+  --shell-radius: 18px;
+}
+
+/* ====================================================================
  * Rückfälle: Die Schalter für weniger Transparenz und weniger Bewegung gelten auch hier
  * (die Token-Blöcke oben sind spezifischer als die in tokens.css und würden sie sonst übertönen).
  * ==================================================================== */
@@ -285,7 +413,7 @@
  * ==================================================================== */
 
 /* Große Seitentitel, die den Bereich benennen – statt der Überschrift im Fließtextmaß */
-:root:is([data-appearance='glass'], [data-appearance='paper']) .page-header-title {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .page-header-title {
   font-size: clamp(1.7rem, 1.1rem + 1.6vw, 2.35rem);
   font-weight: 740;
   line-height: 1.12;
@@ -293,12 +421,12 @@
   color: var(--text-strong);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .page-header-subtitle {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .page-header-subtitle {
   font-size: 14.5px;
 }
 
 /* Reiter als Segmente: eine Mulde mit einem angehobenen aktiven Reiter statt Unterstreichung */
-:root:is([data-appearance='glass'], [data-appearance='paper']) .tabs {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tabs {
   width: fit-content;
   max-width: 100%;
   gap: 2px;
@@ -309,85 +437,85 @@
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .tab {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tab {
   padding: 0.4rem 0.95rem;
   border-radius: calc(var(--radius) + 4px);
   font-weight: 560;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .tab.active::after {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tab.active::after {
   display: none;
 }
 
 /* Statuskacheln der Startseite und Schnellzugriffe: weiter gerundet, größere Zahlen */
-:root:is([data-appearance='glass'], [data-appearance='paper']) .hero-stat {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .hero-stat {
   padding: 0.5rem 1rem;
   border-radius: calc(var(--radius) + 6px);
   font-size: 13px;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .hero-stat b {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .hero-stat b {
   font-size: 17px;
   letter-spacing: -0.01em;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .quick-action {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .quick-action {
   padding: 0.9rem 1.05rem;
   border-radius: var(--radius-lg);
   font-weight: 600;
 }
 
 /* Karten: Titel ohne Trennlinie, großzügigere Ränder */
-:root:is([data-appearance='glass'], [data-appearance='paper']) .card-header {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .card-header {
   padding: 1.05rem 1.3rem 0.6rem;
   border-bottom: 0;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .card-title {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .card-title {
   font-size: 15px;
   font-weight: 680;
   letter-spacing: -0.012em;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .stat {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .stat {
   padding: 1.05rem 1.2rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .stat-value {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .stat-value {
   font-size: 28px;
   letter-spacing: -0.03em;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .modal {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .modal {
   border-radius: var(--radius-xl);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .board-column {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .board-column {
   border-radius: var(--radius-lg);
   padding: 0.7rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .task-card {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .task-card {
   border-radius: calc(var(--radius) + 2px);
   padding: 0.7rem 0.8rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .menu {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .menu {
   padding: 0.35rem;
   border-radius: calc(var(--radius) + 6px);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .menu-item {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .menu-item {
   border-radius: var(--radius-sm);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .nav-link,
-:root:is([data-appearance='glass'], [data-appearance='paper']) .tree-row {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .nav-link,
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tree-row {
   border-radius: var(--radius);
 }
 
 /* Tabellen im Seiteninhalt behalten die engere Rundung: Bei weiten Radien beschneidet sie die Zellränder an den Ecken */
-:root:is([data-appearance='glass'], [data-appearance='paper']) .doc table {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .doc table {
   border-radius: var(--radius);
 }
 
@@ -581,16 +709,176 @@
   background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
 }
 
+/* ====================================================================
+ * Frost
+ *
+ * Sparsam: keine Unschärfe hinter Flächen (`--glass-blur` steht auf `none`), keine Masken für Lichtkanten, kein
+ * Lichtschleier mit Weichzeichner, keine 3D-Szene, keine Neigung zum Zeiger (lib/motion.ts). Statt dessen eine ruhige
+ * Fläche mit Verlauf von oben, ein heller Rand und kleine Schatten. Die Navigation schwebt weiterhin mit Abstand.
+ * ==================================================================== */
+
+/* Grund: zwei weiche Farbflächen oben links und rechts als Verlauf auf der App selbst – einmal gezeichnet, ohne
+   Weichzeichner und ohne eigene Ebene, nichts, was beim Scrollen neu berechnet wird */
+:root[data-appearance='frost'] .app::before {
+  display: none;
+}
+
+:root[data-appearance='frost'] .app {
+  background:
+    radial-gradient(56% 440px at 10% 0, color-mix(in srgb, var(--accent) 16%, transparent), transparent),
+    radial-gradient(44% 400px at 94% 0, color-mix(in srgb, var(--accent-3) 12%, transparent), transparent),
+    var(--bg-app);
+}
+
+/* Kopfleiste, Seitenleiste und Leisten: deckend, mit hellem Rand statt Maskenring */
+:root[data-appearance='frost'] .topbar::before,
+:root[data-appearance='frost'] .sidebar::before,
+:root[data-appearance='frost'] .page-toolbar::before,
+:root[data-appearance='frost'] .editor-topbar::before,
+:root[data-appearance='frost'] .editor-footer::before {
+  display: none;
+}
+
+:root[data-appearance='frost'] .topbar,
+:root[data-appearance='frost'] .sidebar,
+:root[data-appearance='frost'] .page-toolbar,
+:root[data-appearance='frost'] .editor-topbar,
+:root[data-appearance='frost'] .editor-footer {
+  box-shadow: var(--frost-rim), var(--panel-shadow);
+}
+
+:root[data-appearance='frost'] .topbar,
+:root[data-appearance='frost'] .page-toolbar,
+:root[data-appearance='frost'] .editor-topbar,
+:root[data-appearance='frost'] .editor-footer {
+  background: linear-gradient(180deg, var(--frost-sheen), transparent 28px), var(--glass-bg);
+}
+
+:root[data-appearance='frost'] .sidebar {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, var(--bg-sidebar)) 0, var(--bg-sidebar) 260px);
+}
+
+/* Flächen: deckendes Weiß mit hellem Schimmer oben und feinem Rand */
+:root[data-appearance='frost'] :is(.card, .stat, .quick-action, .plan-stat, .project-card, .cal-main, .cal-panel, .editor-sheet, .table-wrap) {
+  background: linear-gradient(180deg, var(--frost-sheen), transparent 64px), var(--bg-elevated);
+  border-color: var(--border-soft);
+  box-shadow: var(--frost-rim), var(--shadow-sm);
+}
+
+:root[data-appearance='frost'] :is(.card.interactive, a.card, .project-card, .quick-action):hover {
+  border-color: var(--accent-border);
+  box-shadow: var(--frost-rim), var(--panel-shadow-lift);
+}
+
+:root[data-appearance='frost'] .board-column {
+  background: var(--bg-soft);
+  border-color: var(--border-soft);
+}
+
+:root[data-appearance='frost'] .task-card {
+  background: var(--bg-elevated);
+  border-color: var(--border-soft);
+  box-shadow: var(--frost-rim), var(--shadow-sm);
+}
+
+/* Hauptaktion: Akzentfarbe mit festem Rand unten, kein Verlauf und kein Leuchten */
+:root[data-appearance='frost'] .btn-primary {
+  background: var(--accent);
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), var(--accent-glow);
+}
+
+:root[data-appearance='frost'] .btn-primary:hover:not(:disabled) {
+  filter: none;
+  background: var(--accent-hover);
+}
+
+:root[data-appearance='frost'] .brand-logo {
+  background: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), var(--accent-glow);
+}
+
+/* Aktiver Eintrag, aktiver Reiter: getönte Fläche mit Akzentstrich links bzw. angehobenes Segment */
+:root[data-appearance='frost'] .nav-link.active,
+:root[data-appearance='frost'] .tree-row.active {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+:root[data-appearance='frost'] .nav-link.active::before {
+  display: none;
+}
+
+/* Der Zähler auf dem getönten aktiven Eintrag bekommt einen festen Grund – Tönung auf Tönung ergäbe zu wenig Kontrast */
+:root[data-appearance='frost'] .nav-link.active .nav-count {
+  background: var(--bg-elevated);
+  color: var(--accent-fg);
+}
+
+:root[data-appearance='frost'] .tab.active,
+:root[data-appearance='frost'] .cal-mode.active {
+  background: var(--bg-elevated);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border-soft);
+}
+
+:root[data-appearance='frost'] .topbar-search {
+  background: var(--bg-input);
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+/* Startseite: ohne 3D-Szene – ein getönter Verlauf; dasselbe für Anmeldung und Fehlerseite (keine Dauerbewegung) */
+:root[data-appearance='frost'] .scene {
+  display: none;
+}
+
+:root[data-appearance='frost'] :is(.auth-page, .not-found-stage) {
+  background:
+    radial-gradient(52% 60% at 12% 8%, color-mix(in srgb, var(--accent) 16%, transparent), transparent),
+    radial-gradient(44% 52% at 92% 96%, color-mix(in srgb, var(--accent-3) 12%, transparent), transparent),
+    var(--bg-app);
+}
+
+:root[data-appearance='frost'] :is(.auth-page, .not-found-stage)::before,
+:root[data-appearance='frost'] .auth-page::after {
+  display: none;
+}
+
+:root[data-appearance='frost'] .hero {
+  min-height: 0;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 14%, var(--bg-elevated)) 0, var(--bg-elevated) 62%);
+}
+
+:root[data-appearance='frost'] .hero::before {
+  display: none;
+}
+
+/* Alles, was nur noch Unschärfe wäre, entfällt – die Abdunklung bleibt */
+:root[data-appearance='frost'] :is(.modal-backdrop, .sidebar-backdrop, .tour-backdrop, .lightbox, .drawio-editor, .whiteboard-editor) {
+  backdrop-filter: none;
+}
+
+/* Keine Neigung und kein Lichtkegel am Zeiger (die Ereignisse lässt lib/motion.ts in diesem Aussehen aus) */
+:root[data-appearance='frost'] [data-tilt],
+:root[data-appearance='frost'] [data-tilt]:hover {
+  transform: none;
+}
+
+:root[data-appearance='frost'] :is([data-tilt], [data-spot])::after {
+  display: none;
+}
+
 /* Aufgabenplaner: Kennzahlen, Projektkarten und Kalender runden wie die übrigen Flächen; der Haken folgt der Tinte */
-:root:is([data-appearance='glass'], [data-appearance='paper']) .plan-stat {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .plan-stat {
   padding: 0.85rem 1.2rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .plan-stat-value {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .plan-stat-value {
   font-size: 1.9rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper']) .cal-cell {
+:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .cal-cell {
   border-radius: calc(var(--radius) + 2px);
 }
 
@@ -614,7 +902,7 @@
 
 /* Kontrastmodus des Betriebssystems: Flächen entfallen – der aktive Reiter (ohne Unterstreichung) bekommt einen Rahmen */
 @media (forced-colors: active) {
-  :root:is([data-appearance='glass'], [data-appearance='paper']) .tab.active,
+  :root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tab.active,
   .cal-mode.active {
     outline: 2px solid Highlight;
     outline-offset: -2px;
