@@ -1,144 +1,19 @@
 /* ------------------------------------------------------------------
- * Aussehen der Oberfläche: „Glas“ und „Papier“ (lib/appearance.ts, Benutzermenü, Profil).
+ * Aussehen der Oberfläche: „Papier“ und „Frost“ (lib/appearance.ts, Benutzermenü, Profil).
  *
  * Ein eigener Satz Token für jede Kombination aus Aussehen und Farbschema, dazu wenige Überschreibungen
  * dort, wo die Gestalt statt nur Farben und Rundungen wechselt (große Titel, Reiter als Segmente, Hauptaktionen).
  * „Klassisch“ ist die Vorgabe und steht in den übrigen Stylesheets – dort ändert sich nichts.
  *
- * Wird als letztes Stylesheet geladen. Alle Regeln hängen an `:root[data-appearance='glass'|'paper']`
+ * Wird als letztes Stylesheet geladen. Alle Regeln hängen an `:root[data-appearance='paper'|'frost']`
  * und sind damit stärker als die Grundgestaltung, ohne `!important`. Farben sind eigene Werte; die
  * Akzentfarbe der Installation bleibt unangetastet (`--accent` wird vom Skript gesetzt).
  *
- *  Glas   – Weite Rundungen, tiefes Glas mit Lichtkanten, Segmente und Pillen, leuchtende Hauptaktionen.
  *  Papier – Warmes Papier, flache Karten mit feinen Rändern, „Tinte“ statt Akzentfarbe für Hauptaktionen
  *           und aktive Einträge, ein warmer Farbverlauf als Grund.
  *  Frost  – Die Glasoptik ohne Glas: deckende Flächen mit hellem Rand und kleinen Schatten, ohne Unschärfe, Masken,
  *           Lichtschleier und 3D-Szene. Gedacht für schwache Rechner, Terminalserver und virtuelle Maschinen.
  * ------------------------------------------------------------------ */
-
-/* ====================================================================
- * Token: Glas – hell
- * ==================================================================== */
-:root[data-appearance='glass']:not([data-theme='dark']) {
-  --bg-app: #e6ecf8;
-  --bg: #ffffff;
-  --bg-elevated: #ffffff;
-  --bg-sidebar: rgba(255, 255, 255, 0.5);
-  --bg-soft: #edf1fb;
-  --bg-muted: #dce4f4;
-  --bg-hover: rgba(30, 50, 110, 0.07);
-  --bg-code: #e9eefa;
-  --bg-code-block: #f4f7fd;
-  --bg-input: rgba(255, 255, 255, 0.78);
-  --bg-overlay: rgba(14, 22, 52, 0.42);
-
-  --glass-bg: rgba(255, 255, 255, 0.58);
-  --glass-bg-strong: rgba(255, 255, 255, 0.88);
-  --glass-border: rgba(255, 255, 255, 0.85);
-  --glass-blur: saturate(190%) blur(28px);
-  /* Lichtflecken liegen in den Ecken, hinter Navigation und Kopf; Schrift direkt auf dem Grund (Links, Untertitel)
-     bleibt damit auch am hellsten Punkt lesbar – gemessen mit e2e/contrast-scan.mjs */
-  --aura-1: color-mix(in srgb, var(--accent) 32%, transparent);
-  --aura-2: color-mix(in srgb, var(--accent-2) 28%, transparent);
-  --aura-3: color-mix(in srgb, var(--accent-3) 24%, transparent);
-
-  --text: #1c2438;
-  --text-strong: #090f20;
-  --text-soft: #3f4a63;
-  --text-muted: #4a5570;
-  --text-faint: #4f5a74;
-  --accent-fg: color-mix(in srgb, var(--accent) 70%, #000);
-  --text-link: var(--accent-fg);
-
-  --border: rgba(40, 60, 120, 0.16);
-  --border-soft: rgba(40, 60, 120, 0.09);
-  --border-strong: rgba(40, 60, 120, 0.28);
-
-  --shadow-sm: 0 1px 2px rgba(20, 35, 90, 0.06);
-  --shadow: 0 10px 28px -14px rgba(20, 35, 90, 0.28), 0 1px 3px rgba(20, 35, 90, 0.05);
-  --shadow-lg: 0 34px 80px -24px rgba(20, 35, 90, 0.42), 0 6px 18px -8px rgba(20, 35, 90, 0.14);
-  --shadow-ring: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
-
-  --glass-edge: linear-gradient(
-    140deg,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(255, 255, 255, 0.6) 30%,
-    color-mix(in srgb, var(--accent) 10%, rgba(30, 50, 110, 0.08)) 62%,
-    color-mix(in srgb, var(--accent) 42%, transparent) 100%
-  );
-  --panel-shadow: 0 30px 60px -32px rgba(25, 45, 110, 0.5), 0 2px 10px -3px rgba(25, 45, 110, 0.08);
-  --panel-shadow-lift: 0 36px 66px -30px rgba(25, 45, 110, 0.58), 0 3px 12px -3px rgba(25, 45, 110, 0.1);
-
-  /* Syntaxfarben etwas dunkler: Auf den getönten Codeflächen erreichten sie sonst keine 4,5 : 1 */
-  --hl-keyword: #6d2fd6;
-  --hl-string: #12692f;
-  --hl-number: #96400a;
-  --hl-attr: #96400a;
-  --hl-comment: #566070;
-  --hl-meta: #53607a;
-}
-
-/* ====================================================================
- * Token: Glas – dunkel
- * ==================================================================== */
-:root[data-appearance='glass'][data-theme='dark'] {
-  --bg-app: #07090f;
-  --bg: #11141d;
-  --bg-elevated: #171b26;
-  --bg-sidebar: rgba(24, 28, 40, 0.52);
-  --bg-soft: #1a1e2b;
-  --bg-muted: #272c3c;
-  --bg-hover: rgba(255, 255, 255, 0.07);
-  --bg-code: #212636;
-  --bg-code-block: #141824;
-  --bg-input: rgba(255, 255, 255, 0.05);
-  --bg-overlay: rgba(2, 4, 10, 0.7);
-
-  --glass-bg: rgba(26, 30, 44, 0.56);
-  --glass-bg-strong: rgba(24, 28, 40, 0.9);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-blur: saturate(180%) blur(30px);
-  --aura-1: color-mix(in srgb, var(--accent) 34%, transparent);
-  --aura-2: color-mix(in srgb, var(--accent-2) 26%, transparent);
-  --aura-3: color-mix(in srgb, var(--accent-3) 20%, transparent);
-
-  --text: #e9edf6;
-  --text-strong: #ffffff;
-  --text-soft: #c6cedd;
-  --text-muted: #9aa4ba;
-  --text-faint: #8f99b0;
-
-  --border: rgba(255, 255, 255, 0.13);
-  --border-soft: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.22);
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.75), 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 38px 90px -24px rgba(0, 0, 0, 0.85), 0 8px 20px -8px rgba(0, 0, 0, 0.5);
-  --shadow-ring: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
-
-  --glass-edge: linear-gradient(
-    140deg,
-    rgba(255, 255, 255, 0.32) 0%,
-    rgba(255, 255, 255, 0.1) 34%,
-    rgba(255, 255, 255, 0.05) 60%,
-    color-mix(in srgb, var(--accent) 60%, transparent) 100%
-  );
-  --panel-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.95), 0 2px 12px -4px rgba(0, 0, 0, 0.6);
-  --panel-shadow-lift: 0 36px 70px -28px rgba(0, 0, 0, 1), 0 4px 16px -4px rgba(0, 0, 0, 0.65);
-
-  --hl-comment: #8d97a8;
-}
-
-/* Maße (beide Farbschemata) */
-:root[data-appearance='glass'] {
-  --radius-sm: 10px;
-  --radius: 14px;
-  --radius-lg: 22px;
-  --radius-xl: 32px;
-  --shell-gap: 14px;
-  --shell-radius: 28px;
-}
 
 /* ====================================================================
  * Token: Papier – hell
@@ -267,7 +142,7 @@
  * Token: Frost – hell
  *
  * Glasoptik ohne Glas: deckende Flächen in kühlem Weiß, ein heller Rand oben und feine Linien statt Unschärfe,
- * Masken und weiter Schatten. Alles, was bei „Glas“ Rechenzeit kostet (backdrop-filter, mask-composite, Lichtschleier mit
+ * Masken und weiter Schatten. Alles, was Rechenzeit kostet (backdrop-filter, mask-composite, Lichtschleier mit
  * Weichzeichner, 3D-Szene), entfällt; gezeichnet wird nur mit Flächen, Verläufen und kleinen Schatten.
  * ==================================================================== */
 :root[data-appearance='frost']:not([data-theme='dark']) {
@@ -409,11 +284,11 @@
 }
 
 /* ====================================================================
- * Gemeinsam: Gestalt von Glas und Papier
+ * Gemeinsam: Gestalt von Papier und Frost
  * ==================================================================== */
 
 /* Große Seitentitel, die den Bereich benennen – statt der Überschrift im Fließtextmaß */
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .page-header-title {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .page-header-title {
   font-size: clamp(1.7rem, 1.1rem + 1.6vw, 2.35rem);
   font-weight: 740;
   line-height: 1.12;
@@ -421,12 +296,12 @@
   color: var(--text-strong);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .page-header-subtitle {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .page-header-subtitle {
   font-size: 14.5px;
 }
 
 /* Reiter als Segmente: eine Mulde mit einem angehobenen aktiven Reiter statt Unterstreichung */
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tabs {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .tabs {
   width: fit-content;
   max-width: 100%;
   gap: 2px;
@@ -437,174 +312,86 @@
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tab {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .tab {
   padding: 0.4rem 0.95rem;
   border-radius: calc(var(--radius) + 4px);
   font-weight: 560;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tab.active::after {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .tab.active::after {
   display: none;
 }
 
 /* Statuskacheln der Startseite und Schnellzugriffe: weiter gerundet, größere Zahlen */
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .hero-stat {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .hero-stat {
   padding: 0.5rem 1rem;
   border-radius: calc(var(--radius) + 6px);
   font-size: 13px;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .hero-stat b {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .hero-stat b {
   font-size: 17px;
   letter-spacing: -0.01em;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .quick-action {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .quick-action {
   padding: 0.9rem 1.05rem;
   border-radius: var(--radius-lg);
   font-weight: 600;
 }
 
 /* Karten: Titel ohne Trennlinie, großzügigere Ränder */
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .card-header {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .card-header {
   padding: 1.05rem 1.3rem 0.6rem;
   border-bottom: 0;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .card-title {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .card-title {
   font-size: 15px;
   font-weight: 680;
   letter-spacing: -0.012em;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .stat {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .stat {
   padding: 1.05rem 1.2rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .stat-value {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .stat-value {
   font-size: 28px;
   letter-spacing: -0.03em;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .modal {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .modal {
   border-radius: var(--radius-xl);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .board-column {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .board-column {
   border-radius: var(--radius-lg);
   padding: 0.7rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .task-card {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .task-card {
   border-radius: calc(var(--radius) + 2px);
   padding: 0.7rem 0.8rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .menu {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .menu {
   padding: 0.35rem;
   border-radius: calc(var(--radius) + 6px);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .menu-item {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .menu-item {
   border-radius: var(--radius-sm);
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .nav-link,
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tree-row {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .nav-link,
+:root:is([data-appearance='paper'], [data-appearance='frost']) .tree-row {
   border-radius: var(--radius);
 }
 
 /* Tabellen im Seiteninhalt behalten die engere Rundung: Bei weiten Radien beschneidet sie die Zellränder an den Ecken */
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .doc table {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .doc table {
   border-radius: var(--radius);
-}
-
-/* ====================================================================
- * Glas
- * ==================================================================== */
-
-/* Grund: drei große Lichtflecken über die ganze Fläche, damit das Glas darüber etwas zu brechen hat */
-:root[data-appearance='glass'] .app::before {
-  inset: 0;
-  height: auto;
-  filter: none;
-  opacity: 1;
-  background:
-    radial-gradient(44% 56% at 0% 0%, var(--aura-1), transparent 74%),
-    radial-gradient(36% 50% at 100% 2%, var(--aura-2), transparent 74%),
-    radial-gradient(44% 48% at 78% 100%, var(--aura-3), transparent 76%);
-}
-
-/* Flächen im Hauptbereich: durchscheinend mit heller Kante, wie die Ebenen der Navigation */
-:root[data-appearance='glass'] .card,
-:root[data-appearance='glass'] .stat,
-:root[data-appearance='glass'] .quick-action,
-:root[data-appearance='glass'] .plan-stat,
-:root[data-appearance='glass'] .project-card,
-:root[data-appearance='glass'] .cal-main,
-:root[data-appearance='glass'] .cal-panel,
-:root[data-appearance='glass'] .editor-sheet {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border-color: var(--glass-border);
-  box-shadow: var(--shadow), var(--shadow-ring);
-}
-
-:root[data-appearance='glass'] .table-wrap {
-  background: var(--glass-bg);
-  border-color: var(--glass-border);
-  box-shadow: var(--shadow), var(--shadow-ring);
-}
-
-:root[data-appearance='glass'] .card.interactive:hover,
-:root[data-appearance='glass'] a.card:hover,
-:root[data-appearance='glass'] .project-card:hover,
-:root[data-appearance='glass'] .quick-action:hover {
-  background: var(--glass-bg-strong);
-  box-shadow: var(--panel-shadow-lift), var(--shadow-ring);
-}
-
-:root[data-appearance='glass'] .board-column {
-  background: color-mix(in srgb, var(--glass-bg) 70%, transparent);
-  border-color: var(--glass-border);
-}
-
-:root[data-appearance='glass'] .task-card {
-  background: var(--glass-bg-strong);
-  border-color: var(--glass-border);
-}
-
-/* Aktiver Eintrag der Navigation: ein angehobener Glaskörper, keine Lichtmarke */
-:root[data-appearance='glass'] .nav-link.active,
-:root[data-appearance='glass'] .tree-row.active {
-  background: var(--glass-bg-strong);
-  box-shadow:
-    var(--shadow-sm),
-    inset 0 0 0 1px var(--glass-border);
-}
-
-:root[data-appearance='glass'] .nav-link.active::before {
-  display: none;
-}
-
-:root[data-appearance='glass'] .tab.active,
-:root[data-appearance='glass'] .cal-mode.active {
-  background: var(--glass-bg-strong);
-  color: var(--text-strong);
-  box-shadow:
-    var(--shadow-sm),
-    inset 0 0 0 1px var(--glass-border);
-}
-
-:root[data-appearance='glass'] .btn-primary {
-  box-shadow:
-    0 12px 28px -10px color-mix(in srgb, var(--accent) 75%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-:root[data-appearance='glass'] .topbar-search {
-  background: var(--bg-input);
-  border-color: var(--glass-border);
 }
 
 /* ====================================================================
@@ -870,15 +657,15 @@
 }
 
 /* Aufgabenplaner: Kennzahlen, Projektkarten und Kalender runden wie die übrigen Flächen; der Haken folgt der Tinte */
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .plan-stat {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .plan-stat {
   padding: 0.85rem 1.2rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .plan-stat-value {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .plan-stat-value {
   font-size: 1.9rem;
 }
 
-:root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .cal-cell {
+:root:is([data-appearance='paper'], [data-appearance='frost']) .cal-cell {
   border-radius: calc(var(--radius) + 2px);
 }
 
@@ -902,7 +689,7 @@
 
 /* Kontrastmodus des Betriebssystems: Flächen entfallen – der aktive Reiter (ohne Unterstreichung) bekommt einen Rahmen */
 @media (forced-colors: active) {
-  :root:is([data-appearance='glass'], [data-appearance='paper'], [data-appearance='frost']) .tab.active,
+  :root:is([data-appearance='paper'], [data-appearance='frost']) .tab.active,
   .cal-mode.active {
     outline: 2px solid Highlight;
     outline-offset: -2px;

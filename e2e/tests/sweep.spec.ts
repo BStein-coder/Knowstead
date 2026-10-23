@@ -12,7 +12,7 @@ import { measureLayout, type LayoutFindings } from './support/layout-measure';
  *   npm run test:sweep            – alles
  *   npm --prefix e2e run sweep -- -g "Startseite"
  *   E2E_SWEEP_WIDTHS=1280,400     – andere Breiten
- *   E2E_APPEARANCE=glass          – mit dem Aussehen „Glas“ oder „Papier“ (Vorgabe: Klassisch); Farbschema dunkel: E2E_SCHEME=dark
+ *   E2E_APPEARANCE=frost          – mit dem Aussehen „Papier“ oder „Frost“ (Vorgabe: Klassisch); Farbschema dunkel: E2E_SCHEME=dark
  * Die einzelnen Fälle, die dabei schon einmal aufgefallen sind, hält layout.spec.ts dauerhaft fest.
  */
 const WIDTHS = (process.env.E2E_SWEEP_WIDTHS ?? '1600,1280,1024,820,400').split(',').map(Number);

@@ -22,7 +22,7 @@ nicht angefasst.
 | `startup.spec.ts` | Start der Anwendung: Startanzeige, Hinweis bei blockierten Programmdateien, 404 für veraltete Dateien |
 | `layout.spec.ts` | Festgehaltene Layoutfälle: Seitenränder, Brotkrumen auf dem Handy, Zeitstrahl, umbrechende Reiter, Aufgabendialog mit Chatspalte |
 | `motion.spec.ts` | 3D-Szene (reine Dekoration, nur `transform`/`opacity`), Stillstand bei reduzierter Bewegung, Einstellung im Benutzermenü, Neigung und Einblenden |
-| `appearance.spec.ts` | **Aussehen** „Glas“ und „Papier“: Wahl im Benutzermenü und im Profil, Speicherung im Konto und auf dem Gerät, Rückfälle bei reduzierter Bewegung, axe-Prüfung jeder Kombination aus Aussehen und Farbschema auf elf Seiten, kein seitlicher Überlauf |
+| `appearance.spec.ts` | **Aussehen** „Papier“ und „Frost“: Wahl im Benutzermenü und im Profil, Speicherung im Konto und auf dem Gerät, Rückfälle bei reduzierter Bewegung, axe-Prüfung jeder Kombination aus Aussehen und Farbschema auf elf Seiten, kein seitlicher Überlauf |
 | `sweep.spec.ts` | **Layout-Messung** über alle Seiten in fünf Fensterbreiten: Überlappungen, verdeckte Bedienelemente, Überstände, abgeschnittene Beschriftungen, seitliches Scrollen – läuft nur auf Wunsch (`npm run test:sweep`) |
 
 Jeder Test schlägt zusätzlich fehl, wenn im Browser ein JavaScript-Fehler, eine Konsolen-Fehlermeldung
@@ -52,8 +52,8 @@ Testkonten und -inhalte an (`tests/global.setup.ts`). Die eigene Installation bl
 | `npm run sweep` | Layout-Messung über alle Seiten (einige Minuten); einzelne Seiten mit `npm run sweep -- -g "Startseite"` |
 | `npm run scan:english` | Englische Oberfläche nach deutschen Resten absuchen (siehe unten); einzelne Ansichten mit `npm run scan:english -- admin` |
 | `npm run scan:perf` | Was kostet ein Aussehen? Leerlauf, Bilder je Sekunde, CPU- und Grafikarbeit beim Scrollen je Aussehen (siehe unten); `-- --software` ohne Grafikkarte, `-- --throttle 6` stärker gebremst |
-| `npm run scan:contrast` | Kontrast jedes Textes gegen die tatsächlich gezeichneten Bildpunkte messen (siehe unten); `-- --look glass --scheme dark --views home,board` schränkt ein |
-| `npm run shots` | Bildschirmfotos der Oberfläche je Aussehen und Farbschema nach `reports/shots/` (`-- --look glass,paper --scheme light,dark --views home,board --width 1440`) |
+| `npm run scan:contrast` | Kontrast jedes Textes gegen die tatsächlich gezeichneten Bildpunkte messen (siehe unten); `-- --look frost --scheme dark --views home,board` schränkt ein |
+| `npm run shots` | Bildschirmfotos der Oberfläche je Aussehen und Farbschema nach `reports/shots/` (`-- --look paper,frost --scheme light,dark --views home,board --width 1440`) |
 | `npm run report` | HTML-Bericht mit Bildschirmfotos und Aufzeichnungen fehlgeschlagener Tests |
 | `npm run typecheck` | TypeScript der Tests prüfen |
 

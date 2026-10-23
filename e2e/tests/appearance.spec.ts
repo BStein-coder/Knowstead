@@ -3,11 +3,11 @@ import { AUTH, VIEWER } from './support/data';
 import { adminRoutes } from './support/routes';
 
 /**
- * Aussehen der Oberfläche („Klassisch“, „Glas“, „Papier“, „Frost“): Wahl im Benutzermenü und im Profil, Speicherung im Konto
+ * Aussehen der Oberfläche („Klassisch“, „Papier“, „Frost“): Wahl im Benutzermenü und im Profil, Speicherung im Konto
  * und auf dem Gerät, Rückfälle bei reduzierter Bewegung – und Barrierefreiheit (Kontrast!) jeder Kombination aus
  * Aussehen und Farbschema auf den wichtigsten Seiten.
  */
-const LOOKS = ['glass', 'paper', 'frost'] as const;
+const LOOKS = ['paper', 'frost'] as const;
 const SCHEMES = ['light', 'dark'] as const;
 
 /** Seiten mit unterschiedlichen Bausteinen: Karten, Tabellen, Reiter, Tafel, Editor, Formulare, Verwaltung */
@@ -47,31 +47,29 @@ test.describe('Wahl des Aussehens', () => {
     await expect(html).toHaveAttribute('data-appearance', 'classic');
     expect(await radiusOf(page)).toBe('16px');
 
-    await choose('Glas');
-    await expect(html).toHaveAttribute('data-appearance', 'glass');
-    expect(await radiusOf(page), 'Glas rundet weiter').toBe('22px');
+    await choose('Papier');
+    await expect(html).toHaveAttribute('data-appearance', 'paper');
+    expect(await radiusOf(page), 'Papier rundet weiter').toBe('24px');
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()), 'Papier bringt die Tintenfarbe mit').not.toBe('');
     // Aussehen und Farbschema sind unabhängig: Der Wechsel lässt hell/dunkel unangetastet
     const scheme = await html.getAttribute('data-theme');
     expect(['light', 'dark']).toContain(scheme);
 
     await page.reload();
     await ready(page);
-    await expect(html).toHaveAttribute('data-appearance', 'glass');
+    await expect(html).toHaveAttribute('data-appearance', 'paper');
 
     // Wahl des Kontos gilt auch auf einem Gerät ohne gespeicherte Wahl
     await page.evaluate(() => localStorage.removeItem('knowstead.appearance'));
     await page.reload();
     await ready(page);
-    await expect(html).toHaveAttribute('data-appearance', 'glass');
-
-    await choose('Papier');
     await expect(html).toHaveAttribute('data-appearance', 'paper');
-    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ink').trim()), 'Papier bringt die Tintenfarbe mit').not.toBe('');
-    expect(await html.getAttribute('data-theme')).toBe(scheme);
 
     // Frost: die Glasoptik ohne Glas – keine Unschärfe hinter den Flächen, keine 3D-Szene, deckende Kopfleiste
     await choose('Frost');
     await expect(html).toHaveAttribute('data-appearance', 'frost');
+    expect(await radiusOf(page), 'Frost rundet weiter als Klassisch').toBe('18px');
+    expect(await html.getAttribute('data-theme')).toBe(scheme);
     const lean = await page.evaluate(() => ({
       topbarBlur: getComputedStyle(document.querySelector('.topbar')!).backdropFilter,
       cardBlur: getComputedStyle(document.querySelector('.card')!).backdropFilter,
@@ -86,9 +84,17 @@ test.describe('Wahl des Aussehens', () => {
     const select = page.getByLabel('Aussehen');
     await expect(select).toHaveValue('frost');
     const done = saved();
-    await select.selectOption({ label: 'Glas' });
+    await select.selectOption({ label: 'Papier' });
     expect((await done).ok()).toBe(true);
-    await expect(html).toHaveAttribute('data-appearance', 'glass');
+    await expect(html).toHaveAttribute('data-appearance', 'paper');
+
+    // Ein Konto, das noch „Glas“ gewählt hatte, sieht „Frost“ – auch auf einem Gerät ohne gespeicherte Wahl
+    const legacy = await page.request.patch('/api/v1/me/preferences', { headers: { 'X-Knowstead-Client': 'e2e' }, data: { appearance: 'glass' } });
+    expect(legacy.ok()).toBe(true);
+    await page.evaluate(() => localStorage.removeItem('knowstead.appearance'));
+    await page.reload();
+    await ready(page);
+    await expect(html).toHaveAttribute('data-appearance', 'frost');
 
     // Zurückstellen – andere Tests mit diesem Konto sollen die klassische Oberfläche sehen
     await choose('Klassisch');
@@ -104,6 +110,13 @@ test.describe('Wahl des Aussehens – ohne Anmeldung', () => {
     await page.goto('/login');
     await ready(page);
     await expect(page.locator('html')).toHaveAttribute('data-appearance', 'paper');
+  });
+
+  test('das entfernte „Glas“ auf diesem Gerät gilt als „Frost“', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('knowstead.appearance', 'glass'));
+    await page.goto('/login');
+    await ready(page);
+    await expect(page.locator('html')).toHaveAttribute('data-appearance', 'frost');
   });
 
   test('Unbekanntes auf diesem Gerät fällt auf „Klassisch“ zurück', async ({ page }) => {

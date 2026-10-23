@@ -4,17 +4,18 @@ import { useSyncExternalStore } from 'react';
  * Aussehen der Oberfläche – unabhängig vom Farbschema (hell/dunkel, theme.ts) und von der Akzentfarbe.
  *
  *  - `classic`: das bisherige, sachliche Aussehen (Vorgabe)
- *  - `glass`:   große Rundungen, tiefes Glas mit Lichtkanten, Pillen und leuchtende Schaltflächen
  *  - `paper`:   warmes Papier, flache Karten mit feinen Rändern, Tinte statt Akzentfarbe für Hauptaktionen
  *  - `frost`:   die Glasoptik ohne Glas – deckende Flächen, keine Unschärfe, keine 3D-Szene; für schwache Rechner
+ *
+ * Das frühere Aussehen `glass` gibt es nicht mehr; gespeicherte Wahlen darauf werden zu `frost` (`normalizeAppearance`).
  *
  * Gesetzt wird `data-appearance` auf <html>; alles Weitere steht in styles/appearance.css. Die Wahl liegt im
  * Konto (`preferences.appearance`, gilt auf allen Geräten) und zusätzlich auf diesem Gerät – so stimmt die erste
  * Darstellung schon vor der Anmeldung.
  */
-export type Appearance = 'classic' | 'glass' | 'paper' | 'frost';
+export type Appearance = 'classic' | 'paper' | 'frost';
 
-export const APPEARANCES: readonly Appearance[] = ['classic', 'glass', 'paper', 'frost'];
+export const APPEARANCES: readonly Appearance[] = ['classic', 'paper', 'frost'];
 
 const KEY = 'knowstead.appearance';
 const EVENT = 'knowstead:appearance';
@@ -23,11 +24,16 @@ export function isAppearance(value: unknown): value is Appearance {
   return typeof value === 'string' && (APPEARANCES as readonly string[]).includes(value);
 }
 
+/** Gültiges Aussehen aus einem gespeicherten Wert – das entfernte `glass` wird zu `frost`, Unbekanntes zu `null`. */
+export function normalizeAppearance(value: unknown): Appearance | null {
+  if (value === 'glass') return 'frost';
+  return isAppearance(value) ? value : null;
+}
+
 /** Auf diesem Gerät gespeicherte Wahl – `null`, solange niemand etwas gewählt hat. */
 export function storedAppearance(): Appearance | null {
   try {
-    const v = localStorage.getItem(KEY);
-    return isAppearance(v) ? v : null;
+    return normalizeAppearance(localStorage.getItem(KEY));
   } catch {
     return null;
   }

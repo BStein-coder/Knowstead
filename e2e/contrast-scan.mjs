@@ -8,7 +8,7 @@
  * tatsächliche Schriftfarbe (mit Deckkraft). Schwelle: 4,5 : 1, für große Schrift (ab 24 px oder ab 18,66 px fett) 3 : 1.
  *
  * Aufruf (die Oberfläche muss gebaut sein):
- *   node contrast-scan.mjs [--look classic,glass,paper] [--scheme light,dark] [--views home,board] [--width 1440] [--height 900]
+ *   node contrast-scan.mjs [--look classic,paper,frost] [--scheme light,dark] [--views home,board] [--width 1440] [--height 900]
  * Im Projektordner:  npm run test:contrast
  *
  * Ergebnis: Auffälligkeiten auf der Konsole und in reports/contrast-scan.txt; Rückgabewert 1, wenn es welche gibt.
@@ -29,7 +29,7 @@ const option = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 };
-const looks = option('look', 'classic,glass,paper,frost').split(',');
+const looks = option('look', 'classic,paper,frost').split(',');
 const schemes = option('scheme', 'light,dark').split(',');
 const width = Number(option('width', 1440));
 const height = Number(option('height', 900));

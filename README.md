@@ -54,11 +54,11 @@ no cache, no queue and no build toolchain on the server.
 | ![Administration overview](docs/images/admin.png) **Administration** – everything is configured in the browser | |
 
 Light and dark design are both shown; each user chooses their own – and so the **appearance**: Classic (above), or
-**Glass** and **Paper** (below), each in light and dark.
+**Frost** and **Paper** (below), each in light and dark.
 
 | | |
 | --- | --- |
-| ![Home page in the Glass appearance, dark](docs/images/appearance-glass.png) **Glass** – wide rounding, translucent cards, pools of light | ![Task board in the Paper appearance, light](docs/images/appearance-paper.png) **Paper** – warm ground, flat cards, ink for main actions |
+| ![Home page in the Frost appearance, dark](docs/images/appearance-frost.png) **Frost** – wide rounding, bright opaque cards, easy on old machines | ![Task board in the Paper appearance, light](docs/images/appearance-paper.png) **Paper** – warm ground, flat cards, ink for main actions |
 
 Plans come as **projects** – every plan of your spaces with progress ring, next date and the people involved – and as a **calendar** of due dates:
 
@@ -87,7 +87,7 @@ Plans come as **projects** – every plan of your spaces with progress ring, nex
 
 The interface comes with light and dark design, keyboard shortcuts, a command palette (`Ctrl`+`K`), a
 responsive layout for phones and tablets and is checked automatically against **WCAG 2.1 AA** on every
-page – in four selectable appearances (Classic, Glass, Paper and the resource-saving Frost), each in light and dark, with the contrast measured
+page – in four selectable appearances (Classic, Paper and the resource-saving Frost), each in light and dark, with the contrast measured
 against the pixels actually drawn. Quality assurance: 452 server tests, 298 browser tests and a layout sweep over every page in five
 window widths.
 

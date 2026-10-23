@@ -1,6 +1,6 @@
 /**
  * Was kostet ein Aussehen? Misst im Browser, wie viel Arbeit die Oberfläche macht – im Leerlauf und beim Scrollen –
- * und stellt Klassisch, Glas, Papier und Frost nebeneinander. Gedacht für die Frage „läuft das auch auf einem
+ * und stellt Klassisch, Papier und Frost nebeneinander. Gedacht für die Frage „läuft das auch auf einem
  * schwachen Rechner oder im Terminalserver?“: Der Browser wird auf Wunsch gebremst (Standard 4-fach), und die Zahlen
  * sind Vergleichswerte, keine Absolutwerte – sie hängen von Rechner und Grafikkarte ab.
  *
@@ -14,7 +14,7 @@
  * virtuellen Maschine); dort kosten Unschärfe, Masken und große Schatten am meisten.
  *
  * Aufruf (die Oberfläche muss gebaut sein):
- *   node perf-probe.mjs [--look classic,glass,paper,frost] [--scheme light,dark] [--views home,board,page] [--throttle 4] [--repeat 3] [--software]
+ *   node perf-probe.mjs [--look classic,paper,frost] [--scheme light,dark] [--views home,board,page] [--throttle 4] [--repeat 3] [--software]
  */
 import { chromium } from 'playwright';
 import { startInstance } from './support/instance.mjs';
@@ -26,7 +26,7 @@ const option = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
 };
-const looks = option('look', 'classic,glass,paper,frost').split(',');
+const looks = option('look', 'classic,paper,frost').split(',');
 const schemes = option('scheme', 'light').split(',');
 const wanted = option('views', 'home,board,page').split(',');
 const throttle = Number(option('throttle', 4));

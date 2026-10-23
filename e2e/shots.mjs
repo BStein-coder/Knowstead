@@ -3,7 +3,7 @@
  * Startet wie english-scan.mjs einen eigenen Server mit Wegwerf-Datenbank (e2e/support/instance.mjs).
  *
  * Aufruf (die Oberfläche muss gebaut sein):
- *   node shots.mjs [--look classic,glass,paper] [--scheme light,dark] [--views home,page,board] [--width 1440] [--height 900] [--full]
+ *   node shots.mjs [--look classic,paper,frost] [--scheme light,dark] [--views home,page,board] [--width 1440] [--height 900] [--full]
  *
  * Die Bilder landen in reports/shots/<aussehen>-<schema>/<ansicht>.png (nicht im Repository).
  */

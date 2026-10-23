@@ -157,7 +157,6 @@ function PreferencesTab() {
             }}
           >
             <option value="classic">{t('app.appearanceClassic')}</option>
-            <option value="glass">{t('app.appearanceGlass')}</option>
             <option value="paper">{t('app.appearancePaper')}</option>
             <option value="frost">{t('app.appearanceFrost')}</option>
           </Select>

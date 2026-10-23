@@ -5,7 +5,7 @@ import type { Me, MeResponse, Preferences, PublicSettings } from '../api/types';
 import { storedLocale, useI18n } from '../i18n';
 import { applyAccent, applyTheme } from './theme';
 import { applyMotion, storedMotion } from './motion';
-import { applyAppearance, isAppearance } from './appearance';
+import { applyAppearance, normalizeAppearance } from './appearance';
 
 interface AuthValue {
   data: MeResponse | undefined;
@@ -69,8 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [data, user?.preferences?.motion, settings.uiMotion]);
   // Aussehen: die Wahl des Kontos gilt auf allen Geräten und wird auf diesem gemerkt
   useEffect(() => {
-    const pref = user?.preferences?.appearance;
-    if (isAppearance(pref)) applyAppearance(pref, true);
+    const pref = normalizeAppearance(user?.preferences?.appearance);
+    if (pref) applyAppearance(pref, true);
   }, [user?.preferences?.appearance]);
   useEffect(() => {
     if (!data) return;

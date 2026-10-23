@@ -48,7 +48,7 @@ export interface Preferences {
   /** Bewegung und 3D-Effekte: eigene Wahl; ohne Angabe gilt die Vorgabe der Installation */
   motion?: 'full' | 'reduced';
   /** Aussehen der Oberfläche (unabhängig von hell/dunkel) */
-  appearance?: 'classic' | 'glass' | 'paper' | 'frost';
+  appearance?: 'classic' | 'glass' | 'paper' | 'frost'; // 'glass' nur noch aus alten Konten; gilt als 'frost'
   sidebarCollapsed?: boolean;
   defaultContentType?: ContentType;
   [key: string]: unknown;

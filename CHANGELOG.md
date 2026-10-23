@@ -11,26 +11,25 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 
 ## [2.2.0] – 2026-10-20
 
-Zwei neue Aussehen („Glas“ und „Papier“), ein Aufgabenplaner in Bewegung mit Kalender, eine Übersicht aller Projekte
+Zwei neue Aussehen („Papier“ und „Frost“), ein Aufgabenplaner in Bewegung mit Kalender, eine Übersicht aller Projekte
 und eine Kontrastprüfung, die auch Lichtflecken und Glas hinter Text misst.
 
 ### Neu
 
-- **Aussehen „Glas“ und „Papier“** zur Wahl neben dem klassischen: Im Benutzermenü (Abschnitt **Aussehen**) und im
+- **Aussehen „Papier“ und „Frost“** zur Wahl neben dem klassischen: Im Benutzermenü (Abschnitt **Aussehen**) und im
   Profil (*Einstellungen → Aussehen*) lässt sich die Gestalt der Oberfläche unabhängig von Hell/Dunkel wählen.
-  - **Glas**: weite Rundungen, durchscheinende Karten mit heller Kante vor Lichtflecken in den Ecken, große
-    Seitentitel, Reiter als Segmente, leuchtende Hauptaktionen.
   - **Papier**: warmer Farbverlauf als Grund, flache Karten mit feinem Rand, „Tinte“ statt Akzentfarbe für
     Hauptaktionen, aktive Einträge und Reiter; die Startseite ohne 3D-Szene.
-  - **Frost**: die Glasoptik ohne Glas, für schwache Rechner, Terminalserver und virtuelle Maschinen. Deckende Flächen mit
-    hellem Rand und kleinen Schatten, ein ruhiger Verlauf als Grund, Hauptaktionen mit festem Rand unten; ohne
-    Unschärfe, ohne Masken, ohne Lichtschleier, ohne 3D-Szene, ohne Neigung zum Zeiger. Ohne Grafikkarte brauchte es beim
-    Scrollen der Startseite in der Messung rund ein Sechstel der CPU-Arbeit von Glas (206 gegen 1 234 ms je Sekunde) und
-    etwa ein Zwölftel der Grafikarbeit, bei 60 statt 30 Bildern je Sekunde; im Leerlauf läuft nichts mit.
+  - **Frost**: hell und klar, weite Rundungen, große Seitentitel, Reiter als Segmente – und für schwache Rechner,
+    Terminalserver und virtuelle Maschinen gebaut. Deckende Flächen mit hellem Rand und kleinen Schatten, ein ruhiger
+    Verlauf als Grund, Hauptaktionen mit festem Rand unten; ohne Unschärfe, ohne Masken, ohne Lichtschleier, ohne
+    3D-Szene, ohne Neigung zum Zeiger. Ohne Grafikkarte brauchte es beim Scrollen der Startseite in der Messung rund ein
+    Sechstel der CPU-Arbeit des klassischen Aussehens (206 gegen 1 273 ms je Sekunde) und etwa ein Elftel der
+    Grafikarbeit (74 gegen 798 ms), bei 60 statt 30 bis 38 Bildern je Sekunde; im Leerlauf läuft nichts mit.
   - Die Wahl gilt im Konto auf allen Geräten (`preferences.appearance`) und wird zusätzlich auf dem Gerät gemerkt,
     damit schon die Anmeldeseite stimmt. **Klassisch** bleibt die Vorgabe und ist unverändert. Die Akzentfarbe der
     Installation gilt in allen Aussehen; „Bewegung reduziert“ und „Transparenz reduzieren“ nehmen auch hier die
-    Unschärfe hinter dem Glas weg.
+    Unschärfe hinter den Glasebenen weg.
   - Technisch eine eigene Achse `data-appearance` auf `<html>` (`web/src/lib/appearance.ts`) mit einem
     Stylesheet (`web/src/styles/appearance.css`), das nur Token und wenige Flächen überschreibt.
 
@@ -92,13 +91,13 @@ und eine Kontrastprüfung, die auch Lichtflecken und Glas hinter Text misst.
   elf Seiten, kein seitlicher Überlauf.
 - Neu: `e2e/tests/planner.spec.ts` – Abhaken und Gleiten der Karten, Ziehen mit Einfügemarke, reduzierte Bewegung,
   Meine Aufgaben, Kalender (Seite und Ansicht im Plan), Projekte; dazu `server/test/task-projects.test.ts`. Die neuen
-  Seiten stehen in Rundgang, Barrierefreiheitsprüfung (hell, dunkel, Glas, Papier), Layout-Messung, Kontrastprüfung und der
+  Seiten stehen in Rundgang, Barrierefreiheitsprüfung (hell, dunkel, Papier, Frost), Layout-Messung, Kontrastprüfung und der
   Suche nach deutschen Resten.
 - Neu: `npm run test:perf` (`e2e/perf-probe.mjs`) misst, was ein Aussehen kostet – Leerlauf, Bilder je Sekunde beim
   Scrollen, CPU- und Grafikarbeit laut Ablaufprotokoll –, auf Wunsch mit gebremstem Browser und ohne Grafikkarte
-  (`--software`). Damit lassen sich Klassisch, Glas, Papier und Frost vergleichen.
+  (`--software`). Damit lassen sich Klassisch, Papier und Frost vergleichen.
 - Neu: `npm --prefix e2e run shots` (Bildschirmfotos je Aussehen und Farbschema in `e2e/reports/shots/`); die
-  Layout-Messung läuft mit `E2E_APPEARANCE=glass` bzw. `paper` (dunkel: `E2E_SCHEME=dark`). Der Wegwerf-Server mit
+  Layout-Messung läuft mit `E2E_APPEARANCE=frost` bzw. `paper` (dunkel: `E2E_SCHEME=dark`). Der Wegwerf-Server mit
   Beispieldaten steht jetzt in `e2e/support/instance.mjs` und dient auch der Suche nach deutschen Resten.
 
 ## [2.1.0] – 2026-10-05

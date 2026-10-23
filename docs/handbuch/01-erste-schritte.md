@@ -63,21 +63,20 @@ Jede Person kann einen **persönlichen Bereich** nutzen (Benutzermenü → „Pe
 
 Im Benutzermenü wählst du **Hell**, **Dunkel** oder **System**, das **Aussehen** sowie die Sprache (Deutsch/Englisch). Die Einstellungen werden in deinem Profil gespeichert und gelten auf allen Geräten.
 
-### Aussehen: Klassisch, Glas, Papier, Frost
+### Aussehen: Klassisch, Papier, Frost
 
 Neben dem Farbschema (hell/dunkel) bestimmt das **Aussehen**, wie die Oberfläche gestaltet ist. Es lässt sich mit Hell und Dunkel beliebig kombinieren; die Akzentfarbe deiner Installation bleibt in allen Aussehen erhalten.
 
 | Aussehen | Charakter |
 | --- | --- |
 | **Klassisch** | Die Vorgabe: sachlich, schwebende Glasebenen für Navigation und Kopfleiste, ruhige Karten. |
-| **Glas** | Großzügig und leuchtend: weite Rundungen, durchscheinende Karten mit heller Kante vor kräftigen Lichtflecken, große Seitentitel, Reiter als Segmente. |
 | **Papier** | Warm und ruhig: warmer Farbverlauf als Grund, flache Karten auf Papier, **Tinte** statt Akzentfarbe für Hauptaktionen, aktive Einträge und Reiter; die Startseite ohne 3D-Szene. |
-| **Frost** | Sieht aus wie Glas, braucht aber kaum Rechenleistung: deckende Flächen mit hellem Rand und kleinen Schatten, ein ruhiger Farbverlauf als Grund, Hauptaktionen mit festem Rand unten wie eine Taste. Ohne Unschärfe, ohne 3D-Szene, ohne Neigung zum Mauszeiger. Gedacht für ältere Geräte, Terminalserver und virtuelle Maschinen. |
+| **Frost** | Hell und klar mit weiten Rundungen, große Seitentitel, Reiter als Segmente – und doch kaum Rechenleistung: deckende Flächen mit hellem Rand und kleinen Schatten, ein ruhiger Farbverlauf als Grund, Hauptaktionen mit festem Rand unten wie eine Taste. Ohne Unschärfe, ohne 3D-Szene, ohne Neigung zum Mauszeiger. Gedacht für ältere Geräte, Terminalserver und virtuelle Maschinen. |
 
-Das Aussehen wählst du im Benutzermenü unter **Aussehen** oder im Profil unter *Einstellungen → Aussehen*. Die Wahl gilt für dein Konto auf allen Geräten; vor der Anmeldung gilt die Wahl, die auf diesem Gerät zuletzt getroffen wurde. Alle Kombinationen erreichen den Kontrast **4,5 : 1** (WCAG AA); mit *Bewegung und Effekte → Reduziert* oder „Transparenz reduzieren“ im Betriebssystem entfällt die Unschärfe hinter dem Glas.
+Das Aussehen wählst du im Benutzermenü unter **Aussehen** oder im Profil unter *Einstellungen → Aussehen*. Die Wahl gilt für dein Konto auf allen Geräten; vor der Anmeldung gilt die Wahl, die auf diesem Gerät zuletzt getroffen wurde. Alle Kombinationen erreichen den Kontrast **4,5 : 1** (WCAG AA); mit *Bewegung und Effekte → Reduziert* oder „Transparenz reduzieren“ im Betriebssystem entfällt die Unschärfe hinter den Glasebenen.
 
 > [!TIP]
-> **Läuft Knowstead bei dir zäh** – im Terminalserver, per Fernzugriff, auf einem älteren Rechner? Dann wähle **Frost**. In Messungen ohne Grafikkarte (Software-Rendering) brauchte Frost beim Scrollen der Startseite rund ein Sechstel der Rechenarbeit von Glas und blieb flüssig, wo Klassisch und Glas ruckelten – und im Leerlauf läuft nichts mehr mit. Wer nur die Bewegung loswerden will, schaltet im Benutzermenü **Animationen und 3D-Effekte** aus.
+> **Läuft Knowstead bei dir zäh** – im Terminalserver, per Fernzugriff, auf einem älteren Rechner? Dann wähle **Frost**. In Messungen ohne Grafikkarte (Software-Rendering) brauchte Frost beim Scrollen der Startseite rund ein Sechstel der Rechenarbeit von Klassisch und blieb flüssig, wo Klassisch ruckelte – und im Leerlauf läuft nichts mehr mit. Wer nur die Bewegung loswerden will, schaltet im Benutzermenü **Animationen und 3D-Effekte** aus.
 
 ### Bewegung und 3D-Effekte
 
