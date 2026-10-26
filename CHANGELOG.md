@@ -9,7 +9,9 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
-## [Unveröffentlicht]
+## [2.2.1] – 2026-10-26
+
+Gedämpftere 3D-Effekte, und Dialoge behalten den Fokus, wo man gerade tippt.
 
 ### Geändert
 
