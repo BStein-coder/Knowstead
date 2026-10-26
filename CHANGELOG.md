@@ -55,6 +55,27 @@ und eine Kontrastprüfung, die auch Lichtflecken und Glas hinter Text misst.
   die Filter `dueFrom` (zusammen mit `dueBefore` ein Zeitraum der Fälligkeiten) sowie `spanFrom`/`spanTo` (Aufgaben, deren
   Zeitraum Beginn–Fälligkeit den Ausschnitt berührt oder ganz überspannt) für `GET /api/v1/tasks`. Jetzt 273 Operationen.
 
+### Sicherheit und Fehler
+
+Gesamtprüfung am 26.10.2026: Rundläufe über alle 273 Operationen (kodierte Pfade, „Kanarien“-Scan als Person ohne Rechte
+und anonym, Fuzz mit seltsamen Werten, Schreibversuche gegen private und schreibgeschützte Bereiche) und eine Durchsicht der
+sicherheitsrelevanten Stellen. Die Rechteprüfung war überall dicht; gefunden wurden:
+
+- **Kodierter Pfad umging Anmeldung, CSRF-Schutz und Token-Rechte**: Der Router dekodiert `/%61pi/v1/…` zu `/api/v1/…`,
+  die Prüfung verglich aber die rohe Adresse. Anfragen über diesen Pfad liefen ohne Auswertung der Sitzung – nur hielt sie
+  der fehlende Kontext meist mit Fehler 500 auf –, und `/%61pi/docs/json` lieferte die API-Beschreibung auch anonym.
+  Maßgeblich ist jetzt die Route selbst (`requestPath` in `server/src/app.ts`).
+- **Passwort ändern**: Die Route ist wie die Anmeldung auf 20 Versuche je 10 Minuten begrenzt, und ein API-Token darf das
+  Passwort seiner Person weder ändern noch durch Probieren erraten – nur die angemeldete Sitzung.
+- **Fehler 500 statt 400**: Ein riesiger `offset` (z. B. `99999999999999999999`) ließ sich nicht an SQLite übergeben –
+  betroffen waren Benachrichtigungen, Versionen, Benutzer, Audit-Log, E-Mail-Warteschlange und Suche. Gruppen und Personen,
+  die es nicht gibt (`groupIds: [0]`, `userIds: [0]`), brachten ebenfalls einen 500 – jetzt 404, und die Änderung wird
+  zurückgenommen.
+- **Abhängigkeiten** (`npm audit`): `fast-uri` 3.1.9/4.2.3 (vier Hinweise zu URI-Auswertung, in Fastify und Ajv),
+  `vite` 8.3.5 mit `rolldown` 1.2.15 und `postcss` 8.5.31 (Entwicklungsserver; nicht im ausgelieferten Programm), `zod` 4.6.7
+  (Entwicklungswerkzeug). Offen bleibt ein niedriger Hinweis zu `katex` in `mermaid` (Behebung nur mit einem Hauptversionssprung).
+- Neu: `server/test/security-hardening.test.ts` hält die drei Fälle fest.
+
 ### Barrierefreiheit
 
 - **Weiße Schrift auf Hauptschaltflächen erreicht jetzt 4,5 : 1**: Der Akzentverlauf lief zum Ende hin in ein

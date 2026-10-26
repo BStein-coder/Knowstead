@@ -1,6 +1,6 @@
 import Type from 'typebox';
 import type { App } from '../../http.ts';
-import { IdParam } from '../../http.ts';
+import { IdParam, Offset } from '../../http.ts';
 import type { Services } from '../../services.ts';
 import { translate } from '../../core/i18n.ts';
 
@@ -18,7 +18,7 @@ export async function mailRoutes(app: App, s: Services): Promise<void> {
           status: Type.Optional(Type.String({ maxLength: 20 })),
           q: Type.Optional(Type.String({ maxLength: 200 })),
           limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 200 })),
-          offset: Type.Optional(Type.Integer({ minimum: 0 })),
+          offset: Type.Optional(Offset),
         }),
       },
     },

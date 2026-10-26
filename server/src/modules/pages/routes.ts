@@ -1,6 +1,6 @@
 import Type from 'typebox';
 import type { App } from '../../http.ts';
-import { IdParam, Nullable, requireUser } from '../../http.ts';
+import { IdParam, Nullable, requireUser, Offset } from '../../http.ts';
 import type { Services } from '../../services.ts';
 import { badRequest } from '../../core/errors.ts';
 import { markdownToHtml } from '../../core/markdown.ts';
@@ -350,7 +350,7 @@ export async function pageRoutes(app: App, s: Services): Promise<void> {
         tags: ['Versionen'],
         summary: 'Versionsgeschichte',
         params: IdParam,
-        querystring: Type.Object({ limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })), offset: Type.Optional(Type.Integer({ minimum: 0 })) }),
+        querystring: Type.Object({ limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })), offset: Type.Optional(Offset) }),
       },
     },
     async (req) => s.revisions.list(req.auth, req.params.id, req.query),

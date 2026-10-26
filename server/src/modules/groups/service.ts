@@ -201,6 +201,7 @@ export class GroupService {
     this.s.db.transaction(() => {
       this.s.db.run('DELETE FROM group_members WHERE group_id = ?', id);
       for (const uid of new Set(userIds)) {
+        this.s.users.require(uid);
         this.s.db.run('INSERT OR IGNORE INTO group_members (group_id, user_id, added_at) VALUES (?, ?, ?)', id, uid, nowIso());
       }
       if (perms.includes('admin') && this.s.users.countActiveAdmins() === 0) {

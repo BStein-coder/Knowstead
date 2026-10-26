@@ -31,9 +31,12 @@ export function requireUser(req: FastifyRequest): AuthUser {
 export const IdParam = Type.Object({ id: Type.Integer({ minimum: 1 }) });
 export const KeyParam = Type.Object({ key: Type.String({ minLength: 1, maxLength: 64 }) });
 
+/** Obergrenze für Versatz-Angaben: größere Zahlen lassen sich nicht mehr an SQLite binden (Fehler 500 statt 400) */
+export const Offset = Type.Integer({ minimum: 0, maximum: 1_000_000_000 });
+
 export const Paging = {
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
-  offset: Type.Optional(Type.Integer({ minimum: 0 })),
+  offset: Type.Optional(Offset),
 };
 
 /**

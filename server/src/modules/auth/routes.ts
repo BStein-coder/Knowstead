@@ -1,6 +1,6 @@
 import Type from 'typebox';
 import type { App } from '../../http.ts';
-import { Nullable, requireUser } from '../../http.ts';
+import { Nullable, requireUser, Offset } from '../../http.ts';
 import type { Services } from '../../services.ts';
 import { GLOBAL_PERMISSIONS } from '../../core/permissions.ts';
 import { forbidden, notFound } from '../../core/errors.ts';
@@ -178,6 +178,8 @@ export async function authRoutes(app: App, s: Services): Promise<void> {
   app.post(
     '/api/v1/auth/password',
     {
+      // Wie die Anmeldung begrenzt: Eine fremde, offene Sitzung soll das aktuelle Passwort nicht durch Probieren erraten können
+      config: rateLimited,
       schema: {
         tags: ['Authentifizierung'],
         summary: 'Eigenes Passwort ändern',
@@ -326,7 +328,7 @@ export async function authRoutes(app: App, s: Services): Promise<void> {
         querystring: Type.Object({
           unread: Type.Optional(Type.Boolean()),
           limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
-          offset: Type.Optional(Type.Integer({ minimum: 0 })),
+          offset: Type.Optional(Offset),
         }),
       },
     },

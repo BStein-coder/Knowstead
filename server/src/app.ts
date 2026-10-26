@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import Fastify, { LogController, type FastifyError } from 'fastify';
+import Fastify, { LogController, type FastifyError, type FastifyRequest } from 'fastify';
 import cookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
@@ -36,6 +36,22 @@ import { RotatingLogStream } from './core/logfile.ts';
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 /** Formular-POST eines Identitätsanbieters (SAML) – geschützt durch Signatur, InResponseTo und das Vorgangs-Cookie */
 const CSRF_EXEMPT = new Set(['/api/v1/auth/saml/acs']);
+
+/**
+ * Pfad der angefragten Route. Der Router dekodiert den Pfad (`/%61pi/v1/…` erreicht dieselbe Route wie `/api/v1/…`);
+ * ein Vergleich mit der rohen Adresse ließe Anmeldung, CSRF-Schutz und Token-Rechte dort aus. Maßgeblich ist deshalb
+ * die Route selbst, bei unbekannten Pfaden die dekodierte Adresse.
+ */
+export function requestPath(req: FastifyRequest): string {
+  const route = req.routeOptions?.url;
+  if (route) return route;
+  const raw = req.url.split('?')[0];
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
 
 export interface BuildOptions {
   logger?: boolean;
@@ -101,7 +117,7 @@ export async function buildApp(config: Config, options: BuildOptions = {}): Prom
   /* ------------------------ Authentifizierung & Schutz ------------------------ */
 
   app.addHook('onRequest', async (req, reply) => {
-    const url = req.url;
+    const url = requestPath(req);
     if (!url.startsWith('/api/') && !url.startsWith('/plugin-assets/')) return;
     if (url.startsWith('/api/docs')) {
       // API-Referenz nur für Angemeldete (Sitzung oder Token) – anonyme Besucher sollen die Schnittstelle nicht
@@ -125,7 +141,7 @@ export async function buildApp(config: Config, options: BuildOptions = {}): Prom
       if (UNSAFE_METHODS.has(method) && !scopes.has('write') && !scopes.has('admin')) {
         throw new HttpError(403, 'insufficient_scope', 'Das Token benötigt den Umfang „write“');
       }
-    } else if (UNSAFE_METHODS.has(method) && !headerValue(req.headers, 'client') && !CSRF_EXEMPT.has(url.split('?')[0])) {
+    } else if (UNSAFE_METHODS.has(method) && !headerValue(req.headers, 'client') && !CSRF_EXEMPT.has(url)) {
       // CSRF-Schutz für Cookie-Sitzungen: nur der eigene Client setzt diesen Header.
       reply.header('Cache-Control', 'no-store');
       throw new HttpError(403, 'csrf', 'Anfrage ohne X-Knowstead-Client-Header abgelehnt (CSRF-Schutz). Für Skripte bitte ein API-Token verwenden.');
@@ -155,9 +171,10 @@ export async function buildApp(config: Config, options: BuildOptions = {}): Prom
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()');
     // Fremde Fenster erhalten keinen Zugriff auf Knowstead-Fenster (window.opener)
     reply.header('Cross-Origin-Opener-Policy', 'same-origin');
-    if (req.url.startsWith('/api/') && !reply.hasHeader('Cache-Control')) reply.header('Cache-Control', 'no-store');
+    const path = requestPath(req);
+    if (path.startsWith('/api/') && !reply.hasHeader('Cache-Control')) reply.header('Cache-Control', 'no-store');
     const type = String(reply.getHeader('Content-Type') ?? '');
-    if (type.startsWith('text/html') && !req.url.startsWith('/api/')) {
+    if (type.startsWith('text/html') && !path.startsWith('/api/')) {
       const frameHosts = s.settings.get('allowedEmbedHosts').map((h) => `https://${h}`);
       // Der draw.io-Editor läuft in einem iframe (auch selbst betrieben möglich).
       try {
@@ -244,7 +261,7 @@ export async function buildApp(config: Config, options: BuildOptions = {}): Prom
 
   app.setNotFoundHandler((req, reply) => {
     // HEAD wie GET beantworten (Verfügbarkeitsprüfungen, Proxys) – Node lässt den Inhalt dabei weg
-    if (req.url.startsWith('/api/') || (req.method !== 'GET' && req.method !== 'HEAD')) {
+    if (requestPath(req).startsWith('/api/') || (req.method !== 'GET' && req.method !== 'HEAD')) {
       return reply.status(404).send({ error: { code: 'not_found', message: `Route ${req.method} ${req.url.split('?')[0]} existiert nicht` } });
     }
     let decoded: string;

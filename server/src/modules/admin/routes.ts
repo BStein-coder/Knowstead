@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Type from 'typebox';
 import type { App } from '../../http.ts';
-import { IdParam, Nullable } from '../../http.ts';
+import { IdParam, Nullable, Offset } from '../../http.ts';
 import type { Services } from '../../services.ts';
 import { EVENT_TYPES } from '../../core/events.ts';
 import { GLOBAL_PERMISSIONS, ROLE_LABELS, SPACE_ACTIONS, SPACE_ROLES } from '../../core/permissions.ts';
@@ -81,7 +81,7 @@ export async function adminRoutes(app: App, s: Services): Promise<void> {
           kind: Type.Optional(Type.String()),
           group: Type.Optional(Type.Integer()),
           limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
-          offset: Type.Optional(Type.Integer({ minimum: 0 })),
+          offset: Type.Optional(Offset),
         }),
       },
     },
@@ -488,7 +488,7 @@ export async function adminRoutes(app: App, s: Services): Promise<void> {
     from: Type.Optional(Type.String()),
     to: Type.Optional(Type.String()),
     limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 1000 })),
-    offset: Type.Optional(Type.Integer({ minimum: 0 })),
+    offset: Type.Optional(Offset),
   });
 
   app.get('/api/v1/admin/audit', { schema: { tags, summary: 'Audit-Log', querystring: AuditQuery } }, async (req) =>

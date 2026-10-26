@@ -391,6 +391,8 @@ export class AuthService {
   }
 
   async changePassword(auth: AuthContext, current: string, next: string): Promise<void> {
+    // Ein Token mit Schreibrecht soll das Passwort seiner Person weder ändern noch durch Probieren erraten können
+    if (auth.via === 'token') throw forbidden('Das Passwort lässt sich nur in einer angemeldeten Sitzung ändern, nicht mit einem API-Token');
     const user = this.s.users.require(this.s.perms.requireUser(auth).id);
     if (!(await verifyPasswordAsync(current, user.password_hash))) throw badRequest('Das aktuelle Passwort ist falsch');
     this.s.users.setPassword(user.id, next);

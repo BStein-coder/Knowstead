@@ -1,5 +1,6 @@
 import Type from 'typebox';
 import type { App } from '../../http.ts';
+import { Offset } from '../../http.ts';
 import type { Services } from '../../services.ts';
 
 export async function searchRoutes(app: App, s: Services): Promise<void> {
@@ -20,7 +21,7 @@ export async function searchRoutes(app: App, s: Services): Promise<void> {
           updatedAfter: Type.Optional(Type.String()),
           sort: Type.Optional(Type.Union([Type.Literal('relevance'), Type.Literal('updated'), Type.Literal('title')])),
           limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
-          offset: Type.Optional(Type.Integer({ minimum: 0 })),
+          offset: Type.Optional(Offset),
         }),
       },
     },

@@ -78,6 +78,7 @@ export const EN_TEXTS: Record<string, string> = {
   'Einrichtungscode fehlt oder ist falsch. Er steht im Serverprotokoll (Startfenster, Dienstprotokoll bzw. „docker compose logs“).': 'Setup code missing or incorrect. It is shown in the server log (console window, service log or “docker compose logs”).',
   'Bitte bestätige {} mit deinem aktuellen Passwort': 'Please confirm {} with your current password',
   'Das aktuelle Passwort ist falsch': 'The current password is incorrect',
+  'Das Passwort lässt sich nur in einer angemeldeten Sitzung ändern, nicht mit einem API-Token': 'The password can only be changed in a signed-in session, not with an API token',
   'Dieses Konto meldet sich über das Verzeichnis (Windows-Anmeldung) an': 'This account signs in via the directory (Windows sign-in)',
   'Dieses Konto meldet sich über Single Sign-on an': 'This account signs in via single sign-on',
   'Ungültiger Claim- bzw. Attributname: {}': 'Invalid claim or attribute name: {}',

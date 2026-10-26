@@ -254,6 +254,7 @@ export class UserService {
         for (const g of this.s.db.all<{ id: number }>('SELECT id FROM groups WHERE is_default = 1')) groupIds.add(g.id);
       }
       for (const gid of groupIds) {
+        this.s.groups.require(gid);
         this.s.db.run('INSERT OR IGNORE INTO group_members (group_id, user_id, added_at) VALUES (?, ?, ?)', gid, userId, now);
       }
       return userId;
@@ -292,6 +293,7 @@ export class UserService {
         const wasAdmin = this.isAdmin(id);
         this.s.db.run('DELETE FROM group_members WHERE user_id = ?', id);
         for (const gid of new Set(input.groupIds)) {
+          this.s.groups.require(gid);
           this.s.db.run('INSERT OR IGNORE INTO group_members (group_id, user_id, added_at) VALUES (?, ?, ?)', gid, id, nowIso());
         }
         if (wasAdmin && !this.isAdmin(id) && this.countActiveAdmins() === 0) {
