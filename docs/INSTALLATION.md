@@ -65,11 +65,11 @@ Update abzuschließen; vorhandene Werte und der Serverschlüssel bleiben dabei e
 Die Prüfsumme steht jeweils in der `.sha256`-Datei daneben:
 
 ```powershell
-Get-FileHash .\knowstead-2.2.0-windows-x64.zip -Algorithm SHA256
+Get-FileHash .\knowstead-2.2.1-windows-x64.zip -Algorithm SHA256
 ```
 
 ```bash
-sha256sum -c knowstead-2.2.0-linux-x64.tar.gz.sha256
+sha256sum -c knowstead-2.2.1-linux-x64.tar.gz.sha256
 ```
 
 Ein Paket gilt für das Betriebssystem, für das es gebaut wurde. Wird es trotzdem auf einem anderen
@@ -137,7 +137,7 @@ die Einrichtung fehl, nachdem der Assistent ein laufendes Knowstead angehalten h
 ### Linux
 
 ```bash
-sudo tar -xzf knowstead-2.2.0-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.2.0-linux-x64 /opt/knowstead
+sudo tar -xzf knowstead-2.2.1-linux-x64.tar.gz -C /opt && sudo mv /opt/knowstead-2.2.1-linux-x64 /opt/knowstead
 ```
 
 ```bash
@@ -227,7 +227,7 @@ apt update && apt install -y curl
 ```
 
 ```bash
-cd /opt && curl -fLO https://github.com/BStein-coder/Knowstead/releases/download/v2.2.0/knowstead-2.2.0-linux-x64.tar.gz
+cd /opt && curl -fLO https://github.com/BStein-coder/Knowstead/releases/download/v2.2.1/knowstead-2.2.1-linux-x64.tar.gz
 ```
 
 Noch kein Release auf GitHub? Dann das Paket auf dem Windows-Rechner mit dem Programmordner bauen und
@@ -237,18 +237,18 @@ Noch kein Release auf GitHub? Dann das Paket auf dem Windows-Rechner mit dem Pro
 cd D:\Knowstead
 npm run build
 node scripts/package.mjs --target linux-x64
-scp release\knowstead-2.2.0-linux-x64.tar.gz root@proxmox:/tmp/
+scp release\knowstead-2.2.1-linux-x64.tar.gz root@proxmox:/tmp/
 ```
 
 ```bash
-pct push <CT-ID> /tmp/knowstead-2.2.0-linux-x64.tar.gz /opt/knowstead-2.2.0-linux-x64.tar.gz
+pct push <CT-ID> /tmp/knowstead-2.2.1-linux-x64.tar.gz /opt/knowstead-2.2.1-linux-x64.tar.gz
 ```
 
 Das Paket enthält Oberfläche und Laufzeitbestandteile für Linux; Besitzer und Rechte stimmen auch, wenn
 es unter Windows gebaut wurde. Danach im Container entpacken:
 
 ```bash
-cd /opt && tar -xzf knowstead-2.2.0-linux-x64.tar.gz && mv knowstead-2.2.0-linux-x64 knowstead
+cd /opt && tar -xzf knowstead-2.2.1-linux-x64.tar.gz && mv knowstead-2.2.1-linux-x64 knowstead
 ```
 
 **3. Installieren:**
@@ -462,7 +462,7 @@ node scripts\prepare.mjs     # installiert Abhängigkeiten und baut die Oberflä
 npm start                    # Probestart im Vordergrund
 ```
 
-Im Protokoll erscheinen `Knowstead 2.2.0 läuft auf https://knowstead.firma.de` und – solange es noch kein Konto
+Im Protokoll erscheinen `Knowstead 2.2.1 läuft auf https://knowstead.firma.de` und – solange es noch kein Konto
 gibt – der **Einrichtungscode**. Probestart mit `Strg`+`C` beenden. Die Ersteinrichtung folgt nach dem
 Einrichten des Proxys ([Abschnitt 8](#8-ersteinrichtung-im-browser)).
 
@@ -876,7 +876,7 @@ ARR ergänzt `X-Forwarded-For` von sich aus. In der `.env` passt `TRUST_PROXY=lo
 ### 7.5 Proxy prüfen
 
 ```bash
-curl https://knowstead.firma.de/api/v1/health                   # {"status":"ok","version":"2.2.0",…}
+curl https://knowstead.firma.de/api/v1/health                   # {"status":"ok","version":"2.2.1",…}
 curl -s -o /dev/null -D - https://knowstead.firma.de/login      # 200, u. a. content-security-policy, strict-transport-security
 ```
 
@@ -1079,7 +1079,7 @@ Migrationen laufen in einer Transaktion, eine ältere Version startet nie auf ei
 `.sha256`-Datei auf den Server kopieren, dann:
 
 ```bash
-sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.2.0-linux-x64.tar.gz
+sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.2.1-linux-x64.tar.gz
 ```
 
 | Schritt | Was geschieht |
@@ -1095,8 +1095,8 @@ sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.2.0-linux-x64.tar.gz
   entpacken und das Skript daraus starten. Es findet die Installation über den Dienst-Eintrag (sonst `--target /opt/knowstead`):
 
   ```bash
-  cd /tmp && tar -xzf knowstead-2.2.0-linux-x64.tar.gz
-  sudo bash /tmp/knowstead-2.2.0-linux-x64/update.sh
+  cd /tmp && tar -xzf knowstead-2.2.1-linux-x64.tar.gz
+  sudo bash /tmp/knowstead-2.2.1-linux-x64/update.sh
   ```
 
 - **Installation aus der Zeit, als Knowstead noch „Doku“ hieß (bis 1.9):** Dienst, Konto, Ordner und
@@ -1104,7 +1104,7 @@ sudo bash /opt/knowstead/update.sh /tmp/knowstead-2.2.0-linux-x64.tar.gz
   Paket an und findet den Dienst `doku` selbst:
 
   ```bash
-  sudo bash /opt/doku/update.sh /tmp/knowstead-2.2.0-linux-x64.tar.gz
+  sudo bash /opt/doku/update.sh /tmp/knowstead-2.2.1-linux-x64.tar.gz
   ```
 
   Wo diese Anleitung `/opt/knowstead`, `/var/lib/knowstead` oder den Dienst `knowstead` nennt, heißt es bei

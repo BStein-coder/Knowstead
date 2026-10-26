@@ -1,4 +1,4 @@
-# Release: Bei einem Tag „v2.2.0“ Installationspakete für Windows und Linux bauen, prüfen und als
+# Release: Bei einem Tag „v2.2.1“ Installationspakete für Windows und Linux bauen, prüfen und als
 # GitHub-Release mit den Versionshinweisen aus CHANGELOG.md veröffentlichen.
 name: Release
 

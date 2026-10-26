@@ -29,7 +29,7 @@ führt der Einrichtungsassistent durch die Kontoanlage.
 | `node scripts/prepare.mjs` | Abhängigkeiten und Oberfläche nur bei Änderungen installieren bzw. bauen (nutzen `start.cmd`/`start.sh`) |
 | `node scripts/install.mjs --help` | Installationskern der Assistenten (`.env`, Verzeichnisse, Probestart, Prüfung) |
 | `node scripts/package.mjs` | Installationspaket nach `release/` bauen (vorher `npm run build`); `--target linux-x64` bzw. `windows-x64`/`linux-arm64` für ein anderes System – npm lädt dann die nativen Module des Zielsystems |
-| `node scripts/release-notes.mjs 2.2.0` | Versionshinweise einer Version aus `CHANGELOG.md` (nutzt der Release-Workflow) |
+| `node scripts/release-notes.mjs 2.2.1` | Versionshinweise einer Version aus `CHANGELOG.md` (nutzt der Release-Workflow) |
 | `node scripts/loadtest.mjs` | Lasttest mit Testdaten in einem temporären Verzeichnis |
 
 Ein einzelner Test:
