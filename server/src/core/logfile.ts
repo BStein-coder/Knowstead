@@ -26,9 +26,13 @@ export class RotatingLogStream {
 
   write(chunk: string | Uint8Array): boolean {
     const data = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
-    if (this.size > 0 && this.size + data.length > this.maxBytes) this.rotate();
-    fs.writeSync(this.fd, data);
-    this.size += data.length;
+    try {
+      if (this.size > 0 && this.size + data.length > this.maxBytes) this.rotate();
+      fs.writeSync(this.fd, data);
+      this.size += data.length;
+    } catch {
+      // Platte voll oder Datei gesperrt: Die Zeile geht in die Datei verloren, der Server läuft weiter (die Konsole bekommt sie trotzdem)
+    }
     this.mirror?.write(data);
     return true;
   }

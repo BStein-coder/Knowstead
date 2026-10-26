@@ -4,6 +4,7 @@ import type { AuthContext } from '../../core/permissions.ts';
 import { GLOBAL_PERMISSIONS } from '../../core/permissions.ts';
 import { nowIso, parseJson } from '../../db/database.ts';
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors.ts';
+import { forgetSubject, nextRowId, rememberRowId } from '../../core/subjects.ts';
 
 /** Zugeordnete Verzeichnisgruppen werden zeilenweise (oder mit „;“) gespeichert. */
 export function splitDirectoryGroups(value: string | null | undefined): string[] {
@@ -119,8 +120,9 @@ export class GroupService {
     const perms = this.validatePermissions(input.permissions ?? [], auth);
     const now = nowIso();
     const res = this.s.db.run(
-      `INSERT INTO groups (name, description, permissions, is_default, created_at, updated_at, directory_groups, sync_enabled)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO groups (id, name, description, permissions, is_default, created_at, updated_at, directory_groups, sync_enabled)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      nextRowId(this.s.db, 'groups'),
       name,
       input.description ?? '',
       JSON.stringify(perms),
@@ -184,9 +186,9 @@ export class GroupService {
     const row = this.require(id);
     if (row.is_system) throw badRequest('Systemgruppen können nicht gelöscht werden');
     this.s.db.transaction(() => {
+      rememberRowId(this.s.db, 'groups', id);
       this.s.db.run('DELETE FROM groups WHERE id = ?', id);
-      this.s.db.run("DELETE FROM space_permissions WHERE subject_type = 'group' AND subject_id = ?", id);
-      this.s.db.run("DELETE FROM page_restrictions WHERE subject_type = 'group' AND subject_id = ?", id);
+      forgetSubject(this.s.db, 'group', id);
       if (this.s.users.countActiveAdmins() === 0) throw badRequest('Es muss mindestens ein aktiver Administrator verbleiben');
     });
     this.s.perms.invalidateRestrictions();

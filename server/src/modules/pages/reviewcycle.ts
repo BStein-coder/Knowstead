@@ -226,6 +226,11 @@ export class ReviewCycleService {
     if (!this.canConfigure(auth, page, space)) throw forbidden('Verantwortliche und Wiedervorlage ändern darf, wer die Seite bearbeiten darf');
     let ownerId = page.owner_id;
     if (input.ownerId !== undefined && input.ownerId !== page.owner_id) {
+      // Die verantwortliche Person entscheidet im Vorschlagsmodus über Vorschläge. Wer nur vorschlagen darf, soll sich
+      // nicht selbst dazu machen können – sonst ließe sich der Modus mit zwei Anfragen umgehen.
+      if ((page.edit_mode ?? 'direct') === 'suggest' && !this.s.suggestions.canResolve(auth, page, space)) {
+        throw forbidden('Auf dieser Seite sind nur Vorschläge möglich – wer verantwortlich ist, bestimmen Autorin, Autor, die Verantwortlichen und die Bereichsverwaltung');
+      }
       if (input.ownerId === null) ownerId = null;
       else {
         const owner = this.s.users.get(input.ownerId);
@@ -470,8 +475,11 @@ export class ReviewCycleService {
           // Die Aufgabe legt das System an, niemand Bestimmtes – Titel, Notiz und Stichwort stehen deshalb in der
           // Sprache der Installation. Der Seitentitel bleibt, wie er ist.
           const locale = this.s.settings.get('defaultLocale');
+          // Der Plan ist für alle im Bereich sichtbar: Der Titel einer eingeschränkten Seite gehört nicht hinein
+          const chain = this.s.perms.ancestorChain(page.id);
+          const restricted = [...this.s.perms.restrictionsFor(chain).values()].some((r) => r.view.length > 0);
           const task = this.s.tasks.create(this.s.perms.system(), space.review_board_id, {
-            title: `${translate('Seite prüfen', locale)}: ${page.title}`.slice(0, 300),
+            title: `${translate('Seite prüfen', locale)}: ${restricted ? `#${page.id}` : page.title}`.slice(0, 300),
             notes: translate(`Wiedervorlage fällig seit ${dueText}. Inhalt prüfen und auf der Seite „Als aktuell bestätigen“ – die Aufgabe wird dann automatisch erledigt.`, locale),
             assigneeId: responsible,
             dueDate: page.review_due_at!.slice(0, 10),

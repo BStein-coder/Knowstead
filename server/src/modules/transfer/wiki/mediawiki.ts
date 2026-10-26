@@ -345,19 +345,19 @@ export function mediaWikiToHtml(source: string, ctx: MwConvertContext, nested = 
   text = text.replace(/<!--[\s\S]*?(-->|$)/g, '');
   text = text.replace(/<nowiki>([\s\S]*?)<\/nowiki>/gi, (_, inner: string) => protect.put(escapeHtml(inner)));
   text = text.replace(/<nowiki\s*\/>/gi, '');
-  text = text.replace(/<(syntaxhighlight|source)\b([^>]*)>([\s\S]*?)<\/\1>/gi, (_, _tag: string, attrs: string, code: string) => {
+  text = text.replace(/<(syntaxhighlight|source)\b([^<>]*)>([\s\S]*?)<\/\1>/gi, (_, _tag: string, attrs: string, code: string) => {
     const lang = attrs.match(/lang(?:uage)?\s*=\s*["']?([\w#+-]+)/i)?.[1];
     if (/\binline\b/i.test(attrs)) return protect.put(`<code>${escapeHtml(code)}</code>`);
     return blockToken(codeBlock(code, lang));
   });
-  text = text.replace(/<pre\b[^>]*>([\s\S]*?)<\/pre>/gi, (_, code: string) => blockToken(codeBlock(decodeXml(code))));
-  text = text.replace(/<math\b([^>]*)>([\s\S]*?)<\/math>/gi, (_, attrs: string, latex: string) => {
+  text = text.replace(/<pre\b[^<>]*>([\s\S]*?)<\/pre>/gi, (_, code: string) => blockToken(codeBlock(decodeXml(code))));
+  text = text.replace(/<math\b([^<>]*)>([\s\S]*?)<\/math>/gi, (_, attrs: string, latex: string) => {
     const tex = escapeHtml(latex.trim());
     return /display\s*=\s*["']?block/i.test(attrs)
       ? blockToken(`<div data-type="block-math" data-latex="${tex}"></div>`)
       : protect.put(`<span data-type="inline-math" data-latex="${tex}"></span>`);
   });
-  text = text.replace(/<gallery\b[^>]*>([\s\S]*?)<\/gallery>/gi, (_, body: string) => {
+  text = text.replace(/<gallery\b[^<>]*>([\s\S]*?)<\/gallery>/gi, (_, body: string) => {
     const items = body
       .split('\n')
       .map((line) => line.trim())
@@ -374,12 +374,12 @@ export function mediaWikiToHtml(source: string, ctx: MwConvertContext, nested = 
   });
 
   // Einzelnachweise
-  text = text.replace(/<ref\b([^>]*?)\/>/gi, (_, attrs: string) => {
+  text = text.replace(/<ref\b([^<>]*?)\/>/gi, (_, attrs: string) => {
     const name = attrs.match(/name\s*=\s*["']?([^"'>\s]+)/i)?.[1];
     const n = name ? namedRefs.get(name) : undefined;
     return n ? protect.put(`<sup>[${n}]</sup>`) : '';
   });
-  text = text.replace(/<ref\b([^>]*)>([\s\S]*?)<\/ref>/gi, (_, attrs: string, body: string) => {
+  text = text.replace(/<ref\b([^<>]*)>([\s\S]*?)<\/ref>/gi, (_, attrs: string, body: string) => {
     const name = attrs.match(/name\s*=\s*["']?([^"'>\s]+)/i)?.[1];
     let n = name ? namedRefs.get(name) : undefined;
     if (!n) {
@@ -389,7 +389,7 @@ export function mediaWikiToHtml(source: string, ctx: MwConvertContext, nested = 
     }
     return protect.put(`<sup>[${n}]</sup>`);
   });
-  text = text.replace(/<references\b[^>]*(\/>|>[\s\S]*?<\/references>)/gi, () => {
+  text = text.replace(/<references\b[^<>]*(\/>|>[\s\S]*?<\/references>)/gi, () => {
     referencesPlaced = true;
     return '\n\u0003REFERENCES\u0003\n';
   });
@@ -413,7 +413,8 @@ export function mediaWikiToHtml(source: string, ctx: MwConvertContext, nested = 
   });
 
   // Kategorien entfernen und merken
-  text = text.replace(/\[\[\s*([^\]:|]+)\s*:([^\]|]*)(?:\|[^\]]*)?\]\]\n?/g, (m, prefix: string, name: string) => {
+  // Ohne „[“ in den Teilen: Bei einer Folge von „[[Datei:“ ohne Ende suchte sonst jeder Versuch bis zum Textende (quadratisch)
+  text = text.replace(/\[\[\s*([^\][:|]+)\s*:([^\][|]*)(?:\|[^\][]*)?\]\]\n?/g, (m, prefix: string, name: string) => {
     if (!ctx.categoryPrefixes.includes(prefix.trim().toLowerCase())) return m;
     if (name.trim()) categories.push(name.trim());
     return '';
@@ -427,7 +428,7 @@ export function mediaWikiToHtml(source: string, ctx: MwConvertContext, nested = 
     for (let round = 0; round < 6 && /\[\[[^[\]]+\]\]/.test(s); round++) {
       s = s.replace(/\[\[([^[\]]+)\]\]([a-zäöüß]*)/g, (_, body: string, trail: string) => protect.put(internalLink(body, trail)));
     }
-    s = s.replace(/\[((?:https?|ftp):\/\/|mailto:)([^\s\]]+)(?:\s+([^\]]*))?\]/g, (_, scheme: string, rest: string, label?: string) => {
+    s = s.replace(/\[((?:https?|ftp):\/\/|mailto:)([^\s\][]+)(?:\s+([^\][]*))?\]/g,(_, scheme: string, rest: string, label?: string) => {
       const url = `${scheme}${rest}`;
       const text = label?.trim() ? label.trim() : url;
       return protect.put(`<a href="${escapeHtml(url)}">${escapeHtml(text)}</a>`);

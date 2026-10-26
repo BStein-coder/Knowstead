@@ -74,7 +74,56 @@ sicherheitsrelevanten Stellen. Die Rechteprüfung war überall dicht; gefunden w
 - **Abhängigkeiten** (`npm audit`): `fast-uri` 3.1.9/4.2.3 (vier Hinweise zu URI-Auswertung, in Fastify und Ajv),
   `vite` 8.3.5 mit `rolldown` 1.2.15 und `postcss` 8.5.31 (Entwicklungsserver; nicht im ausgelieferten Programm), `zod` 4.6.7
   (Entwicklungswerkzeug). Offen bleibt ein niedriger Hinweis zu `katex` in `mermaid` (Behebung nur mit einem Hauptversionssprung).
-- Neu: `server/test/security-hardening.test.ts` hält die drei Fälle fest.
+
+Zweite Runde, Zeile für Zeile durch die Dienste, Routen und den Datenzugriff:
+
+- **Nummern gelöschter Personen, Gruppen, Seiten und Bereiche werden nicht neu vergeben**: SQLite vergibt bei
+  `INTEGER PRIMARY KEY` ohne `AUTOINCREMENT` die größte vorhandene Nummer erneut. Wer nach dem Löschen der zuletzt
+  angelegten Person (oder Gruppe) jemanden neu anlegte, erbte deren Seiteneinschränkungen, Bereichsrechte,
+  Zielgruppen von Pflichtlektüren und Freigabestufen. Bei Seiten und Bereichen hingen Verlauf, Ereignisse und
+  Benachrichtigungen des gelöschten Inhalts plötzlich an einer neuen Seite. Jetzt merkt sich die Datenbank je Tabelle
+  die höchste je vergebene Nummer (`core/subjects.ts`), und beim Löschen räumt `forgetSubject` Verweise auf –
+  Einschränkungen, die nur noch aus der gelöschten Person bestanden, bleiben dabei gesperrt statt offen zu werden.
+- **Eingeschränkte Seiten verraten sich nicht mehr**: Die Titelsuche (`/pages/find`) lieferte Treffer ohne Leserecht,
+  die Anwesenheitsliste (`presence`) nannte, wer an einer fremden Seite arbeitet, und „Entwurf verwerfen“ antwortete bei
+  fremden, eingeschränkten und nicht vorhandenen Seiten unterschiedlich. Die Zwischenablage zeigte den Titel der
+  Quellseite auch nach Entzug des Leserechts, und Eigenschaftsnamen (`properties/names`) stammten auch aus
+  unveröffentlichten Entwürfen.
+- **Vorschlagsmodus**: Wer nur vorschlagen darf, konnte Link-Ziele, Bilder und Makros ohne Vorschlag ändern (derselbe
+  Linktext, anderes Ziel) und sich über den Prüfzyklus selbst als verantwortliche Person eintragen. Beides wird abgelehnt. Nach dem
+  Entfernen von Vorschlägen wird der Inhalt erneut bereinigt.
+- **Ereignisse erst nach dem Abschluss**: Eine zurückgerollte Sammeländerung hatte ihre Ereignisse (Benachrichtigungen,
+  Webhooks) bereits ausgelöst. `Db.afterCommit` verschiebt sie hinter das endgültige `COMMIT`.
+- **Gruppenliste**: `/api/v1/groups` liefert Personen ohne Benutzerverwaltung nur noch Name und Kennung statt Rechte und
+  Verzeichnisanbindung.
+- **Importe und Uploads**: Verweise mit ungültiger Prozent-Kodierung („100%.png“) brachten den ganzen Markdown-Import zu
+  Fall; ein Archiv mit leerer oder beschädigter Beschreibung endete mit 500 und ließ einen halben Bereich zurück; ein
+  beschädigter oder abgebrochener Multipart-Upload (Importe und Anhänge) antwortete mit 500 statt 400. Die Rechte werden
+  jetzt vor dem Empfang großer Dateien geprüft. Ein Webhook für einen Bereich, den es nicht gibt, wird abgelehnt.
+- **Verzeichnisanmeldung**: Der Anmeldename wurde als Ersatztext in den Suchfilter eingesetzt – JavaScript wertet darin
+  Folgen wie `$'` und `` $` `` aus und kopierte so Teile des Filters in den Filter (die Sonderzeichen des Filters selbst
+  waren maskiert; eingeschleust werden konnten nur Bruchstücke des eigenen Filters). Der Name wird jetzt wörtlich eingesetzt.
+- **Konnektoren**: Ein Pfad mit ungültiger Prozent-Kodierung (`/%zz`) endete mit Fehler 500, jetzt mit einer Meldung.
+- **Rechenlast** (jede Person mit Schreibrecht konnte den Server minuten- bis stundenlang auslasten; der Server arbeitet
+  in einem Thread, also stehen dann alle Anfragen). Gefunden mit Eingaben aus 20 000 wiederholten Bruchstücken je Funktion:
+  - *Verschachtelung*: Die Textumwandlung (Suche, Auszüge, Vergleich) rechnet kubisch in der Tiefe der Tags; rund
+    20 000 ineinander geöffnete `<div>` (100 KB) kosteten 15 Minuten beim Speichern. Die Bereinigung kappt die Tiefe jetzt
+    bei 100 Ebenen (Kommentare 30); was der Editor erzeugt, bleibt unverändert.
+  - *Markdown*: Ein Absatz aus lauter einzelnen Betonungszeichen (`_x_x_x…`) rechnet quadratisch (40 KB: 1,3 s, 5 MB:
+    Stunden). Das Umwandeln hat ein Zeitbudget von 4 s und meldet dann, dass der Text in kürzere Absätze zu gliedern ist;
+    ein echtes 5-MB-Dokument ist in unter einer Sekunde fertig.
+  - *Versionsvergleich*: Zwei völlig verschiedene lange Fassungen ließen den Vergleich Minuten rechnen. Nach 1,5 s bricht
+    er ab; die Ansicht zeigt dann keine farbige Gegenüberstellung (Zeilenvergleich: alles als ersetzt).
+  - *SVG-Erkennung beim Export*: Eine hochgeladene Datei mit rund 40 leeren Kommentaren am Anfang ließ den Ausdruck zur
+    Erkennung Stunden rechnen – ausgelöst beim Export einer Seite, die das „Bild“ zeigt. Jetzt linear.
+  - *Wiki-Importe*: MediaWiki-, DokuWiki- und XWiki-Texte mit unzähligen nie geschlossenen Anfängen (`[[Datei:`,
+    `[http://`, `<ref name="`, `<file `, `<WRAP `, `{{code language="`) suchten bei jedem bis zum Textende (100 KB:
+    bis zu 6 s, quadratisch). Die offenen Teile enden jetzt am nächsten Anfang. Unabgeschlossene Paare wie
+    `<code java>` ohne Ende bleiben quadratisch (rund 1,5 s je 200 KB Bosheit), das Ergebnis echter Wikis ändert sich nicht.
+- **Sonstiges**: Ein volles Laufwerk bringt das Schreiben der Protokolldatei nicht mehr zu Fall; die
+  Seitenaufruf-Zählung überspringt gelöschte Personen; Listen von Benachrichtigungs-Kennungen sind auf 500 begrenzt;
+  draw.io startet in der gewählten Sprache.
+- Neu: `server/test/security-hardening.test.ts` hält die Fälle beider Runden fest (zwölf Tests).
 
 ### Barrierefreiheit
 

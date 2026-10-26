@@ -223,7 +223,7 @@ export class LabelService {
     if (!this.mustFilterPages(auth)) {
       return this.s.db.all<{ name: string; type: string; count: number }>(
         `SELECT pp.name, MAX(pp.type) AS type, COUNT(*) AS count FROM page_properties pp JOIN pages p ON p.id = pp.page_id
-         WHERE p.space_id IN ${Db.placeholders(spaceIds.length)} AND p.deleted_at IS NULL
+         WHERE p.space_id IN ${Db.placeholders(spaceIds.length)} AND p.deleted_at IS NULL AND p.status = 'current'
          GROUP BY pp.name COLLATE NOCASE ORDER BY count DESC LIMIT 100`,
         ...spaceIds,
       );
@@ -231,7 +231,7 @@ export class LabelService {
     // Wie bei den Stichwörtern: Namen von Eigenschaften eingeschränkter Seiten bleiben verborgen
     const rows = this.s.db.all<VisibleCheckRow & { name: string; type: string }>(
       `SELECT pp.name, pp.type, ${VISIBLE_CHECK_COLUMNS} FROM page_properties pp JOIN pages p ON p.id = pp.page_id
-       WHERE p.space_id IN ${Db.placeholders(spaceIds.length)} AND p.deleted_at IS NULL`,
+       WHERE p.space_id IN ${Db.placeholders(spaceIds.length)} AND p.deleted_at IS NULL AND p.status = 'current'`,
       ...spaceIds,
     );
     const visible = this.visibleIds(auth, rows);

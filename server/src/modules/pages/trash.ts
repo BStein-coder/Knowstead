@@ -4,6 +4,7 @@ import type { AuthContext } from '../../core/permissions.ts';
 import { Db, nowIso } from '../../db/database.ts';
 import { badRequest, notFound } from '../../core/errors.ts';
 import { pageUrl } from './service.ts';
+import { rememberRowId } from '../../core/subjects.ts';
 
 /**
  * Papierkorb: Seiten (mit Unterseiten) löschen, wiederherstellen und endgültig entfernen. Dateien der
@@ -141,6 +142,8 @@ export class TrashService {
     if (!ids.length) return;
     const files: string[] = [];
     this.s.db.transaction(() => {
+      // Die Nummern bleiben vergeben: Der Verlauf der Seiten darf nicht an eine neue Seite geraten
+      rememberRowId(this.s.db, 'pages', Math.max(...ids));
       for (let i = 0; i < ids.length; i += 500) {
         const chunk = ids.slice(i, i + 500);
         const ph = Db.placeholders(chunk.length);

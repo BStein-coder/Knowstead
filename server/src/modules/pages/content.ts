@@ -47,7 +47,11 @@ export function plainText(contentType: ContentType, content: string): string {
 
 /** Anzeige-HTML einer Seite (Markdown wird gerendert, Code als Block). */
 export function toDisplayHtml(contentType: ContentType, content: string, language: string | null, iframeHosts: string[]): string {
-  if (contentType === 'richtext') return rejectAllSuggestions(content);
+  if (contentType === 'richtext') {
+    // Nur wenn Vorschläge entfernt wurden, ist das HTML neu geschrieben worden – dann noch einmal bereinigen (Absicherung)
+    const shown = rejectAllSuggestions(content);
+    return shown === content ? content : sanitizeRichText(shown, iframeHosts);
+  }
   if (contentType === 'markdown') return sanitizeRichText(renderMarkdown(content), iframeHosts);
   const escaped = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   return `<pre><code class="language-${(language ?? 'plaintext').replace(/[^a-z0-9+#-]/gi, '')}">${escaped}</code></pre>`;

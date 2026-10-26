@@ -247,6 +247,8 @@ export async function spaceRoutes(app: App, s: Services): Promise<void> {
     async (req) => {
       requireUser(req);
       const space = s.spaces.requireViewable(req.auth, req.params.key);
+      // Das Recht vor dem Hochladen prüfen: Sonst könnte jede angemeldete Person Gigabytes auf die Platte des Servers schicken
+      s.perms.requireSpace(req.auth, space, 'create');
       // Dateien liegen als Zwischendateien auf der Platte, nicht im Arbeitsspeicher
       const upload = await receiveUploads(req, s.config.dataDir);
       try {
@@ -274,6 +276,7 @@ export async function spaceRoutes(app: App, s: Services): Promise<void> {
     async (req, reply) => {
       requireUser(req);
       const space = s.spaces.requireViewable(req.auth, req.params.key);
+      s.perms.requireSpace(req.auth, space, 'create');
       // Das Archiv wird auf die Platte geschrieben und von dort stückweise gelesen – der Auftrag räumt es weg
       const upload = await receiveUploads(req, s.config.dataDir);
       try {
@@ -304,6 +307,7 @@ export async function spaceRoutes(app: App, s: Services): Promise<void> {
     { schema: { tags: ['Export & Import'], summary: 'Neuen Bereich aus Knowstead-Archiv anlegen (multipart: file, key, name)' } },
     async (req) => {
       requireUser(req);
+      s.perms.requireGlobal(req.auth, 'spaces.create');
       const upload = await receiveUploads(req, s.config.dataDir);
       try {
         const file = upload.files[0];

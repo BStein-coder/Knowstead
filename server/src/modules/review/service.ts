@@ -137,18 +137,30 @@ export class ReviewService {
 
   /* ------------------------------- Anforderung ------------------------------- */
 
+  /**
+   * Die prüfende Person, die jemand benennt: ein aktives Personenkonto. Wer eine Prüfung anfordert, darf auch bei
+   * Prüfpflicht eine andere Person benennen (Vier-Augen-Prinzip: die eigene Anforderung gibt niemand selbst frei).
+   */
+  private requireReviewer(reviewerId: number): number {
+    const reviewer = this.s.users.require(reviewerId);
+    if (reviewer.status !== 'active' || reviewer.kind !== 'user') throw badRequest('Diese Person kann nicht prüfen');
+    return reviewer.id;
+  }
+
   request(auth: AuthContext, pageId: number, input: { reviewerId?: number | null; note?: string } = {}): ReviewDto {
     const { page, space } = this.s.pages.requireAccess(auth, pageId, 'edit');
     const open = this.s.db.get<ReviewRow>("SELECT * FROM page_reviews WHERE page_id = ? AND status = 'open'", pageId);
     if (open) {
       // Bestehende Anforderung auf die aktuelle Version heben statt zu verdoppeln.
-      this.s.db.run('UPDATE page_reviews SET version = ?, note = ?, reviewer_id = ? WHERE id = ?', page.version, input.note ?? open.note, input.reviewerId ?? open.reviewer_id, open.id);
+      const reviewerId = input.reviewerId ? this.requireReviewer(input.reviewerId) : open.reviewer_id;
+      this.s.db.run('UPDATE page_reviews SET version = ?, note = ?, reviewer_id = ? WHERE id = ?', page.version, input.note ?? open.note, reviewerId, open.id);
       if (open.stages && open.version !== page.version) this.s.approvals.restart(this.row(open.id), page, space);
       return this.toDto(auth, this.row(open.id));
     }
     // Mehrstufiger Ablauf des Bereichs ersetzt die einzelne prüfende Person
     const workflow = this.s.approvals.activeFor(space);
-    const reviewer = input.reviewerId && !workflow ? this.s.users.require(input.reviewerId) : null;
+    const reviewerId = input.reviewerId && !workflow ? this.requireReviewer(input.reviewerId) : null;
+    const reviewer = reviewerId ? this.s.users.require(reviewerId) : null;
     const res = this.s.db.run(
       `INSERT INTO page_reviews (page_id, version, status, requested_by, reviewer_id, note, created_at, stages, current_stage, stage_started_at)
        VALUES (?, ?, 'open', ?, ?, ?, ?, ?, 0, ?)`,

@@ -347,7 +347,7 @@ export async function authRoutes(app: App, s: Services): Promise<void> {
       schema: {
         tags: ['Benachrichtigungen'],
         summary: 'Als gelesen markieren',
-        body: Type.Object({ ids: Type.Optional(Type.Array(Type.Integer())), all: Type.Optional(Type.Boolean()) }),
+        body: Type.Object({ ids: Type.Optional(Type.Array(Type.Integer(), { maxItems: 500 })), all: Type.Optional(Type.Boolean()) }),
       },
     },
     async (req) => {

@@ -30,6 +30,7 @@ import { decryptSecret, encryptSecret, randomToken, safeEqual, sha256 } from '..
 import { headerValue } from '../../core/legacy.ts';
 import { HttpError, badRequest, notFound } from '../../core/errors.ts';
 import { colorFor } from '../../core/util.ts';
+import { nextRowId } from '../../core/subjects.ts';
 import { translate, type Locale } from '../../core/i18n.ts';
 
 export type SsoProvider = 'oidc' | 'saml' | 'kerberos';
@@ -953,8 +954,9 @@ export class SsoService {
     const source = identity.provider === 'kerberos' ? 'local' : identity.provider;
     const id = this.s.db.transaction(() => {
       const res = this.s.db.run(
-        `INSERT INTO users (username, email, display_name, password_hash, kind, status, avatar_color, created_at, updated_at, auth_source, synced_at)
-         VALUES (?, ?, ?, NULL, 'user', 'active', ?, ?, ?, ?, ?)`,
+        `INSERT INTO users (id, username, email, display_name, password_hash, kind, status, avatar_color, created_at, updated_at, auth_source, synced_at)
+         VALUES (?, ?, ?, ?, NULL, 'user', 'active', ?, ?, ?, ?, ?)`,
+        nextRowId(this.s.db, 'users'),
         identity.username,
         emailTaken ? null : identity.email,
         identity.displayName || identity.username,

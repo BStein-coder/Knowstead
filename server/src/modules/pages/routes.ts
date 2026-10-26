@@ -4,6 +4,7 @@ import { IdParam, Nullable, requireUser, Offset } from '../../http.ts';
 import type { Services } from '../../services.ts';
 import { badRequest } from '../../core/errors.ts';
 import { markdownToHtml } from '../../core/markdown.ts';
+import type { PageRow } from '../../core/types.ts';
 
 const ContentType = Type.Union([Type.Literal('richtext'), Type.Literal('markdown'), Type.Literal('code')]);
 const Property = Type.Object({ name: Type.String({ minLength: 1, maxLength: 60 }), value: Type.String({ maxLength: 2000 }), type: Type.Optional(Type.String()) });
@@ -91,13 +92,14 @@ export async function pageRoutes(app: App, s: Services): Promise<void> {
     },
     async (req) => {
       const space = s.spaces.requireViewable(req.auth, req.query.space);
-      const row = s.db.get<{ id: number }>(
-        "SELECT id FROM pages WHERE space_id = ? AND title = ? COLLATE NOCASE AND deleted_at IS NULL AND status = 'current' LIMIT 1",
+      // Eingeschränkte Seiten gibt es für diese Abfrage nicht: Dieselbe Antwort wie bei „nicht gefunden“, sonst verriete sie den Titel
+      const candidates = s.db.all<PageRow>(
+        "SELECT * FROM pages WHERE space_id = ? AND title = ? COLLATE NOCASE AND deleted_at IS NULL AND status = 'current' ORDER BY id LIMIT 50",
         space.id,
         req.query.title,
       );
-      if (!row) return { page: null };
-      const { page } = s.pages.requireViewable(req.auth, row.id);
+      const page = candidates.find((candidate) => s.perms.canViewPage(req.auth, candidate, space));
+      if (!page) return { page: null };
       return { page: await s.pages.dto(req.auth, page, space) };
     },
   );
@@ -550,7 +552,12 @@ export async function pageRoutes(app: App, s: Services): Promise<void> {
     },
     async (req) => {
       if (req.body.mode !== 'leave') s.pages.requireViewable(req.auth, req.params.id);
-      return s.realtime.heartbeat(req.auth, req.params.id, req.body.mode).map((p) => ({ ...p.user, mode: p.mode }));
+      const present = s.realtime.heartbeat(req.auth, req.params.id, req.body.mode).map((p) => ({ ...p.user, mode: p.mode }));
+      if (req.body.mode !== 'leave') return present;
+      // Abmelden geht auch von einer Seite, die man nicht (mehr) sehen darf – wer dort gerade liest, erfährt man dabei aber nicht
+      const page = s.pages.get(req.params.id);
+      const space = page ? s.spaces.get(page.space_id) : undefined;
+      return page && space && s.perms.canViewPage(req.auth, page, space) ? present : [];
     },
   );
 

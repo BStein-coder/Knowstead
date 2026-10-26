@@ -116,8 +116,8 @@ export function xwikiToHtml(source: string, ctx: XwConvertContext, nested = fals
   // Makros: {{name …/}} und {{name …}}Inhalt{{/name}} (von innen nach außen)
   for (let round = 0; round < 8; round++) {
     const before = text;
-    text = text.replace(/\{\{([\w.-]+)((?:\s[^}]*?)?)\s*\/\}\}/g, (_, name: string, params: string) => macro(name, macroParams(params), null));
-    text = text.replace(/\{\{([\w.-]+)((?:\s[^}]*?)?)\}\}((?:(?!\{\{\1[\s}])[\s\S])*?)\{\{\/\1\}\}/g, (_, name: string, params: string, body: string) =>
+    text = text.replace(/\{\{([\w.-]+)((?:\s[^{}]*?)?)\s*\/\}\}/g,(_, name: string, params: string) => macro(name, macroParams(params), null));
+    text = text.replace(/\{\{([\w.-]+)((?:\s[^{}]*?)?)\}\}((?:(?!\{\{\1[\s}])[\s\S])*?)\{\{\/\1\}\}/g,(_, name: string, params: string, body: string) =>
       macro(name, macroParams(params), body),
     );
     if (text === before) break;

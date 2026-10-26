@@ -5,6 +5,7 @@ import { Db, nowIso, parseJson } from '../../db/database.ts';
 import { hashPassword } from '../../core/crypto.ts';
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors.ts';
 import { colorFor, isValidEmail } from '../../core/util.ts';
+import { forgetSubject, nextRowId, rememberRowId } from '../../core/subjects.ts';
 
 export /** Schlüssel, die niemals in gespeicherte Objekte gelangen dürfen. */
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
@@ -235,8 +236,9 @@ export class UserService {
     const now = nowIso();
     const id = this.s.db.transaction(() => {
       const res = this.s.db.run(
-        `INSERT INTO users (username, email, display_name, password_hash, kind, status, avatar_color, created_at, updated_at, password_changed_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO users (id, username, email, display_name, password_hash, kind, status, avatar_color, created_at, updated_at, password_changed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        nextRowId(this.s.db, 'users'),
         username,
         email,
         displayName,
@@ -359,8 +361,12 @@ export class UserService {
     this.s.db.transaction(() => {
       // Persönlichen Bereich an den ausführenden Administrator übergeben.
       this.s.db.run("UPDATE spaces SET owner_id = ? WHERE owner_id = ? AND kind = 'personal'", auth.user?.id ?? null, id);
+      // Rechte und Zielgruppen, die auf diese Nummer zeigen, räumen – und die Nummer nie wieder vergeben
+      rememberRowId(this.s.db, 'users', id);
+      forgetSubject(this.s.db, 'user', id);
       this.s.db.run('DELETE FROM users WHERE id = ?', id);
     });
+    this.s.perms.invalidateRestrictions();
     this.s.emit(auth, { type: 'user.deleted', target: { type: 'user', id, label: row.username } });
   }
 

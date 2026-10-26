@@ -132,7 +132,7 @@ export function dokuWikiToHtml(source: string, ctx: DwConvertContext, nested = f
   };
 
   let text = nested ? source : normalizeSource(source);
-  text = text.replace(/<(code|file)(?:\s+([^\s>]+))?(?:\s+[^>]*)?>\n?([\s\S]*?)<\/\1>/g, (_, _tag: string, lang: string | undefined, code: string) =>
+  text = text.replace(/<(code|file)(?:\s+([^\s<>]+))?(?:\s+[^<>]*)?>\n?([\s\S]*?)<\/\1>/g, (_, _tag: string, lang: string | undefined, code: string) =>
     blockToken(codeBlock(code, lang && lang !== '-' ? lang : null)),
   );
   text = text.replace(/<(php|PHP)>([\s\S]*?)<\/\1>/g, (_, _tag: string, code: string) => blockToken(codeBlock(code, 'php')));
@@ -151,7 +151,7 @@ export function dokuWikiToHtml(source: string, ctx: DwConvertContext, nested = f
     text = text.replace(/<note(?:\s+([a-z]+))?>((?:(?!<note)[\s\S])*?)<\/note>/gi, (_, kind: string | undefined, body: string) =>
       blockToken(callout(NOTE_VARIANTS[(kind ?? '').toLowerCase()] ?? 'info', dokuWikiToHtml(body.trim(), ctx, true).html)),
     );
-    text = text.replace(/<WRAP([^>]*)>((?:(?!<WRAP)[\s\S])*?)<\/WRAP>/g, (_, classes: string, body: string) => {
+    text = text.replace(/<WRAP([^<>]*)>((?:(?!<WRAP)[\s\S])*?)<\/WRAP>/g, (_, classes: string, body: string) => {
       const variant = classes
         .trim()
         .split(/\s+/)
@@ -162,7 +162,7 @@ export function dokuWikiToHtml(source: string, ctx: DwConvertContext, nested = f
     });
     if (text === before) break;
   }
-  text = text.replace(/<\/?wrap[^>]*>/g, '');
+  text = text.replace(/<\/?wrap[^<>]*>/g, '');
 
   // Fußnoten
   text = text.replace(/\(\((.+?)\)\)/gs, (_, body: string) => {
@@ -208,8 +208,9 @@ export function dokuWikiToHtml(source: string, ctx: DwConvertContext, nested = f
   function inline(raw: string): string {
     let s = raw;
     s = s.replace(/''(.+?)''/g, (_, code: string) => protect.put(`<code>${escapeHtml(code)}</code>`));
-    s = s.replace(/\[\[(.+?)\]\]/g, (_, body: string) => protect.put(link(body)));
-    s = s.replace(/\{\{(.+?)\}\}/g, (_, body: string) => protect.put(media(body)));
+    // Ohne ein weiteres „[[“ bzw. „{{“ im Inneren: Ein Anfang ohne Ende suchte sonst bis zum Zeilenende (quadratisch bei langen Zeilen)
+    s = s.replace(/\[\[((?:(?!\[\[).)+?)\]\]/g, (_, body: string) => protect.put(link(body)));
+    s = s.replace(/\{\{((?:(?!\{\{).)+?)\}\}/g, (_, body: string) => protect.put(media(body)));
     s = s.replace(/(^|[\s(])((?:https?|ftp):\/\/[^\s<>[\]"']+[^\s<>[\]"'.,;:!?)])/g, (_, lead: string, url: string) => `${lead}${protect.put(`<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`)}`);
     s = s.replace(/\*\*(.+?)\*\*/g, `${tagMark('strong')}$1${tagMark('/strong')}`);
     s = s.replace(/\/\/(.+?)\/\//g, `${tagMark('em')}$1${tagMark('/em')}`);

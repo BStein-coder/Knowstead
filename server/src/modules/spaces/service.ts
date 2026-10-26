@@ -4,6 +4,7 @@ import type { AuthContext, SpaceRole } from '../../core/permissions.ts';
 import { ROLE_RANK, SPACE_ROLES } from '../../core/permissions.ts';
 import { nowIso } from '../../db/database.ts';
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors.ts';
+import { nextRowId, rememberRowId } from '../../core/subjects.ts';
 
 export const SPACE_KEY_RE = /^[A-Z][A-Z0-9_]{1,19}$/;
 
@@ -234,8 +235,9 @@ export class SpaceService {
   }): SpaceRow {
     const now = nowIso();
     const res = this.s.db.run(
-      `INSERT INTO spaces (key, name, description, icon, color, kind, owner_id, created_by, created_at, updated_at, category, review_required)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO spaces (id, key, name, description, icon, color, kind, owner_id, created_by, created_at, updated_at, category, review_required)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      nextRowId(this.s.db, 'spaces'),
       input.key,
       input.name,
       input.description,
@@ -364,6 +366,9 @@ export class SpaceService {
     );
     const pageIds = this.s.db.all<{ id: number }>('SELECT id FROM pages WHERE space_id = ?', space.id).map((r) => r.id);
     this.s.db.transaction(() => {
+      // Die Nummern bleiben vergeben: Der Verlauf der gelöschten Seiten darf nicht an neue Seiten oder Bereiche geraten
+      rememberRowId(this.s.db, 'spaces', space.id);
+      if (pageIds.length) rememberRowId(this.s.db, 'pages', Math.max(...pageIds));
       for (const id of pageIds) this.s.search.remove(id);
       this.s.db.run('DELETE FROM attachments_fts WHERE rowid IN (SELECT a.id FROM attachments a JOIN pages p ON p.id = a.page_id WHERE p.space_id = ?)', space.id);
       this.s.db.run('DELETE FROM watches WHERE target_type = ? AND target_id = ?', 'space', space.id);

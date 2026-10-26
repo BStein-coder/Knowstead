@@ -311,7 +311,7 @@ export function DrawioView(props: NodeViewProps) {
 
 function DrawioEditor({ xml, onSave, onClose }: { xml: string; onSave: (xml: string, svg: string) => void; onClose: () => void }) {
   const { settings } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const base = (settings.drawioUrl || 'https://embed.diagrams.net').replace(/\/+$/, '');
   const origin = useMemo(() => {
@@ -321,7 +321,7 @@ function DrawioEditor({ xml, onSave, onClose }: { xml: string; onSave: (xml: str
       return 'https://embed.diagrams.net';
     }
   }, [base]);
-  const src = `${base}/?embed=1&ui=min&spin=1&proto=json&saveAndExit=1&noSaveBtn=0&libraries=1&lang=de`;
+  const src = `${base}/?embed=1&ui=min&spin=1&proto=json&saveAndExit=1&noSaveBtn=0&libraries=1&lang=${locale}`;
   const pendingXml = useRef(xml);
   const exitAfterExport = useRef(false);
 

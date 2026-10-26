@@ -46,9 +46,11 @@ export class ClipService {
     this.s = s;
   }
 
-  private toDto(row: ClipRow): ClipDto {
-    const page = row.source_page_id ? this.s.pages.get(row.source_page_id) : undefined;
-    const space = page ? this.s.spaces.get(page.space_id) : undefined;
+  private toDto(auth: AuthContext, row: ClipRow): ClipDto {
+    const candidate = row.source_page_id ? this.s.pages.get(row.source_page_id) : undefined;
+    const space = candidate ? this.s.spaces.get(candidate.space_id) : undefined;
+    // Die Quelle nur nennen, wenn die Person die Seite noch sehen darf (Recht inzwischen entzogen, Seite eingeschränkt)
+    const page = candidate && space && this.s.perms.canViewPage(auth, candidate, space) ? candidate : undefined;
     return {
       id: row.id,
       title: row.title,
@@ -65,7 +67,7 @@ export class ClipService {
     const user = this.s.perms.requireUser(auth);
     return this.s.db
       .all<ClipRow>('SELECT * FROM clips WHERE user_id = ? ORDER BY pinned DESC, id DESC LIMIT ?', user.id, MAX_CLIPS)
-      .map((r) => this.toDto(r));
+      .map((r) => this.toDto(auth, r));
   }
 
   create(auth: AuthContext, input: { title?: string; kind?: ClipKind; content: string; sourcePageId?: number | null }): ClipDto {
@@ -98,21 +100,21 @@ export class ClipService {
       user.id,
       MAX_CLIPS,
     );
-    return this.toDto(this.require(user.id, res.lastInsertRowid));
+    return this.toDto(auth, this.require(user.id, res.lastInsertRowid));
   }
 
   setPinned(auth: AuthContext, id: number, pinned: boolean): ClipDto {
     const user = this.s.perms.requireUser(auth);
     const row = this.require(user.id, id);
     this.s.db.run('UPDATE clips SET pinned = ? WHERE id = ?', pinned ? 1 : 0, row.id);
-    return this.toDto(this.require(user.id, id));
+    return this.toDto(auth, this.require(user.id, id));
   }
 
   rename(auth: AuthContext, id: number, title: string): ClipDto {
     const user = this.s.perms.requireUser(auth);
     this.require(user.id, id);
     this.s.db.run('UPDATE clips SET title = ? WHERE id = ?', title.trim().slice(0, 120) || 'Ausschnitt', id);
-    return this.toDto(this.require(user.id, id));
+    return this.toDto(auth, this.require(user.id, id));
   }
 
   delete(auth: AuthContext, id: number): void {

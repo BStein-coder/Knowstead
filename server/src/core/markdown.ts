@@ -3,6 +3,7 @@ import TurndownService from 'turndown';
 import { gfm } from '@joplin/turndown-plugin-gfm';
 import { parse } from 'node-html-parser';
 import { escapeHtml } from './html.ts';
+import { badRequest } from './errors.ts';
 
 const ALERT_VARIANTS: Record<string, string> = {
   NOTE: 'info',
@@ -19,7 +20,34 @@ const VARIANT_ALERTS: Record<string, string> = {
   error: 'CAUTION',
 };
 
-const marked = new Marked({ gfm: true, breaks: false });
+/**
+ * Zeitbudget für das Umwandeln eines Textes. Marked sucht zu jedem Unterstrich oder Stern bis zum Ende des Absatzes
+ * nach dem Gegenstück; ein Absatz aus lauter einzelnen Zeichen („_x_x_x…“) braucht dadurch quadratisch lange
+ * (40 KB: 1,3 s, 5 MB: Stunden). Ein echtes 5-MB-Dokument ist in unter einer Sekunde fertig.
+ */
+const RENDER_BUDGET_MS = 4000;
+let deadline = Infinity;
+
+/** Prüft die Frist bei jedem Schritt der Inline-Auswertung und übergibt dann an die ursprüngliche Methode (`false`). */
+const withinBudget = () => {
+  if (Date.now() > deadline) throw badRequest('Der Markdown-Text ist zu aufwendig zu verarbeiten – bitte in kürzere Absätze gliedern.');
+  return false as const;
+};
+
+const marked = new Marked({
+  gfm: true,
+  breaks: false,
+  tokenizer: { emStrong: withinBudget, del: withinBudget, link: withinBudget, reflink: withinBudget, url: withinBudget, inlineText: withinBudget },
+});
+
+function parseMarkdown(markdown: string): string {
+  deadline = Date.now() + RENDER_BUDGET_MS;
+  try {
+    return marked.parse(markdown, { async: false }) as string;
+  } finally {
+    deadline = Infinity;
+  }
+}
 
 /**
  * Markdown → HTML im Format des Knowstead-Editors.
@@ -27,7 +55,7 @@ const marked = new Marked({ gfm: true, breaks: false });
  * Aufgabenlisten und `<!-- toc -->` als Inhaltsverzeichnis-Makro.
  */
 export function markdownToHtml(markdown: string): string {
-  const raw = (marked.parse(markdown.replace(/^\uFEFF/, ''), { async: false }) as string).replace(
+  const raw = parseMarkdown(markdown.replace(/^\uFEFF/, '')).replace(
     /<!--\s*toc\s*-->/gi,
     '<div data-type="toc"></div>',
   );
@@ -73,7 +101,7 @@ export function markdownToHtml(markdown: string): string {
 
 /** Nur Rendern (z. B. für Markdown-Seiten), ohne Umbau in Editor-Strukturen. */
 export function renderMarkdown(markdown: string): string {
-  return marked.parse(markdown, { async: false }) as string;
+  return parseMarkdown(markdown);
 }
 
 let turndown: TurndownService | null = null;

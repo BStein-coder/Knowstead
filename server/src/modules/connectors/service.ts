@@ -234,7 +234,13 @@ export class ConnectorService {
     if (/^[a-z][a-z0-9+.-]*:/i.test(relative) || relative.startsWith('//')) throw badRequest('Nur relative Pfade sind erlaubt');
     const url = new URL(relative, base);
     if (url.origin !== base.origin || !url.pathname.startsWith(base.pathname)) throw badRequest('Der Pfad verlässt die Basis-URL');
-    if (/(^|\/)\.\.(\/|$)/.test(decodeURIComponent(url.pathname))) throw badRequest('Ungültiger Pfad');
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(url.pathname);
+    } catch {
+      throw badRequest('Ungültiger Pfad');
+    }
+    if (/(^|\/)\.\.(\/|$)/.test(decoded)) throw badRequest('Ungültiger Pfad');
     const allowed = parseJson<string[]>(row.allowed_paths, []);
     const relPath = '/' + url.pathname.slice(base.pathname.length);
     if (allowed.length && !allowed.some((p) => relPath.startsWith(p.startsWith('/') ? p : `/${p}`))) {

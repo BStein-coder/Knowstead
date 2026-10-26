@@ -101,6 +101,7 @@ export class WebhookService {
       throw badRequest('Ungültige URL');
     }
     if (!['http:', 'https:'].includes(url.protocol)) throw badRequest('Nur http(s)-URLs sind erlaubt');
+    if (input.spaceId && !this.s.spaces.get(input.spaceId)) throw badRequest('Der Bereich existiert nicht');
     if (!input.events?.length) throw badRequest('Bitte mindestens ein Ereignis auswählen');
     for (const e of input.events) {
       if (e !== '*' && !e.endsWith('.*') && !EVENT_TYPES[e]) throw badRequest(`Unbekanntes Ereignis: ${e}`);

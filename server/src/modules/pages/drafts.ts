@@ -2,7 +2,7 @@ import type { Services } from '../../services.ts';
 import type { ContentType, PageRow } from '../../core/types.ts';
 import type { AuthContext } from '../../core/permissions.ts';
 import { nowIso } from '../../db/database.ts';
-import { badRequest, forbidden } from '../../core/errors.ts';
+import { badRequest } from '../../core/errors.ts';
 import { CONTENT_TYPES, prepareContent } from './content.ts';
 import type { PageSummary } from './service.ts';
 
@@ -77,10 +77,12 @@ export class DraftService {
   /** Entwurf verwerfen; eine nie veröffentlichte neue Seite wird dabei gelöscht. */
   discard(auth: AuthContext, id: number): void {
     const user = this.s.perms.requireUser(auth);
-    const page = this.s.pages.require(id);
+    // Ohne Fehlermeldung, wenn es nichts zu verwerfen gibt: Ein Unterschied zwischen „gibt es nicht“ und „gehört jemand anderem“
+    // verriete fremde Entwürfe und eingeschränkte Seiten
+    const page = this.s.pages.get(id);
+    if (!page) return;
     if (page.status === 'draft') {
-      if (page.created_by !== user.id) throw forbidden();
-      this.s.trash.hardDelete([page.id]);
+      if (page.created_by === user.id) this.s.trash.hardDelete([page.id]);
       return;
     }
     this.s.db.run('DELETE FROM page_drafts WHERE page_id = ? AND user_id = ?', id, user.id);

@@ -21,6 +21,7 @@ import { nowIso } from '../../db/database.ts';
 import { decryptSecret } from '../../core/crypto.ts';
 import { badRequest, unauthorized } from '../../core/errors.ts';
 import { colorFor } from '../../core/util.ts';
+import { nextRowId } from '../../core/subjects.ts';
 
 export interface DirectoryProfile {
   dn: string;
@@ -43,6 +44,15 @@ const USERNAME_SAFE = /[^a-zA-Z0-9._-]/g;
 /** RFC 4515: Sonderzeichen in Suchfiltern maskieren. */
 function escapeFilter(value: string): string {
   return value.replace(/[\\*()\0/]/g, (c) => `\\${c.charCodeAt(0).toString(16).padStart(2, '0')}`);
+}
+
+/**
+ * Suchfilter für einen Anmeldenamen. Der Name wird per Funktion eingesetzt: Als Ersatztext würde JavaScript
+ * Folgen wie `$'` oder `$&` auswerten und Teile des Filters in den Filter kopieren.
+ */
+export function userFilterFor(d: DirectorySettings, login: string): string {
+  const escaped = escapeFilter(login);
+  return (d.userFilter || '(&(objectClass=user)(sAMAccountName={login}))').replaceAll('{login}', () => escaped);
 }
 
 /** CN aus einem DN lesen: „CN=Redaktion,OU=Gruppen,DC=…“ → „Redaktion“. */
@@ -123,7 +133,7 @@ export class DirectoryService {
     let client: Client | null = null;
     try {
       client = await this.connect(d);
-      const filter = (d.userFilter || '(&(objectClass=user)(sAMAccountName={login}))').replaceAll('{login}', escapeFilter(account));
+      const filter = userFilterFor(d, account);
       const { searchEntries } = await client.search(d.baseDn, {
         scope: 'sub',
         filter,
@@ -187,7 +197,7 @@ export class DirectoryService {
     let client: Client | null = null;
     try {
       client = await this.connect(d);
-      const filter = (d.userFilter || '(&(objectClass=user)(sAMAccountName={login}))').replaceAll('{login}', escapeFilter(account));
+      const filter = userFilterFor(d, account);
       const { searchEntries } = await client.search(d.baseDn, {
         scope: 'sub',
         filter,
@@ -303,9 +313,10 @@ export class DirectoryService {
         return existing.id;
       }
       const res = this.s.db.run(
-        `INSERT INTO users (username, email, display_name, password_hash, kind, status, avatar_color, created_at, updated_at,
+        `INSERT INTO users (id, username, email, display_name, password_hash, kind, status, avatar_color, created_at, updated_at,
                             auth_source, external_id, external_dn, synced_at)
-         VALUES (?, ?, ?, NULL, 'user', 'active', ?, ?, ?, 'ldap', ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, NULL, 'user', 'active', ?, ?, ?, 'ldap', ?, ?, ?)`,
+        nextRowId(this.s.db, 'users'),
         profile.username,
         email,
         profile.displayName || profile.username,
@@ -362,7 +373,7 @@ export class DirectoryService {
     try {
       const filter = user.external_dn
         ? '(objectClass=*)'
-        : (d.userFilter || '(&(objectClass=user)(sAMAccountName={login}))').replaceAll('{login}', escapeFilter(user.username));
+        : userFilterFor(d, user.username);
       const { searchEntries } = await client.search(user.external_dn || d.baseDn, {
         scope: user.external_dn ? 'base' : 'sub',
         filter,
@@ -417,7 +428,7 @@ export class DirectoryService {
 
       if (sample?.login) {
         const account = this.normalizeLogin(sample.login);
-        const filter = (d.userFilter || '(&(objectClass=user)(sAMAccountName={login}))').replaceAll('{login}', escapeFilter(account));
+        const filter = userFilterFor(d, account);
         const res = await client.search(d.baseDn, { scope: 'sub', filter, sizeLimit: 2, attributes: [d.userIdAttribute, d.nameAttribute, d.mailAttribute, d.groupAttribute] });
         const entry = res.searchEntries[0];
         steps.push({

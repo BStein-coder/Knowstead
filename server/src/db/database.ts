@@ -46,6 +46,8 @@ export class Db {
   readonly file: string;
   private readonly statements = new Map<string, StatementSync>();
   private depth = 0;
+  /** Arbeiten, die erst nach dem erfolgreichen Abschluss der äußersten Transaktion laufen sollen */
+  private commitHooks: (() => void)[] = [];
 
   constructor(file: string) {
     this.file = file;
@@ -108,9 +110,20 @@ export class Db {
     this.raw.exec(sql);
   }
 
+  /**
+   * Führt `fn` aus, sobald die äußerste Transaktion erfolgreich abgeschlossen ist – gleich, wenn keine läuft. Wird die
+   * Transaktion (oder der Savepoint, in dem der Aufruf stand) zurückgerollt, entfällt `fn`: Ereignisse über Änderungen,
+   * die es nie gab, erreichen so weder Webhooks noch Benachrichtigungen.
+   */
+  afterCommit(fn: () => void): void {
+    if (this.depth === 0) fn();
+    else this.commitHooks.push(fn);
+  }
+
   /** Führt `fn` in einer Transaktion aus. Verschachtelte Aufrufe nutzen Savepoints. */
   transaction<T>(fn: () => T): T {
     const savepoint = `sp_${this.depth}`;
+    const hooksBefore = this.commitHooks.length;
     if (this.depth === 0) this.raw.exec('BEGIN IMMEDIATE');
     else this.raw.exec(`SAVEPOINT ${savepoint}`);
     this.depth++;
@@ -122,6 +135,7 @@ export class Db {
       }
     } catch (err) {
       this.depth--;
+      this.commitHooks.length = Math.min(this.commitHooks.length, hooksBefore);
       try {
         if (this.depth === 0) this.raw.exec('ROLLBACK');
         else this.raw.exec(`ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`);
@@ -136,6 +150,7 @@ export class Db {
       else this.raw.exec(`RELEASE ${savepoint}`);
     } catch (err) {
       // COMMIT fehlgeschlagen (z. B. Datenträger voll): Transaktion sauber verwerfen, Tiefe stimmt bereits
+      this.commitHooks.length = Math.min(this.commitHooks.length, hooksBefore);
       if (this.depth === 0 && this.raw.isTransaction) {
         try {
           this.raw.exec('ROLLBACK');
@@ -144,6 +159,17 @@ export class Db {
         }
       }
       throw err;
+    }
+    if (this.depth === 0 && this.commitHooks.length) {
+      const hooks = this.commitHooks;
+      this.commitHooks = [];
+      for (const hook of hooks) {
+        try {
+          hook();
+        } catch {
+          /* ein fehlerhafter Nachlauf darf die abgeschlossene Transaktion nicht umwerfen */
+        }
+      }
     }
     return result;
   }

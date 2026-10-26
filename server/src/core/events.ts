@@ -248,16 +248,19 @@ export class EventBus {
   private dispatch(event: DomainEvent): void {
     const handlers = this.subs.filter((s) => matchesPattern(s.pattern, event.type));
     if (!handlers.length) return;
-    setImmediate(() => {
-      for (const sub of handlers) {
-        try {
-          const res = sub.handler(event);
-          if (res instanceof Promise) res.catch((err) => this.onError(err, event));
-        } catch (err) {
-          this.onError(err, event);
+    // Erst nach dem Abschluss der laufenden Transaktion: Wird sie zurückgerollt, hat es das Ereignis nie gegeben
+    this.db.afterCommit(() =>
+      setImmediate(() => {
+        for (const sub of handlers) {
+          try {
+            const res = sub.handler(event);
+            if (res instanceof Promise) res.catch((err) => this.onError(err, event));
+          } catch (err) {
+            this.onError(err, event);
+          }
         }
-      }
-    });
+      }),
+    );
   }
 
   static fromRow(row: EventRow): DomainEvent {

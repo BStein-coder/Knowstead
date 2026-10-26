@@ -4,6 +4,7 @@ import type { App } from '../../http.ts';
 import { IdParam, requireUser } from '../../http.ts';
 import type { Services } from '../../services.ts';
 import { badRequest } from '../../core/errors.ts';
+import { uploadError } from '../../core/archive-entries.ts';
 
 export async function attachmentRoutes(app: App, s: Services): Promise<void> {
   app.get(
@@ -19,11 +20,15 @@ export async function attachmentRoutes(app: App, s: Services): Promise<void> {
       requireUser(req);
       const results = [];
       let comment = '';
-      for await (const part of req.parts()) {
-        if (part.type === 'field' && part.fieldname === 'comment') comment = String(part.value ?? '');
-        if (part.type === 'file') {
-          results.push(await s.attachments.upload(req.auth, req.params.id, { filename: part.filename, mimetype: part.mimetype, stream: part.file }, comment));
+      try {
+        for await (const part of req.parts()) {
+          if (part.type === 'field' && part.fieldname === 'comment') comment = String(part.value ?? '');
+          if (part.type === 'file') {
+            results.push(await s.attachments.upload(req.auth, req.params.id, { filename: part.filename, mimetype: part.mimetype, stream: part.file }, comment));
+          }
         }
+      } catch (err) {
+        throw uploadError(err);
       }
       if (!results.length) throw badRequest('Keine Datei übermittelt');
       return results;

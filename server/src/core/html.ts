@@ -49,6 +49,9 @@ function richTextOptions(iframeHosts: string[]): sanitizeHtml.IOptions {
     allowedSchemes: ['http', 'https', 'mailto', 'tel'],
     allowedSchemesByTag: { img: ['http', 'https', 'data'] },
     allowProtocolRelative: false,
+    // Der Editor erzeugt nie annähernd so tiefe Verschachtelungen. Ohne Grenze legen rund 20 000 ineinander geöffnete
+    // Tags (100 KB) die Textumwandlung (kubische Laufzeit in der Tiefe) beim Speichern für Minuten lahm.
+    nestingLimit: 100,
     allowedIframeHostnames: iframeHosts,
     allowIframeRelativeUrls: false,
     transformTags: {
@@ -85,6 +88,7 @@ const COMMENT_OPTIONS: sanitizeHtml.IOptions = {
   allowedAttributes: { a: ['href', 'target', 'rel'], span: ['data-type', 'data-id', 'data-label', 'class'], code: ['class'] },
   allowedClasses: { span: ['mention'], code: ['language-*'] },
   allowedSchemes: ['http', 'https', 'mailto'],
+  nestingLimit: 30,
   transformTags: { a: sanitizeHtml.simpleTransform('a', { rel: 'noopener noreferrer', target: '_blank' }) },
 };
 

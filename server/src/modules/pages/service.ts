@@ -6,6 +6,7 @@ import type { AuthContext, PageAccess } from '../../core/permissions.ts';
 import { Db, nowIso } from '../../db/database.ts';
 import { HttpError, badRequest, conflict, forbidden, notFound } from '../../core/errors.ts';
 import { slugify } from '../../core/util.ts';
+import { nextRowId } from '../../core/subjects.ts';
 import { sanitizeRichText, toggleTaskItem } from '../../core/html.ts';
 import { CONTENT_TYPES, prepareContent, toDisplayHtml } from './content.ts';
 import type { PropertyInput } from './labels.ts';
@@ -165,9 +166,10 @@ export class PageService {
 
   /** Seite laden und Leserecht prüfen. Liefert Seite und Bereich. */
   requireViewable(auth: AuthContext, id: number, options: { includeDeleted?: boolean } = {}): { page: PageRow; space: SpaceRow } {
-    const page = this.require(id);
-    const space = this.s.spaces.require(page.space_id);
-    if (!this.s.perms.canViewPage(auth, page, space, options)) {
+    // Dieselbe Antwort, ob es die Seite nicht gibt oder sie nicht sichtbar ist – sonst verriete der Unterschied eingeschränkte Seiten
+    const page = this.get(id);
+    const space = page ? this.s.spaces.get(page.space_id) : undefined;
+    if (!page || !space || !this.s.perms.canViewPage(auth, page, space, options)) {
       if (!auth.user) throw new HttpError(401, 'unauthorized', 'Anmeldung erforderlich');
       throw notFound('Seite nicht gefunden oder keine Berechtigung');
     }
@@ -435,9 +437,10 @@ export class PageService {
     const page = this.s.db.transaction(() => {
       const position = input.position ?? this.nextPosition(space.id, parentId);
       const res = this.s.db.run(
-        `INSERT INTO pages (space_id, parent_id, title, icon, content_type, language, content, content_text, excerpt, status, version,
+        `INSERT INTO pages (id, space_id, parent_id, title, icon, content_type, language, content, content_text, excerpt, status, version,
                             position, full_width, created_by, updated_by, created_at, updated_at, published_at, edit_mode)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        nextRowId(this.s.db, 'pages'),
         space.id,
         parentId,
         filtered.title || (status === 'draft' ? '' : 'Unbenannte Seite'),
@@ -893,13 +896,15 @@ export class PageService {
         this.s.analytics.recordViews(views);
         for (const v of userViews) {
           this.s.db.run(
-            `INSERT INTO page_views (user_id, page_id, count, viewed_at) SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM pages WHERE id = ?)
+            // Person oder Seite können in den letzten Sekunden gelöscht worden sein – ein Fremdschlüsselfehler würde sonst alle gesammelten Aufrufe verwerfen
+            `INSERT INTO page_views (user_id, page_id, count, viewed_at) SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM pages WHERE id = ?) AND EXISTS (SELECT 1 FROM users WHERE id = ?)
              ON CONFLICT(user_id, page_id) DO UPDATE SET count = count + excluded.count, viewed_at = excluded.viewed_at`,
             v.userId,
             v.pageId,
             v.count,
             v.at,
             v.pageId,
+            v.userId,
           );
         }
       });

@@ -64,6 +64,19 @@ export function collectSuggestions(html: string): SuggestionSummary[] {
 
 const compact = (html: string) => htmlToText(rejectAllSuggestions(html)).replace(/\s+/g, '');
 
+/**
+ * Was sich nicht im Text zeigt, aber wirkt: Ziele von Links, Bilder, Einbettungen und Makros – ohne Vorschläge betrachtet.
+ * Wer nur vorschlagen darf, soll auch diese nicht still ändern können (ein anderes Ziel hinter demselben Linktext).
+ */
+function behaviour(html: string): string {
+  const root = parse(rejectAllSuggestions(html));
+  const parts: string[] = [];
+  for (const el of root.querySelectorAll('a[href], img[src], iframe[src], [data-type]')) {
+    parts.push([el.rawTagName.toLowerCase(), el.getAttribute('href') ?? '', el.getAttribute('src') ?? '', el.getAttribute('data-type') ?? ''].join('|'));
+  }
+  return parts.sort().join('\n');
+}
+
 export class SuggestionService {
   private readonly s: Services;
 
@@ -153,7 +166,7 @@ export class SuggestionService {
     const content = root.toString();
 
     if (info.forced) {
-      if (compact(content) !== compact(page.content)) {
+      if (compact(content) !== compact(page.content) || behaviour(content) !== behaviour(page.content)) {
         throw forbidden('Im Vorschlagsmodus sind nur Vorschläge möglich – der Text wurde direkt geändert. Bitte die Seite neu laden und Änderungen als Vorschlag eintragen.');
       }
       const after = new Map(collectSuggestions(content).map((sg) => [sg.sid, sg]));

@@ -9,6 +9,7 @@ import { LEGACY_SESSION_COOKIE } from '../../core/legacy.ts';
 import { HttpError, badRequest, forbidden, unauthorized } from '../../core/errors.ts';
 import { renderMail } from '../mail/templates.ts';
 import { localeOfPreferences } from '../../core/i18n.ts';
+import { forgetSubject, rememberRowId } from '../../core/subjects.ts';
 
 export const SESSION_COOKIE = 'knowstead_session';
 
@@ -353,7 +354,15 @@ export class AuthService {
   /** Unbestätigte Selbstregistrierungen nach Ablauf der Frist entfernen (geben Namen und Adresse wieder frei). */
   pruneUnverifiedRegistrations(now = new Date()): number {
     const cutoff = new Date(now.getTime() - REGISTRATION_PENDING_DAYS * 86400_000).toISOString();
-    return this.s.db.run('DELETE FROM users WHERE registration_pending_at IS NOT NULL AND registration_pending_at < ?', cutoff).changes;
+    const expired = this.s.db.all<{ id: number }>('SELECT id FROM users WHERE registration_pending_at IS NOT NULL AND registration_pending_at < ?', cutoff);
+    return this.s.db.transaction(() => {
+      // Wie beim Löschen eines Kontos: Verweise räumen, Nummer nicht wieder vergeben
+      for (const { id } of expired) {
+        rememberRowId(this.s.db, 'users', id);
+        forgetSubject(this.s.db, 'user', id);
+      }
+      return this.s.db.run('DELETE FROM users WHERE registration_pending_at IS NOT NULL AND registration_pending_at < ?', cutoff).changes;
+    });
   }
 
   /**

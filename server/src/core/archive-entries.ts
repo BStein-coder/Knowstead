@@ -171,6 +171,15 @@ export function clearUploadTemp(dataDir: string): void {
   fs.rmSync(uploadTempDir(dataDir), { recursive: true, force: true });
 }
 
+/** Ein abgebrochener oder beschädigter Multipart-Body ist ein Fehler des Aufrufs (400), kein Serverfehler. */
+export function uploadError(err: unknown): unknown {
+  const e = err as { code?: string; statusCode?: number; message?: string };
+  if (err instanceof Error && !e.code && !e.statusCode && /multipart|boundary|malformed|part header/i.test(e.message ?? '')) {
+    return new HttpError(400, 'bad_upload', 'Der Upload ist unvollständig oder beschädigt.');
+  }
+  return err;
+}
+
 /**
  * Multipart-Upload entgegennehmen: Dateien werden direkt auf die Platte geschrieben, Felder gesammelt.
  * Die Größe begrenzt die Multipart-Einstellung des Servers (2 GB je Datei).
@@ -199,7 +208,7 @@ export async function receiveUploads(req: FastifyRequest, dataDir: string): Prom
     const code = (err as { code?: string }).code;
     if (code === 'ENOSPC') throw new HttpError(507, 'disk_full', 'Auf dem Server ist nicht genug Speicherplatz für diesen Upload frei.');
     if (code === 'FST_REQ_FILE_TOO_LARGE') throw new HttpError(413, 'file_too_large', 'Die Datei ist zu groß (höchstens 2 GB).');
-    throw err;
+    throw uploadError(err);
   }
   return { dir, files, fields, cleanup };
 }

@@ -2,6 +2,12 @@ import { diffArrays, diffLines } from 'diff';
 
 const TOKEN = /(<[^>]+>)|([\p{L}\p{N}_]+)|(\s+)|([^\s<])/gu;
 const MAX_TOKENS = 60000;
+/**
+ * Zwei völlig verschiedene Fassungen kosten das Verfahren Zeit in der Größenordnung von Eingabe × Unterschied:
+ * Bei 60 000 Token wären das Minuten auf dem Hauptthread. Danach wird abgebrochen; die Ansicht zeigt dann keine
+ * farbige Gegenüberstellung bzw. die Zeilen als ersetzt.
+ */
+const DIFF_TIMEOUT_MS = 1500;
 
 /** Makros ohne Textinhalt, deren Änderungen als Marker angezeigt werden. */
 const ATOM_LABELS: Record<string, string> = {
@@ -46,7 +52,8 @@ export function htmlDiff(oldHtml: string, newHtml: string): { html: string; stat
   const a = tokenize(oldHtml);
   const b = tokenize(newHtml);
   if (a.length + b.length > MAX_TOKENS) return null;
-  const changes = diffArrays(a, b);
+  const changes = diffArrays(a, b, { timeout: DIFF_TIMEOUT_MS });
+  if (!changes) return null;
   const out: string[] = [];
   const stats: DiffStats = { added: 0, removed: 0 };
 
@@ -114,7 +121,13 @@ export function lineDiff(oldText: string, newText: string): { lines: LineChange[
     const t = s.replace(/\r\n/g, '\n');
     return t.endsWith('\n') ? t : `${t}\n`;
   };
-  const changes = diffLines(norm(oldText), norm(newText));
+  const before = norm(oldText);
+  const after = norm(newText);
+  // Bei Abbruch (siehe DIFF_TIMEOUT_MS): alles Alte als entfernt, alles Neue als hinzugefügt zeigen
+  const changes = diffLines(before, after, { timeout: DIFF_TIMEOUT_MS }) ?? [
+    { value: before, count: 0, removed: true, added: false },
+    { value: after, count: 0, removed: false, added: true },
+  ];
   const lines: LineChange[] = [];
   const stats: DiffStats = { added: 0, removed: 0 };
   for (const c of changes) {

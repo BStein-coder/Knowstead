@@ -74,14 +74,28 @@ export function imageSize(data: Buffer, mime: string): { width: number; height: 
   return null;
 }
 
+/**
+ * Beginnt der Text mit einem SVG-Wurzelelement – davor dürfen XML-Kopf, Kommentare und DOCTYPE stehen?
+ * Schrittweise statt mit einem einzigen Ausdruck: Die Kommentarfolge `(<!--[\s\S]*?-->\s*)*` braucht bei
+ * einer Datei aus lauter leeren Kommentaren exponentiell lange (rund 40 davon legen den Server lahm).
+ */
+function startsWithSvg(head: string): boolean {
+  let rest = head.replace(/^<\?xml[^>]*>\s*/i, '');
+  while (rest.startsWith('<!--')) {
+    const end = rest.indexOf('-->', 4);
+    if (end < 0) return false;
+    rest = rest.slice(end + 3).trimStart();
+  }
+  return /^(<!DOCTYPE svg[^>]*>\s*)?<svg\b/i.test(rest);
+}
+
 /** Bildformat anhand der ersten Bytes bestimmen. */
 export function sniffImage(data: Buffer): 'image/png' | 'image/jpeg' | 'image/svg+xml' | null {
   if (data.length > 8 && data.readUInt32BE(0) === 0x89504e47) return 'image/png';
   if (data.length > 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) return 'image/jpeg';
   // trimStart entfernt auch ein vorangestelltes BOM (U+FEFF)
   const head = data.subarray(0, 1024).toString('utf8').trimStart();
-  if (/^(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE svg[^>]*>\s*)?<svg\b/i.test(head)) return 'image/svg+xml';
-  return null;
+  return startsWithSvg(head) ? 'image/svg+xml' : null;
 }
 
 /** SVG-Abmessungen aus width/height oder viewBox. */

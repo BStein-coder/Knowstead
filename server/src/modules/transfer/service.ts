@@ -517,7 +517,14 @@ ${content}</body></html>`;
         const attr = el.tagName === 'IMG' ? 'src' : 'href';
         const ref = el.getAttribute(attr) ?? '';
         if (!ref || /^(https?:|mailto:|tel:|#|\/|data:)/i.test(ref)) continue;
-        const target = path.posix.normalize(path.posix.join(dir, decodeURIComponent(ref.split('#')[0].split('?')[0])));
+        const bare = ref.split('#')[0].split('?')[0];
+        let decoded = bare;
+        try {
+          decoded = decodeURIComponent(bare);
+        } catch {
+          // „100%.png“ ist keine gültige Kodierung – dann gilt der Name, wie er dasteht (sonst bräche der ganze Import ab)
+        }
+        const target = path.posix.normalize(path.posix.join(dir, decoded));
         const entry = entries.get(target);
         if (!entry || /\.(md|markdown|html?)$/i.test(target)) continue;
         const att = this.s.attachments.storeBuffer(page.id, path.posix.basename(target), source.read(entry), auth.user?.id ?? null);
@@ -700,14 +707,23 @@ ${content}</body></html>`;
   private async createSpaceFromArchive(auth: AuthContext, content: ArchiveEntries, input: { key: string; name?: string }) {
     const metaFile = archiveFile(content);
     if (!metaFile) throw badRequest('Das ZIP enthält kein Knowstead-Archiv (knowstead-space.json)');
-    const meta = JSON.parse(new TextDecoder().decode(content.read(metaFile))) as { space: { name: string; description: string; icon: string | null } };
+    let meta: { space?: { name?: unknown; description?: unknown; icon?: unknown } } | null;
+    try {
+      meta = JSON.parse(new TextDecoder().decode(content.read(metaFile)));
+    } catch {
+      throw badRequest('Die Beschreibung im Archiv ist beschädigt');
+    }
+    // Ein falsch gebautes Archiv soll mit einer Meldung enden – und keinen halb angelegten Bereich hinterlassen
+    const info = meta?.space;
+    if (!info || typeof info !== 'object') throw badRequest('Die Beschreibung im Archiv ist beschädigt');
+    const text = (value: unknown, max: number) => (typeof value === 'string' ? value.slice(0, max) : '');
     const key = input.key.toUpperCase();
     if (!SPACE_KEY_RE.test(key)) throw badRequest('Ungültiger Bereichsschlüssel');
     const space = await this.s.spaces.create(auth, {
       key,
-      name: input.name || meta.space.name,
-      description: meta.space.description,
-      icon: meta.space.icon,
+      name: input.name || text(info.name, 100) || key,
+      description: text(info.description, 1000),
+      icon: typeof info.icon === 'string' && info.icon.length <= 16 ? info.icon : null,
       preset: 'private',
     });
     const pages = await this.importArchive(auth, space, null, content, { adoptHome: true });

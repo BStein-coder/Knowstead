@@ -255,7 +255,10 @@ export async function adminRoutes(app: App, s: Services): Promise<void> {
 
   app.get('/api/v1/groups', { schema: { tags: ['Benutzer'], summary: 'Gruppen (für Auswahlfelder)', querystring: Type.Object({ q: Type.Optional(Type.String()) }) } }, async (req) => {
     s.perms.requireUser(req.auth);
-    return s.groups.list(req.query.q);
+    const groups = s.groups.list(req.query.q);
+    // Auswahlfelder brauchen nur Namen: Rechte und zugeordnete Verzeichnisgruppen (Aufbau des Active Directory) sehen nur Benutzerverwalter
+    if (s.perms.hasGlobal(req.auth, 'users.manage')) return groups;
+    return groups.map((g) => ({ ...g, permissions: [], directoryGroups: [], syncEnabled: false }));
   });
 
   app.get('/api/v1/admin/groups/:id', { schema: { tags, summary: 'Gruppe mit Mitgliedern', params: IdParam } }, async (req) => {
