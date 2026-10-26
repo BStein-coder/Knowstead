@@ -199,6 +199,12 @@ export function Modal({ open, onClose, title, children, footer, size = 'md', dis
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const { t } = useI18n();
+  // Eltern übergeben `onClose` meist als neue Funktion bei jedem Rendern. Hinge der Effekt davon ab, liefe er bei jedem
+  // Neuzeichnen erneut – und die erste Eingabe holte sich den Fokus zurück, während jemand im Dialog woanders tippt.
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -207,7 +213,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md', dis
       // Hat schon etwas im Dialog die Taste verarbeitet (Vorschlagsmenü im Editor), bleibt der Dialog offen
       if (e.key === 'Escape' && dismissible && !e.defaultPrevented) {
         e.stopPropagation();
-        onClose();
+        closeRef.current();
       }
     };
     document.addEventListener('keydown', onKey);
@@ -222,7 +228,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md', dis
       window.clearTimeout(timer);
       prev?.focus?.();
     };
-  }, [open, dismissible, onClose]);
+  }, [open, dismissible]);
 
   if (!open) return null;
   return createPortal(

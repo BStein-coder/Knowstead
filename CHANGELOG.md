@@ -9,6 +9,17 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+### Behoben
+
+- **Dialoge holten sich den Fokus zurück**: Der Dialograhmen setzte den Fokus beim Öffnen auf das erste Eingabefeld –
+  und tat es bei jedem Neuzeichnen der aufrufenden Seite erneut, weil sein Effekt von der Schließen-Funktion abhing,
+  die Eltern bei jedem Rendern neu bilden. Wer im geöffneten Aufgabendialog gerade im Chat tippte, sprang nach einem
+  Neuzeichnen (etwa nach einem Abruf) ins Titelfeld, und die nächste Eingabe landete dort. Der Fokus wird jetzt nur
+  einmal beim Öffnen gesetzt. Das behebt auch zwei Oberflächentests, die auf GitHub unregelmäßig scheiterten
+  („Erwähnung im Chat“ und „Ziehen“ im Planer).
+
 ## [2.2.0] – 2026-10-20
 
 Zwei neue Aussehen („Papier“ und „Frost“), ein Aufgabenplaner in Bewegung mit Kalender, eine Übersicht aller Projekte
