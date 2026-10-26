@@ -71,6 +71,9 @@ eingesetzte Werte). Neue Meldungen dort ergänzen – `server/test/i18n.test.ts`
 - Die Szene besteht aus CSS-3D-Transformationen ohne WebGL und ohne Bibliothek. Alle Maße hängen an der
   Welt-Einheit `--u`; die Komposition steht als Tabelle `NODES` in `Scene3D.tsx`. Sie ist Dekoration
   (`aria-hidden`, nicht anklickbar) und pausiert außerhalb des Bildes und nach einer Minute ohne Eingabe.
+- Die Tiefenwirkung aller 3D-Effekte (Neigung der Kacheln, Kamera der Szene, Logo) steuert eine einzige Größe:
+  `--fx3d` in `tokens.css` (1 = volle Stärke, 0 = flach; Vorgabe 0,5). Neue 3D-Bewegungen multiplizieren ihre
+  Winkel und Wege damit, statt eigene Beträge festzulegen.
 
 **Navigation.** Kopfleiste, Seitenleiste, die Leiste über einer Seite, „Auf dieser Seite“ und die Leisten des
 Editors sind schwebende Glasebenen (`web/src/styles/shell.css`; der Aufbau – Raster, Schublade auf dem Handy –

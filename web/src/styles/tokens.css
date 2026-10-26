@@ -153,6 +153,9 @@
   --dur-slow: 0.34s;
   --dur-enter: 0.42s;
   --dur-reveal: 0.7s;
+  /* Tiefenwirkung der 3D-Effekte: Neigung der Kacheln, Kamera der Szene (Zeiger, Fahrt, Drift, Scrollen), Logo.
+     1 = die ursprüngliche Stärke, 0 = flach. Die Einstellung „Bewegung reduzieren“ schaltet weiterhin alles ab. */
+  --fx3d: 0.5;
 
   /* Syntaxhervorhebung */
   --hl-keyword: #7c3aed;

@@ -170,7 +170,7 @@
 .scene-rig {
   left: var(--cx, 50%);
   top: var(--cy, 50%);
-  transform: rotateX(calc(var(--py) * -2.4deg)) rotateY(calc(var(--px) * 3.6deg)) translate3d(calc(var(--px) * -16 * var(--u)), calc(var(--py) * -10 * var(--u)), 0);
+  transform: rotateX(calc(var(--py) * -2.4deg * var(--fx3d))) rotateY(calc(var(--px) * 3.6deg * var(--fx3d))) translate3d(calc(var(--px) * -16 * var(--u) * var(--fx3d)), calc(var(--py) * -10 * var(--u) * var(--fx3d)), 0);
   transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -180,7 +180,7 @@
 
 @keyframes scene-intro {
   from {
-    transform: translate3d(0, calc(46 * var(--u)), calc(-560 * var(--u))) rotateX(9deg);
+    transform: translate3d(0, calc(46 * var(--u) * var(--fx3d)), calc(-560 * var(--u) * var(--fx3d))) rotateX(calc(9deg * var(--fx3d)));
   }
   to {
     transform: none;
@@ -193,13 +193,13 @@
 
 @keyframes scene-drift {
   from {
-    transform: translate3d(calc(-16 * var(--u)), calc(7 * var(--u)), 0) rotateY(-3.4deg) rotateX(1.2deg);
+    transform: translate3d(calc(-16 * var(--u) * var(--fx3d)), calc(7 * var(--u) * var(--fx3d)), 0) rotateY(calc(-3.4deg * var(--fx3d))) rotateX(calc(1.2deg * var(--fx3d)));
   }
   50% {
-    transform: translate3d(calc(8 * var(--u)), calc(-9 * var(--u)), calc(46 * var(--u))) rotateY(2.2deg) rotateX(-1.1deg);
+    transform: translate3d(calc(8 * var(--u) * var(--fx3d)), calc(-9 * var(--u) * var(--fx3d)), calc(46 * var(--u) * var(--fx3d))) rotateY(calc(2.2deg * var(--fx3d))) rotateX(calc(-1.1deg * var(--fx3d)));
   }
   to {
-    transform: translate3d(calc(22 * var(--u)), calc(5 * var(--u)), 0) rotateY(4.2deg) rotateX(0.7deg);
+    transform: translate3d(calc(22 * var(--u) * var(--fx3d)), calc(5 * var(--u) * var(--fx3d)), 0) rotateY(calc(4.2deg * var(--fx3d))) rotateX(calc(0.7deg * var(--fx3d)));
   }
 }
 
@@ -214,7 +214,7 @@
 
 @keyframes scene-scroll {
   to {
-    transform: translate3d(0, calc(-70 * var(--u)), calc(300 * var(--u))) rotateX(-7deg);
+    transform: translate3d(0, calc(-70 * var(--u) * var(--fx3d)), calc(300 * var(--u) * var(--fx3d))) rotateX(calc(-7deg * var(--fx3d)));
   }
 }
 
@@ -264,10 +264,10 @@
 
 @keyframes scene-float {
   from {
-    transform: translate3d(0, calc(var(--fy) * -1), 0) rotateZ(calc(var(--fr) * -1)) rotateX(calc(var(--fr) * 1.5));
+    transform: translate3d(0, calc(var(--fy) * -1 * var(--fx3d)), 0) rotateZ(calc(var(--fr) * -1 * var(--fx3d))) rotateX(calc(var(--fr) * 1.5 * var(--fx3d)));
   }
   to {
-    transform: translate3d(0, var(--fy), calc(var(--fy) * 1.6)) rotateZ(var(--fr)) rotateX(calc(var(--fr) * -1.5));
+    transform: translate3d(0, calc(var(--fy) * var(--fx3d)), calc(var(--fy) * 1.6 * var(--fx3d))) rotateZ(calc(var(--fr) * var(--fx3d))) rotateX(calc(var(--fr) * -1.5 * var(--fx3d)));
   }
 }
 

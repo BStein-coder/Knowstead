@@ -11,6 +11,13 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- **3D-Effekte um die Hälfte gedämpft**: Das Neigen der Kacheln zum Zeiger, die Kamera der Startseiten-Szene (Zeiger,
+  Einflug, Drift, Kamerafahrt beim Scrollen, Schweben der Seiten) und das Kippen des Logos arbeiten mit halber
+  Stärke. Eine einzige Größe steuert das: `--fx3d` in `tokens.css` (1 = bisherige Stärke, 0 = flach). „Bewegung
+  reduzieren“ schaltet wie bisher alles ab.
+
 ### Behoben
 
 - **Dialoge holten sich den Fokus zurück**: Der Dialograhmen setzte den Fokus beim Öffnen auf das erste Eingabefeld –

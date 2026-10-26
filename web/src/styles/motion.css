@@ -84,7 +84,7 @@
 [data-tilt],
 [data-tilt]:hover {
   position: relative;
-  transform: perspective(900px) translate3d(0, var(--lift, 0px), 0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform: perspective(900px) translate3d(0, var(--lift, 0px), 0) rotateX(calc(var(--rx, 0deg) * var(--fx3d))) rotateY(calc(var(--ry, 0deg) * var(--fx3d)));
   transition:
     transform 0.55s var(--ease-spring),
     box-shadow var(--dur) var(--ease),
@@ -167,7 +167,7 @@
 }
 
 .brand:hover .brand-logo {
-  transform: perspective(240px) rotateY(-16deg) rotateX(8deg) scale(1.04);
+  transform: perspective(240px) rotateY(calc(-16deg * var(--fx3d))) rotateX(calc(8deg * var(--fx3d))) scale(1.04);
 }
 
 /* Lichtmarke des aktiven Eintrags: wächst aus der Mitte, wenn ein Eintrag aktiv wird */
