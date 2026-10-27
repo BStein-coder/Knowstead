@@ -1,6 +1,6 @@
 import type { Services } from '../../services.ts';
 import type { UserRef, UserRow } from '../../core/types.ts';
-import type { AuthContext } from '../../core/permissions.ts';
+import { permissionNames, type AuthContext } from '../../core/permissions.ts';
 import { Db, nowIso, parseJson } from '../../db/database.ts';
 import { hashPassword } from '../../core/crypto.ts';
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors.ts';
@@ -214,14 +214,29 @@ export class UserService {
     if (password.length > 200) throw badRequest('Das Passwort ist zu lang');
   }
 
-  private validateIdentity(username: string, email: string | null | undefined, excludeId?: number): void {
+  /** Formfehler von Name und Adresse – ohne zu prüfen, ob beides schon vergeben ist. */
+  private validateFormat(username: string, email: string | null | undefined): void {
     if (!USERNAME_RE.test(username)) {
       throw badRequest('Der Benutzername darf nur Buchstaben, Ziffern, Punkt, Binde- und Unterstrich enthalten (2–40 Zeichen)');
     }
+    if (email && !isValidEmail(email)) throw badRequest('Ungültige E-Mail-Adresse');
+  }
+
+  /**
+   * Alle Formprüfungen einer Neuanmeldung, aber ohne die auf bereits vergebene Namen und Adressen. Die
+   * Selbstregistrierung antwortet bei einer schon registrierten Adresse wie bei einer neuen und braucht daher
+   * dieselben Fehler für ungültige Eingaben – sonst verriete der Unterschied die Adresse.
+   */
+  validateNewAccount(username: string, email: string, password: string): void {
+    this.validateFormat(username.trim(), email.trim() || null);
+    this.validatePassword(password);
+  }
+
+  private validateIdentity(username: string, email: string | null | undefined, excludeId?: number): void {
+    this.validateFormat(username, email);
     const existing = this.byUsername(username);
     if (existing && existing.id !== excludeId) throw conflict('Dieser Benutzername ist bereits vergeben');
     if (email) {
-      if (!isValidEmail(email)) throw badRequest('Ungültige E-Mail-Adresse');
       const byMail = this.s.db.get<UserRow>('SELECT id FROM users WHERE email = ?', email);
       if (byMail && byMail.id !== excludeId) throw conflict('Diese E-Mail-Adresse wird bereits verwendet');
     }
@@ -233,6 +248,8 @@ export class UserService {
     const displayName = input.displayName.trim() || username;
     this.validateIdentity(username, email);
     if (input.password) this.validatePassword(input.password);
+    // Wer nicht Systemadministration hat, legt Konten nur in Gruppen an, deren Rechte er selbst hat
+    if (auth && input.groupIds?.length) this.s.groups.requireDelegable(auth, input.groupIds);
     const now = nowIso();
     const id = this.s.db.transaction(() => {
       const res = this.s.db.run(
@@ -292,6 +309,8 @@ export class UserService {
       if (input.groupIds) {
         this.s.perms.requireGlobal(auth, 'users.manage');
         const before = this.groupsOf(id).map((g) => g.id);
+        const wanted = new Set(input.groupIds);
+        this.s.groups.requireDelegable(auth, [...before.filter((g) => !wanted.has(g)), ...[...wanted].filter((g) => !before.includes(g))]);
         const wasAdmin = this.isAdmin(id);
         this.s.db.run('DELETE FROM group_members WHERE user_id = ?', id);
         for (const gid of new Set(input.groupIds)) {
@@ -322,6 +341,16 @@ export class UserService {
   requireManageable(auth: AuthContext, id: number): void {
     if (auth.via === 'system' || auth.isAdmin) return;
     if (this.isAdmin(id)) throw forbidden('Administratorkonten dürfen nur Administratoren ändern');
+    // Dasselbe für jedes Konto, das Rechte hat, die man selbst nicht hat: Wer dessen Adresse oder Passwort ändert,
+    // übernimmt das Konto samt Rechten – das wäre der Umweg an der Weitergabe-Regel für Gruppen vorbei.
+    const rows = this.s.db.all<{ permissions: string }>(
+      'SELECT g.permissions FROM groups g JOIN group_members m ON m.group_id = g.id WHERE m.user_id = ?',
+      id,
+    );
+    const missing = this.s.perms.uncovered(auth, rows.flatMap((r) => parseJson<string[]>(r.permissions, [])));
+    if (missing.length) {
+      throw forbidden(`Dieses Konto hat Rechte, die dir selbst fehlen (${permissionNames(missing)}). Es darf nur von jemandem verwaltet werden, der sie ebenfalls hat.`);
+    }
   }
 
   setPassword(id: number, password: string): void {

@@ -293,10 +293,17 @@ Dateien dauert das eine Weile; der Fortschritt steht unter `GET /api/v1/admin/at
   `integrations.manage`.
 - **Benutzerverwaltung:** Gruppen mit `users.manage`, aber ohne `admin`, können Administratorkonten
   nicht mehr bearbeiten, sperren oder löschen und keine Tokens für Administrator-Dienstkonten anlegen.
+  Allgemein gilt: **Rechte lassen sich nur weitergeben, wenn man sie selbst hat.** Wer
+  `users.manage` hat, aber zum Beispiel `integrations.manage` nicht, kann keine Gruppe mit diesem Recht anlegen
+  oder ändern, niemanden in eine solche Gruppe setzen oder daraus entfernen (auch sich selbst nicht), sie nicht
+  zur Standardgruppe machen oder mit dem Verzeichnis abgleichen – und Konten, die solche Rechte haben, nicht
+  verwalten (Adresse, Passwort, Zugangslinks, Sperren). Die Systemadministration darf das alles. Die Meldung
+  nennt, welches Recht fehlt.
 - **Verzeichniskonten** können ihr Passwort nicht mehr über „Passwort vergessen“ setzen – das Passwort
   verwaltet das AD.
 - **Selbstregistrierung:** Mit eingerichtetem E-Mail-Versand müssen neue Konten ihre Adresse bestätigen;
   ist eine Domain-Beschränkung gesetzt, braucht die Registrierung den E-Mail-Versand (sonst gesperrt).
+  Die Antwort verrät dann nie, ob eine Adresse schon registriert ist (siehe Abschnitt Selbstregistrierung).
 - **Profil:** Die E-Mail-Adresse lässt sich nur noch mit dem aktuellen Passwort ändern; Skripte senden
   dafür `currentPassword` mit.
 - **Ersteinrichtung** neuer Installationen über das Netzwerk verlangt den Einrichtungscode aus dem Protokoll.
@@ -527,7 +534,12 @@ Bereichseinstellungen unter „Eingeschränkte Seiten“ aufgelistet.
   bestätigen neue Konten ihre Adresse über einen Link und können sich erst danach anmelden. Eine
   Beschränkung auf **E-Mail-Domains** wirkt nur so – ohne E-Mail-Versand ist die Registrierung dann
   gesperrt. Unbestätigte Konten zeigt die Benutzerverwaltung mit „Freischalten“; nach sieben Tagen
-  werden sie automatisch gelöscht.
+  werden sie automatisch gelöscht. Wer sich mit einer Adresse registriert, die schon zu einem Konto
+  gehört, sieht dieselbe Antwort wie bei einer neuen Adresse („Wir haben dir eine E-Mail geschickt“); das
+  vorhandene Konto bekommt eine Mail („Du hast schon ein Konto“) – bei einer noch unbestätigten Registrierung
+  stattdessen ein neuer Bestätigungslink –, höchstens eine je zehn Minuten. Ohne E-Mail-Versand entsteht das
+  Konto sofort, und eine vergebene Adresse lässt sich nicht verbergen. Ein vergebener **Benutzername** wird
+  weiterhin gemeldet; die Namen stehen in Personenliste und Erwähnungen ohnehin offen.
 - Die eigene **E-Mail-Adresse** lässt sich im Profil nur mit dem aktuellen Passwort ändern.
 
 ---

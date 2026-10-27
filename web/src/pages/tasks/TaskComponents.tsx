@@ -397,6 +397,8 @@ export function TaskDialog({ board, task, bucket, pageId, onClose }: TaskDialogP
   };
 
   const readOnly = !board.canEdit;
+  // Der Beginn darf nicht nach der Fälligkeit liegen (der Server lehnt es ebenfalls ab)
+  const datesInvalid = !!startDate && !!dueDate && startDate > dueDate;
 
   return (
     <Modal
@@ -417,7 +419,7 @@ export function TaskDialog({ board, task, bucket, pageId, onClose }: TaskDialogP
             {t('common.cancel')}
           </Button>
           {!readOnly && (
-            <Button variant="primary" loading={save.isPending} disabled={!title.trim()} onClick={() => save.mutate()}>
+            <Button variant="primary" loading={save.isPending} disabled={!title.trim() || datesInvalid} onClick={() => save.mutate()}>
               {task ? t('common.save') : t('tasks.create')}
             </Button>
           )}
@@ -429,7 +431,7 @@ export function TaskDialog({ board, task, bucket, pageId, onClose }: TaskDialogP
         className="task-form"
         onSubmit={(e) => {
           e.preventDefault();
-          if (title.trim() && !readOnly) save.mutate();
+          if (title.trim() && !readOnly && !datesInvalid) save.mutate();
         }}
       >
         <Input className="task-title-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('tasks.titlePlaceholder')} autoFocus disabled={readOnly} />
@@ -447,10 +449,10 @@ export function TaskDialog({ board, task, bucket, pageId, onClose }: TaskDialogP
             </Select>
           </Field>
           <Field label={t('tasks.start')}>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} disabled={readOnly} />
+            <Input type="date" value={startDate} max={dueDate || undefined} onChange={(e) => setStartDate(e.target.value)} disabled={readOnly} />
           </Field>
-          <Field label={t('tasks.due')}>
-            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} disabled={readOnly} />
+          <Field label={t('tasks.due')} error={datesInvalid ? t('tasks.dateOrder') : undefined}>
+            <Input type="date" value={dueDate} min={startDate || undefined} aria-invalid={datesInvalid || undefined} onChange={(e) => setDueDate(e.target.value)} disabled={readOnly} />
           </Field>
           <Field label={t('tasks.priority')}>
             <Select value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)} disabled={readOnly}>

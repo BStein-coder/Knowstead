@@ -1297,6 +1297,7 @@ const en: Dictionary = {
     dependencyConflict: '1 scheduling conflict',
     dependencyConflicts: '{n} scheduling conflicts',
     alignedToPredecessors: 'Dates adjusted to the dependencies – the task now follows its predecessor.',
+    dateOrder: 'The due date is before the start date.',
     showDependencies: 'Dependencies',
     autoSchedule: 'Move dependent tasks automatically',
     autoScheduleHelp: 'When a task moves or grows, waiting tasks follow and keep their duration. When off, conflicts are only highlighted.',

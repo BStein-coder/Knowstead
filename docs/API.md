@@ -103,7 +103,8 @@ Ist unter Administration → Einstellungen „Anonymer Lesezugriff“ aktiv und 
 
 ```bash
 # Selbstregistrierung (falls aktiviert). Mit E-Mail-Versand: { "user": null, "pending": true, "email": "…" }
-# – angemeldet wird erst über den Link aus der E-Mail; ohne E-Mail-Versand sofort mit Sitzung.
+# – angemeldet wird erst über den Link aus der E-Mail; ohne E-Mail-Versand sofort mit Sitzung. Die Antwort ist
+# für eine neue und eine schon registrierte Adresse gleich (die Inhaberin bekommt eine Mail).
 curl -X POST https://knowstead.example.com/api/v1/auth/register \
   -H "Content-Type: application/json" -H "X-Knowstead-Client: script" \
   -d '{"username":"paul","displayName":"Paul","email":"paul@firma.de","password":"…"}'

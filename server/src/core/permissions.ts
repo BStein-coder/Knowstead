@@ -32,6 +32,11 @@ export const GLOBAL_PERMISSIONS: Record<string, { label: string; description: st
   },
 };
 
+/** Namen von Rechten für Meldungen: „Integrationen verwalten, Audit-Log einsehen“. */
+export function permissionNames(keys: Iterable<string>): string {
+  return [...keys].map((key) => GLOBAL_PERMISSIONS[key]?.label ?? key).join(', ');
+}
+
 /* ------------------------------------------------------------------ *
  * Bereichsrollen und die daraus abgeleiteten Aktionen
  * ------------------------------------------------------------------ */
@@ -232,6 +237,16 @@ export class PermissionService {
   requireGlobal(auth: AuthContext, permission: string): void {
     if (!auth.user && auth.via !== 'system') throw unauthorized();
     if (!this.hasGlobal(auth, permission)) throw forbidden();
+  }
+
+  /**
+   * Welche dieser Rechte hat jemand nicht selbst? Weitergeben (an Gruppen, Konten) darf man nur, was man hat –
+   * sonst könnte „Benutzer verwalten“ sich eine Gruppe mit Integrations-, Audit- oder Vorlagenrechten anlegen und
+   * ihr beitreten. Die Systemadministration (und der Server selbst) darf alles.
+   */
+  uncovered(auth: AuthContext, permissions: Iterable<string>): string[] {
+    if (auth.isAdmin || auth.via === 'system') return [];
+    return [...new Set(permissions)].filter((p) => !auth.permissions.has(p));
   }
 
   /* ------------------------- Bereichsrechte ------------------------- */

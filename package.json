@@ -23,7 +23,9 @@
     "test:contrast": "npm run build && npm --prefix e2e run scan:contrast",
     "test:perf": "npm run build && npm --prefix e2e run scan:perf",
     "lint": "eslint . && node --disable-warning=ExperimentalWarning scripts/check-i18n.mjs && node scripts/check-docs.mjs",
-    "typecheck": "tsc -p server/tsconfig.json && tsc -p web/tsconfig.json"
+    "typecheck": "tsc -p server/tsconfig.json && tsc -p web/tsconfig.json",
+    "release:bump": "node scripts/release.mjs bump",
+    "release:check": "node scripts/release.mjs check"
   },
   "overrides": {
     "lodash-es": "4.18.1",
@@ -33,6 +35,9 @@
     },
     "@excalidraw/mermaid-to-excalidraw": {
       "nanoid": "5.1.16"
+    },
+    "mermaid": {
+      "katex": "^0.18.7"
     }
   },
   "devDependencies": {

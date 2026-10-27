@@ -121,7 +121,8 @@ als JSON-Text gespeichert. Transaktionen (`db.transaction`) sind synchron – ke
 **Rechte.** Nie selbst prüfen, sondern fragen:
 `perms.requireGlobal`, `spaces.requireViewable`, `pages.requireAccess`, `perms.canSpace`. Aktionen an
 fremden Konten (ändern, sperren, löschen, Tokens) laufen zusätzlich über `users.requireManageable` –
-sonst könnte `users.manage` Administratoren übernehmen.
+sonst könnte `users.manage` Administratoren übernehmen. Wer Rechte vergibt (Gruppen, Mitglieder), prüft mit
+`perms.uncovered` bzw. `groups.requireDelegable`, dass die Person sie selbst hat.
 
 **Dateien.** Anhänge nie direkt vom Datenträger löschen, sondern mit
 `attachments.scheduleFileRemoval(keys)` vormerken: Die Wartung entfernt sie nach 30 Tagen, damit

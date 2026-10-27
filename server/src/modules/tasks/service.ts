@@ -626,6 +626,9 @@ export class TaskService {
     const fromChecklist = input.progressFromChecklist === true;
     const progress = status === 'done' ? 100 : ((fromChecklist ? checklistProgress(checklist) : null) ?? clamp(input.progress ?? 0));
     const maxPos = this.s.db.value<number>('SELECT COALESCE(MAX(position), 0) FROM tasks WHERE board_id = ? AND bucket = ? AND deleted_at IS NULL', boardId, bucket) ?? 0;
+    const dueDate = cleanDate(input.dueDate);
+    const startDate = cleanDate(input.startDate);
+    requireDateOrder(startDate, dueDate);
     // Alles oder nichts: Scheitert eine Vorgängerin (Kreis, anderer Plan), entsteht auch keine halbe Aufgabe
     const task = this.s.db.transaction(() => {
       const res = this.s.db.run(
@@ -638,8 +641,8 @@ export class TaskService {
         title.slice(0, 300),
         (input.notes ?? '').slice(0, 5000),
         this.validAssignee(input.assigneeId, space),
-        cleanDate(input.dueDate),
-        cleanDate(input.startDate),
+        dueDate,
+        startDate,
         PRIORITIES.includes(input.priority as TaskRow['priority']) ? input.priority : 'normal',
         status,
         progress,
@@ -701,6 +704,10 @@ export class TaskService {
     const computed = fromChecklist ? checklistProgress(checklist) : null;
     const progress =
       status === 'done' ? 100 : (computed ?? (input.progress !== undefined ? clamp(input.progress) : wasDone && row.progress === 100 ? 0 : row.progress));
+    const dueDate = input.dueDate !== undefined ? cleanDate(input.dueDate) : row.due_date;
+    const startDate = input.startDate !== undefined ? cleanDate(input.startDate) : row.start_date;
+    // Nur prüfen, wenn sich ein Datum ändert: Ältere Aufgaben mit vertauschten Terminen bleiben sonst nicht mehr änderbar
+    if (dueDate !== row.due_date || startDate !== row.start_date) requireDateOrder(startDate, dueDate);
     let rescheduled: number[] = [];
     // Alles oder nichts: Wird eine Vorgängerin abgelehnt (Kreis, anderer Plan), bleiben auch die übrigen Felder unverändert
     this.s.db.transaction(() => {
@@ -714,8 +721,8 @@ export class TaskService {
         (input.title ?? row.title).trim().slice(0, 300) || row.title,
         input.notes !== undefined ? input.notes.slice(0, 5000) : row.notes,
         input.assigneeId !== undefined && input.assigneeId !== row.assignee_id ? this.validAssignee(input.assigneeId, space) : row.assignee_id,
-        input.dueDate !== undefined ? cleanDate(input.dueDate) : row.due_date,
-        input.startDate !== undefined ? cleanDate(input.startDate) : row.start_date,
+        dueDate,
+        startDate,
         PRIORITIES.includes(input.priority as TaskRow['priority']) ? input.priority : row.priority,
         status,
         progress,
@@ -832,7 +839,9 @@ export class TaskService {
     let next = advance(base, rule);
     for (let guard = 0; next < today() && guard < 1000; guard++) next = advance(next, rule);
     const shift = daysBetween(base, next);
-    const start = task.start_date ? shiftDay(task.start_date, shift) : null;
+    // Eine ältere Aufgabe mit vertauschten Terminen bekäme sonst keine Nachfolgerin (die Prüfung lehnt sie ab)
+    const shifted = task.start_date ? shiftDay(task.start_date, shift) : null;
+    const start = shifted && shifted <= next ? shifted : null;
     const seriesId = task.series_id ?? task.id;
     const buckets = parseJson<Bucket[]>(board.buckets, DEFAULT_BUCKETS);
     try {
@@ -991,6 +1000,11 @@ function cleanDate(value: string | null | undefined): string | null {
     throw badRequest('Ungültiges Datum – bitte einen Tag zwischen 1970 und 2199 im Format JJJJ-MM-TT angeben');
   }
   return day;
+}
+
+/** Der Beginn darf nicht nach der Fälligkeit liegen – sonst zeichnen Kalender und Zeitachse eine Aufgabe rückwärts. */
+function requireDateOrder(start: string | null, due: string | null): void {
+  if (start && due && start > due) throw badRequest('Der Beginn darf nicht nach der Fälligkeit liegen');
 }
 
 function cleanChecklist(items: ChecklistItem[] | undefined): ChecklistItem[] {

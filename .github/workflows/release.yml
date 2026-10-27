@@ -25,13 +25,11 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Tag und Version in package.json stimmen überein
+      # Version in allen Dateien, Tag, Abschnitt im Änderungsprotokoll, Versionshinweise – lokal: node scripts/release.mjs check --git
+      - name: Tag, Version und Änderungsprotokoll stimmen überein
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
-        run: |
-          version="$(node -p "require('./package.json').version")"
-          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME passt nicht zu package.json ($version)"; exit 1; }
-          node scripts/release-notes.mjs "$version" > /dev/null
+        run: node scripts/release.mjs check --tag "$GITHUB_REF_NAME"
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       # Erst bauen, dann testen: Die Tests des Installationskerns prüfen eine Installation samt gebauter Oberfläche

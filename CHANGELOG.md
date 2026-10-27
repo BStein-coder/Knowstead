@@ -9,6 +9,44 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+### Sicherheit
+
+Die fünf offenen Randpunkte der Gesamtprüfung vom 26.10.2026 sind erledigt:
+
+- **Registrierung verrät keine vorhandene E-Mail-Adresse mehr**: Mit eingerichtetem E-Mail-Versand sieht die Antwort bei
+  einer schon registrierten Adresse genauso aus wie bei einer neuen („Wir haben dir eine E-Mail geschickt“) – auch bei
+  ungültigen Eingaben und in der Rechenzeit. Das vorhandene Konto bekommt eine Mail („Du hast schon ein Konto“), bei
+  einer noch unbestätigten Registrierung stattdessen einen neuen Bestätigungslink; höchstens eine Mail je Konto und
+  zehn Minuten. Ein vergebener Benutzername wird weiterhin gemeldet (die Namen stehen in Personenliste und
+  Erwähnungen ohnehin offen). Ohne E-Mail-Versand entsteht das Konto sofort; dort lässt sich eine vergebene Adresse
+  nicht verbergen.
+- **Die Benutzerverwaltung gibt nur Rechte weiter, die sie selbst hat**: Wer `users.manage` hat, aber nicht
+  `integrations.manage`, konnte sich bisher eine Gruppe mit diesem Recht anlegen und beitreten – oder eine Person
+  mit dem Recht übernehmen. Jetzt brauchen Gruppen anlegen und ändern (Rechte hinzufügen oder entziehen, zur
+  Standardgruppe machen, mit dem Verzeichnis abgleichen), Mitglieder setzen, Konten in Gruppen anlegen und ändern
+  sowie das Verwalten von Konten mit fremden Rechten alle betroffenen Rechte selbst. Die Systemadministration darf
+  weiterhin alles; die Meldung nennt das fehlende Recht.
+- **Docker-Image ohne Entwicklungsabhängigkeiten**: Eine eigene Stufe installiert nur die Laufzeitabhängigkeiten des
+  Servers (`npm ci --omit=dev`, wie beim Installationspaket); Vite, TypeScript, Playwright & Co. liegen nicht mehr im
+  Abbild.
+- **`katex`-Hinweis behoben**: `mermaid` brachte eine eigene, betroffene Kopie (0.16) mit. Eine Überschreibung in
+  `package.json` lässt es die bereits eingesetzte Fassung 0.18 nutzen; `npm audit` meldet keine Schwachstellen mehr.
+  Formeln in Diagrammen werden weiterhin dargestellt.
+
+### Geändert
+
+- **Aufgaben: Der Beginn darf nicht nach der Fälligkeit liegen**: Der Server lehnt es ab (Fehler 400), und der
+  Aufgabendialog zeigt den Hinweis schon beim Eingeben und sperrt „Speichern“. Ältere Aufgaben mit vertauschten
+  Terminen bleiben änderbar, solange man die Termine nicht anfasst, und wiederkehrende Aufgaben legen ihre
+  Nachfolgerin dann ohne Beginn an.
+- **Release-Prüfung**: `node scripts/release.mjs bump <version>` setzt die Versionsnummern überall (die drei
+  `package.json`, die eigenen Einträge der Lock-Datei, die Beispiele in Dokumentation und Vorlagen) und macht aus
+  „Unveröffentlicht“ den Abschnitt der Version; `node scripts/release.mjs check [--git]` prüft vor dem Tag, ob
+  Version, Änderungsprotokoll, Versionshinweise und Git-Stand (committet, gepusht, Tag frei) zusammenpassen. Der
+  Workflow „Release“ nutzt dieselbe Prüfung.
+
 ## [2.2.1] – 2026-10-26
 
 Gedämpftere 3D-Effekte, und Dialoge behalten den Fokus, wo man gerade tippt.

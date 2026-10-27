@@ -289,8 +289,12 @@ export class AuthService {
    * das Konto sich anmelden kann (`pending`). Eine Beschränkung auf E-Mail-Domains ist ohne diese
    * Bestätigung wirkungslos – jeder könnte eine fremde Firmenadresse angeben – und setzt den
    * E-Mail-Versand deshalb voraus.
+   *
+   * Mit E-Mail-Bestätigung verrät die Antwort nie, ob eine Adresse schon registriert ist: Bei einer vorhandenen
+   * Adresse sieht die Antwort aus wie bei einer neuen, und die Inhaberin bzw. der Inhaber bekommt eine Mail
+   * (siehe `notifyExistingOwner`). Ohne E-Mail-Versand lässt sich das nicht verbergen – dort entsteht das Konto sofort.
    */
-  register(auth: AuthContext, input: { username: string; displayName: string; email: string; password: string }): { user: UserRow; pending: boolean } {
+  register(auth: AuthContext, input: { username: string; displayName: string; email: string; password: string }): { user: UserRow | null; pending: boolean; email: string } {
     const settings = this.s.settings.all();
     if (!settings.allowRegistration) throw forbidden('Die Selbstregistrierung ist deaktiviert');
     const email = input.email.trim().toLowerCase();
@@ -304,28 +308,78 @@ export class AuthService {
     if (!verify && settings.registrationDomains.length) {
       throw forbidden('Die Registrierung ist derzeit nicht möglich: Zur Bestätigung der E-Mail-Adresse fehlt der E-Mail-Versand. Bitte wende dich an die Administration.');
     }
+    if (verify) {
+      const owner = this.s.db.get<UserRow>('SELECT * FROM users WHERE email = ?', email);
+      if (owner) {
+        // Dieselben Fehler wie bei einer neuen Adresse (ungültiger Name, zu kurzes Passwort) und dieselbe Rechenzeit
+        this.s.users.validateNewAccount(input.username, email, input.password);
+        hashPassword(input.password);
+        this.notifyExistingOwner(owner);
+        return { user: null, pending: true, email };
+      }
+    }
     const created = this.s.users.create({ username: input.username, displayName: input.displayName, email, password: input.password });
     if (verify) {
       this.s.db.run('UPDATE users SET registration_pending_at = ? WHERE id = ?', nowIso(), created.id);
-      const token = this.createResetToken(created.id, 48);
-      const site = this.s.settings.get('siteName');
-      this.s.mail.enqueue({
-        to: email,
-        userId: created.id,
-        kind: 'registration',
-        mail: renderMail(this.s.mail.brand(), `${site}: E-Mail-Adresse bestätigen`, {
-          heading: 'Fast geschafft',
-          paragraphs: [
-            `Hallo ${created.display_name},`,
-            `bitte bestätige deine E-Mail-Adresse, um dein Konto „${created.username}“ zu aktivieren. Der Link ist zwei Tage gültig.`,
-          ],
-          action: { label: 'E-Mail-Adresse bestätigen', url: `${this.s.config.baseUrl}/verify-email/${token}` },
-          reason: `Du erhältst diese E-Mail, weil mit dieser Adresse ein Konto bei ${site} angelegt wurde. Warst du das nicht, kannst du sie ignorieren – das Konto wird nach ${REGISTRATION_PENDING_DAYS} Tagen gelöscht.`,
-        }, settings.defaultLocale),
-      });
+      this.sendVerificationMail(created);
     }
     this.s.emit(auth, { type: 'auth.registered', target: { type: 'user', id: created.id, label: created.username }, data: { pending: verify } });
-    return { user: this.s.users.require(created.id), pending: verify };
+    return { user: this.s.users.require(created.id), pending: verify, email };
+  }
+
+  /** Mail mit dem Link, der die Adresse einer Selbstregistrierung bestätigt. */
+  private sendVerificationMail(user: UserRow): void {
+    if (!user.email) return;
+    const settings = this.s.settings.all();
+    const token = this.createResetToken(user.id, 48);
+    const site = this.s.settings.get('siteName');
+    this.s.mail.enqueue({
+      to: user.email,
+      userId: user.id,
+      kind: 'registration',
+      mail: renderMail(this.s.mail.brand(), `${site}: E-Mail-Adresse bestätigen`, {
+        heading: 'Fast geschafft',
+        paragraphs: [
+          `Hallo ${user.display_name},`,
+          `bitte bestätige deine E-Mail-Adresse, um dein Konto „${user.username}“ zu aktivieren. Der Link ist zwei Tage gültig.`,
+        ],
+        action: { label: 'E-Mail-Adresse bestätigen', url: `${this.s.config.baseUrl}/verify-email/${token}` },
+        reason: `Du erhältst diese E-Mail, weil mit dieser Adresse ein Konto bei ${site} angelegt wurde. Warst du das nicht, kannst du sie ignorieren – das Konto wird nach ${REGISTRATION_PENDING_DAYS} Tagen gelöscht.`,
+      }, settings.defaultLocale),
+    });
+  }
+
+  /**
+   * Jemand hat sich mit einer Adresse registriert, die schon zu einem Konto gehört. Der Anmeldende erfährt
+   * davon nichts; die Inhaberin bzw. der Inhaber bekommt eine Mail – bei einer noch unbestätigten Registrierung
+   * einen neuen Bestätigungslink. Höchstens eine Mail je Konto und zehn Minuten, damit sich über die Registrierung
+   * kein Postfach fluten lässt.
+   */
+  private notifyExistingOwner(owner: UserRow): void {
+    if (!owner.email || owner.kind === 'bot') return;
+    if (owner.status !== 'active' && !owner.registration_pending_at) return;
+    const since = new Date(Date.now() - 10 * 60_000).toISOString();
+    const recent = this.s.db.value<number>("SELECT 1 FROM mail_queue WHERE user_id = ? AND kind IN ('registration', 'registration-existing') AND created_at > ?", owner.id, since);
+    if (recent) return;
+    if (owner.registration_pending_at) {
+      this.sendVerificationMail(owner);
+      return;
+    }
+    const site = this.s.settings.get('siteName');
+    this.s.mail.enqueue({
+      to: owner.email,
+      userId: owner.id,
+      kind: 'registration-existing',
+      mail: renderMail(this.s.mail.brand(), `${site}: Registrierung mit deiner Adresse`, {
+        heading: 'Du hast schon ein Konto',
+        paragraphs: [
+          `Hallo ${owner.display_name},`,
+          `jemand hat versucht, mit deiner E-Mail-Adresse ein neues Konto bei ${site} anzulegen. Du hast dort bereits ein Konto: „${owner.username}“.`,
+        ],
+        action: { label: 'Anmelden', url: `${this.s.config.baseUrl}/login` },
+        reason: 'Warst du das nicht, kannst du diese E-Mail ignorieren – an deinem Konto hat sich nichts geändert. Das Passwort vergessen? Auf der Anmeldeseite gibt es „Passwort vergessen“.',
+      }, localeOfPreferences(this.s.users.preferences(owner.id), this.s.settings.get('defaultLocale'))),
+    });
   }
 
   /** Konto zu einem gültigen, unbenutzten Link (Passwort zurücksetzen, Einladung, Registrierung). */

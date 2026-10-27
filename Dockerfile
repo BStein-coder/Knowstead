@@ -1,7 +1,8 @@
 # ---------------------------------------------------------------------------
 #  Knowstead – Dokumentations- und Wissensmanagementsystem
 #
-#  Zwei Stufen: Die Oberfläche wird gebaut, der Server läuft direkt aus dem
+#  Drei Stufen: Die Oberfläche wird gebaut, die Laufzeit-Abhängigkeiten werden ohne
+#  Entwicklungswerkzeuge installiert, und der Server läuft direkt aus dem
 #  TypeScript-Quelltext (Node 24 entfernt die Typen beim Laden).
 # ---------------------------------------------------------------------------
 FROM node:24-alpine AS build
@@ -15,6 +16,16 @@ RUN npm ci --no-audit --no-fund
 
 COPY . .
 RUN npm run build
+
+
+# Laufzeit-Abhängigkeiten des Servers ohne Entwicklungswerkzeuge (Vite, TypeScript, Playwright …) – dasselbe Vorgehen
+# wie scripts/package.mjs. Das Abbild bleibt dadurch klein, und nichts davon läuft im Betrieb.
+FROM node:24-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY server/package.json ./server/
+COPY web/package.json ./web/
+RUN npm ci --omit=dev --workspace=server --include-workspace-root --no-audit --no-fund
 
 
 FROM node:24-alpine AS runtime
@@ -32,7 +43,7 @@ RUN apk add --no-cache tini \
  && mkdir -p /app/data && chown -R node:node /app
 
 COPY --from=build --chown=node:node /app/package.json /app/package-lock.json ./
-COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/server ./server
 COPY --from=build --chown=node:node /app/plugins ./plugins
 COPY --from=build --chown=node:node /app/docs ./docs

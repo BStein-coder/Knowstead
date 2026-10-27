@@ -1295,6 +1295,7 @@ const de = {
     dependencyConflict: '1 Terminkonflikt',
     dependencyConflicts: '{n} Terminkonflikte',
     alignedToPredecessors: 'Termine an die Abhängigkeiten angepasst – die Aufgabe liegt jetzt hinter ihrer Vorgängerin.',
+    dateOrder: 'Die Fälligkeit liegt vor dem Beginn.',
     showDependencies: 'Abhängigkeiten',
     autoSchedule: 'Abhängige Aufgaben automatisch verschieben',
     autoScheduleHelp: 'Verschiebt oder verlängert sich eine Aufgabe, rücken wartende Aufgaben samt Dauer nach. Ausgeschaltet werden Konflikte nur markiert.',

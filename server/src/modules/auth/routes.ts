@@ -148,9 +148,9 @@ export async function authRoutes(app: App, s: Services): Promise<void> {
       },
     },
     async (req, reply) => {
-      const { user, pending } = s.auth.register(req.auth, req.body);
+      const { user, pending, email } = s.auth.register(req.auth, req.body);
       // Mit E-Mail-Bestätigung erst nach dem Klick auf den Link anmelden
-      if (pending) return { user: null, pending: true, email: user.email };
+      if (pending || !user) return { user: null, pending: true, email };
       const session = s.auth.createSession(user.id, req.auth, true);
       s.auth.setCookie(req, reply, session.token, session.expiresAt, true);
       return { user: s.users.toDto(user, { includeGroups: true }), pending: false };

@@ -101,11 +101,23 @@ Scheitert ein Test, enthält das Artefakt `playwright-report` Screenshots und Tr
 
 ## 6. Versionen veröffentlichen
 
-1. Version in `package.json`, `server/package.json` und `web/package.json` erhöhen und den Abschnitt
-   *Unveröffentlicht* in `CHANGELOG.md` in die neue Version umbenennen bzw. – wenn es ihn nicht gibt –
-   den Abschnitt der Version oben anlegen (`## [2.2.1] – JJJJ-MM-TT`). Das Protokoll erscheint so, wie es
-   ist, unter *Administration → Über*.
-2. Commit und Tag anlegen und hochladen:
+1. Die Änderungen unter *Unveröffentlicht* in `CHANGELOG.md` eintragen. Dann die Version überall setzen –
+   das erledigt ein Skript (`package.json` ×3, eigene Einträge der Lock-Datei, Beispiele in Dokumentation und
+   Vorlagen) und macht aus *Unveröffentlicht* den Abschnitt `## [2.2.1] – JJJJ-MM-TT`:
+
+```bash
+node scripts/release.mjs bump 2.2.1
+```
+
+   Das Protokoll erscheint so, wie es ist, unter *Administration → Über*. Danach committen und pushen.
+2. Vor dem Tag prüfen, ob alles zusammenpasst (gleiche Version überall, Abschnitt im Protokoll mit Datum, Versionshinweise
+   lesbar, nichts Uncommittetes oder Ungepushtes, Tag noch frei) – dieselbe Prüfung macht der Workflow später:
+
+```bash
+node scripts/release.mjs check --git
+```
+
+   Dann den Tag anlegen und hochladen:
 
 ```bash
 git tag -a v2.2.1 -m "Knowstead 2.2.1"

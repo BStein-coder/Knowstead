@@ -1,7 +1,7 @@
 import type { Services } from '../../services.ts';
 import type { GroupRow, UserRef, UserRow } from '../../core/types.ts';
 import type { AuthContext } from '../../core/permissions.ts';
-import { GLOBAL_PERMISSIONS } from '../../core/permissions.ts';
+import { GLOBAL_PERMISSIONS, permissionNames } from '../../core/permissions.ts';
 import { nowIso, parseJson } from '../../db/database.ts';
 import { badRequest, conflict, forbidden, notFound } from '../../core/errors.ts';
 import { forgetSubject, nextRowId, rememberRowId } from '../../core/subjects.ts';
@@ -105,6 +105,23 @@ export class GroupService {
     return clean;
   }
 
+  /** Rechte, die man nicht selbst hat, lassen sich auch nicht vergeben (siehe `PermissionService.uncovered`). */
+  private requireCovered(auth: AuthContext, permissions: string[]): void {
+    const missing = this.s.perms.uncovered(auth, permissions);
+    if (missing.length) throw forbidden(`Rechte lassen sich nur vergeben, wenn man sie selbst hat. Es fehlt: ${permissionNames(missing)}`);
+  }
+
+  /** Gruppen, die jemand ohne Systemadministration vergeben oder entziehen darf: nur solche, deren Rechte er selbst hat. */
+  requireDelegable(auth: AuthContext, groupIds: Iterable<number>): void {
+    for (const gid of new Set(groupIds)) {
+      const row = this.require(gid);
+      const missing = this.s.perms.uncovered(auth, parseJson<string[]>(row.permissions, []));
+      if (missing.length) {
+        throw forbidden(`Die Gruppe „${row.name}“ gibt Rechte, die dir selbst fehlen (${permissionNames(missing)}). Rechte lassen sich nur weitergeben, wenn man sie selbst hat.`);
+      }
+    }
+  }
+
   private cleanDirectoryGroups(value: string[] | undefined): string | null {
     if (value === undefined) return null;
     return joinDirectoryGroups(value);
@@ -118,6 +135,7 @@ export class GroupService {
     if (name.length < 2 || name.length > 60) throw badRequest('Der Gruppenname muss 2–60 Zeichen lang sein');
     if (this.byName(name)) throw conflict('Eine Gruppe mit diesem Namen existiert bereits');
     const perms = this.validatePermissions(input.permissions ?? [], auth);
+    this.requireCovered(auth, perms);
     const now = nowIso();
     const res = this.s.db.run(
       `INSERT INTO groups (id, name, description, permissions, is_default, created_at, updated_at, directory_groups, sync_enabled)
@@ -156,7 +174,16 @@ export class GroupService {
       if (before.includes('admin') !== perms.includes('admin') && !auth.isAdmin) {
         throw forbidden('Nur Administratoren dürfen Administratorrechte ändern');
       }
+      // Hinzufügen und Entziehen: nur Rechte, die man selbst hat (unveränderte Rechte einer Gruppe stören nicht)
+      this.requireCovered(auth, [...perms.filter((p) => !before.includes(p)), ...before.filter((p) => !perms.includes(p))]);
     }
+    // Was Mitglieder bringt (Standardgruppe, Abgleich mit dem Verzeichnis), vergibt die Rechte der Gruppe ebenfalls
+    const directoryGroups = this.cleanDirectoryGroups(input.directoryGroups) ?? row.directory_groups;
+    const spreads =
+      (input.isDefault !== undefined && !!input.isDefault !== !!row.is_default) ||
+      (input.syncEnabled !== undefined && !!input.syncEnabled !== !!row.sync_enabled) ||
+      directoryGroups !== row.directory_groups;
+    if (spreads) this.requireCovered(auth, perms);
     this.s.db.transaction(() => {
       this.s.db.run(
         `UPDATE groups SET name = ?, description = ?, permissions = ?, is_default = ?, updated_at = ?,
@@ -166,7 +193,7 @@ export class GroupService {
         JSON.stringify(perms),
         input.isDefault === undefined ? row.is_default : input.isDefault ? 1 : 0,
         nowIso(),
-        this.cleanDirectoryGroups(input.directoryGroups) ?? row.directory_groups,
+        directoryGroups,
         input.syncEnabled === undefined ? row.sync_enabled : input.syncEnabled ? 1 : 0,
         id,
       );
@@ -200,6 +227,8 @@ export class GroupService {
     const perms = parseJson<string[]>(row.permissions, []);
     if (perms.includes('admin') && !auth.isAdmin) throw forbidden('Nur Administratoren dürfen die Administratorgruppe ändern');
     const before = this.members(id).map((m) => m.id);
+    const wanted = new Set(userIds);
+    if (before.some((uid) => !wanted.has(uid)) || [...wanted].some((uid) => !before.includes(uid))) this.requireDelegable(auth, [id]);
     this.s.db.transaction(() => {
       this.s.db.run('DELETE FROM group_members WHERE group_id = ?', id);
       for (const uid of new Set(userIds)) {
