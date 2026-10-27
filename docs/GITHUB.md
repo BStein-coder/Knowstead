@@ -56,7 +56,7 @@ git status --short
 ```
 
 ```bash
-git commit -m "Knowstead 2.2.1"
+git commit -m "Knowstead 2.2.2"
 ```
 
 ```bash
@@ -103,10 +103,10 @@ Scheitert ein Test, enthält das Artefakt `playwright-report` Screenshots und Tr
 
 1. Die Änderungen unter *Unveröffentlicht* in `CHANGELOG.md` eintragen. Dann die Version überall setzen –
    das erledigt ein Skript (`package.json` ×3, eigene Einträge der Lock-Datei, Beispiele in Dokumentation und
-   Vorlagen) und macht aus *Unveröffentlicht* den Abschnitt `## [2.2.1] – JJJJ-MM-TT`:
+   Vorlagen) und macht aus *Unveröffentlicht* den Abschnitt `## [2.2.2] – JJJJ-MM-TT`:
 
 ```bash
-node scripts/release.mjs bump 2.2.1
+node scripts/release.mjs bump 2.2.2
 ```
 
    Das Protokoll erscheint so, wie es ist, unter *Administration → Über*. Danach committen und pushen.
@@ -120,7 +120,7 @@ node scripts/release.mjs check --git
    Dann den Tag anlegen und hochladen:
 
 ```bash
-git tag -a v2.2.1 -m "Knowstead 2.2.1"
+git tag -a v2.2.2 -m "Knowstead 2.2.2"
 ```
 
 ```bash
@@ -134,8 +134,8 @@ git push origin main --tags
 
 | Datei | Inhalt |
 | --- | --- |
-| `knowstead-2.2.1-windows-x64.zip` | Programm mit vorgebauter Oberfläche und installierten Laufzeitabhängigkeiten, `Knowstead-Installation.cmd` |
-| `knowstead-2.2.1-linux-x64.tar.gz` | dasselbe für Linux mit `install.sh` und `update.sh` |
+| `knowstead-2.2.2-windows-x64.zip` | Programm mit vorgebauter Oberfläche und installierten Laufzeitabhängigkeiten, `Knowstead-Installation.cmd` |
+| `knowstead-2.2.2-linux-x64.tar.gz` | dasselbe für Linux mit `install.sh` und `update.sh` |
 | `*.sha256` | Prüfsummen zum Abgleich nach dem Herunterladen |
 
 Die Pakete sind betriebssystemabhängig, weil eine Abhängigkeit (PDF-Vorschaubilder) native Programmteile
