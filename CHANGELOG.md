@@ -9,7 +9,9 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
-## [Unveröffentlicht]
+## [2.2.3] – 2026-10-28
+
+Das Einklappen der Seitenleiste ist leichter zu finden, und auf Wunsch weist die Über-Seite auf neue Versionen hin.
 
 ### Neu
 

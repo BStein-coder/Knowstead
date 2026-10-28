@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Versionshinweise einer Version aus CHANGELOG.md ausgeben (für GitHub-Releases).
- *   node scripts/release-notes.mjs 2.2.2 > notes.md
+ *   node scripts/release-notes.mjs 2.2.3 > notes.md
  */
 import fs from 'node:fs';
 import path from 'node:path';
