@@ -82,6 +82,7 @@ export const EN_TEXTS: Record<string, string> = {
   'Die Beschreibung im Archiv ist beschädigt': 'The description in the archive is damaged',
   'Der Upload ist unvollständig oder beschädigt.': 'The upload is incomplete or damaged.',
   'Der Beginn darf nicht nach der Fälligkeit liegen': 'The start date must not be after the due date',
+  'Die Suche nach neuen Versionen ist ausgeschaltet': 'Looking for new versions is switched off',
   'Rechte lassen sich nur vergeben, wenn man sie selbst hat. Es fehlt: {}': 'Permissions can only be granted if you hold them yourself. Missing: {}',
   'Die Gruppe „{}“ gibt Rechte, die dir selbst fehlen ({}). Rechte lassen sich nur weitergeben, wenn man sie selbst hat.': 'The group “{}” grants permissions you do not have yourself ({}). Permissions can only be passed on if you hold them yourself.',
   'Dieses Konto hat Rechte, die dir selbst fehlen ({}). Es darf nur von jemandem verwaltet werden, der sie ebenfalls hat.': 'This account has permissions you do not have yourself ({}). Only someone who holds them as well may manage it.',

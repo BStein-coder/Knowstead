@@ -369,7 +369,7 @@ keinen Cache-Dienst und keine Warteschlange.
 | intern **3000/TCP** | nur zwischen Proxy und Knowstead – nicht nach außen freigeben |
 | ausgehend SMTP (25/465/587) | E-Mail-Versand (optional) |
 | ausgehend LDAPS (636) bzw. LDAP (389) | Active Directory (optional) |
-| ausgehend HTTPS | KI-Anbieter, Webhooks, API-Konnektoren, draw.io im Browser (jeweils optional) |
+| ausgehend HTTPS | KI-Anbieter, Webhooks, API-Konnektoren, draw.io im Browser, Hinweis auf neue Versionen (`api.github.com`, nur auf Wunsch) (jeweils optional) |
 
 Der Proxy muss **WebSockets** (gleichzeitiges Bearbeiten) und **Server-Sent Events** (Live-Aktualisierung)
 durchreichen – die Beispielkonfigurationen in [Abschnitt 7](#7-https-und-reverse-proxy) erledigen das.

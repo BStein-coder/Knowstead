@@ -392,7 +392,7 @@ service and no queue.
 | internal **3000/TCP** | only between proxy and Knowstead – do not expose it to the outside |
 | outbound SMTP (25/465/587) | sending e-mail (optional) |
 | outbound LDAPS (636) or LDAP (389) | Active Directory (optional) |
-| outbound HTTPS | AI provider, webhooks, API connectors, draw.io in the browser (each optional) |
+| outbound HTTPS | AI provider, webhooks, API connectors, draw.io in the browser, notice of new versions (`api.github.com`, only on request) (each optional) |
 
 The proxy must pass **WebSockets** (editing together) and **Server-Sent Events** (live updates) through –
 the example configurations in [section 7](#7-https-and-reverse-proxy) take care of that.

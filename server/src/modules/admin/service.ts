@@ -238,6 +238,7 @@ export class AdminService {
       if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) throw badRequest(message);
     }
     if (clean.realtimeCollaboration !== undefined) clean.realtimeCollaboration = clean.realtimeCollaboration === true;
+    if (clean.updateCheck !== undefined) clean.updateCheck = clean.updateCheck === true;
     if (clean.exportTemplate) clean.exportTemplate = validateExportTemplate({ ...this.s.settings.get('exportTemplate'), ...clean.exportTemplate });
     if (clean.accentColor !== undefined && !/^#[0-9a-f]{6}$/i.test(clean.accentColor)) throw badRequest('Ungültige Akzentfarbe');
     if (clean.uiMotion !== undefined && clean.uiMotion !== 'full' && clean.uiMotion !== 'reduced') throw badRequest('Bewegung und Effekte: „full“ oder „reduced“');

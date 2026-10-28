@@ -175,4 +175,69 @@ test.describe('Schublade der Seitenleiste auf dem Handy', () => {
     await expect(sidebar).toBeHidden();
     await expect.poll(() => css(backdrop, 'pointer-events')).toBe('none');
   });
+
+  test('kein Griff an der Kante: dort öffnet der Knopf oben links die Schublade', async ({ page, seed }) => {
+    await page.goto(`/s/${seed.spaceKey}`);
+    await ready(page);
+    await expect(page.locator('.sidebar-handle')).toBeHidden();
+  });
+});
+
+test.describe('Griff zum Ein- und Ausklappen der Seitenleiste', () => {
+  test.use({ storageState: AUTH.admin, viewport: { width: 1440, height: 900 } });
+
+  const intersects = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+  test('sitzt auf der Kante der Seitenleiste, klappt ein und aus, merkt sich den Zustand und bleibt per Tastatur bedienbar', async ({ page, seed }) => {
+    await page.goto(`/s/${seed.spaceKey}/p/${seed.richPageId}`);
+    await ready(page);
+    await settled(page);
+    const sidebar = page.locator('.sidebar');
+    const toolbar = page.locator('.page-toolbar').first();
+    const collapse = page.getByRole('button', { name: 'Seitenleiste einklappen' });
+    await expect(collapse).toBeVisible();
+    await expect(collapse).toHaveAttribute('aria-expanded', 'true');
+    await expect(collapse).toHaveAttribute('aria-controls', 'sidebar');
+    await expect(collapse).toHaveAttribute('title', /\[/);
+
+    // Offen: halb auf der rechten Kante der Leiste, nichts von der Leiste über der Seite verdeckt
+    const side = await box(sidebar);
+    const open = await box(collapse);
+    expect(Math.abs(open.x + open.width / 2 - (side.x + side.width)), 'Mitte auf der Kante').toBeLessThanOrEqual(3);
+    expect(open.width, 'Zielgröße').toBeGreaterThanOrEqual(24);
+    expect(intersects(open, await box(toolbar)), 'verdeckt die Leiste über der Seite nicht').toBe(false);
+
+    // Einklappen: Leiste weg, Pfeil dreht sich, der Reiter sitzt am Fensterrand und verdeckt keinen Inhalt der Leiste über der Seite
+    await collapse.click();
+    await expect(page.locator('.app')).toHaveClass(/sidebar-collapsed/);
+    await expect(sidebar).toBeHidden();
+    const expand = page.getByRole('button', { name: 'Seitenleiste ausklappen' });
+    await expect(expand).toBeVisible();
+    await expect(expand).toHaveAttribute('aria-expanded', 'false');
+    const edge = await box(expand);
+    expect(edge.x).toBe(0);
+    expect(edge.width, 'Zielgröße').toBeGreaterThanOrEqual(24);
+    const crumbs = await box(page.locator('.page-toolbar a, .page-toolbar button').first());
+    expect(intersects(edge, crumbs), 'liegt nicht auf dem ersten Eintrag der Leiste über der Seite').toBe(false);
+
+    // Der Zustand bleibt nach dem Neuladen (wie bei „[“ und dem Knopf oben links)
+    await page.reload();
+    await ready(page);
+    await expect(page.locator('.app')).toHaveClass(/sidebar-collapsed/);
+    await expect(page.getByRole('button', { name: 'Seitenleiste ausklappen' })).toBeVisible();
+
+    // Per Tastatur: Fokus auf den Griff, Enter klappt aus
+    await page.getByRole('button', { name: 'Seitenleiste ausklappen' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.app')).not.toHaveClass(/sidebar-collapsed/);
+    await expect(sidebar).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Seitenleiste einklappen' })).toBeVisible();
+  });
+
+  test('im Editor gibt es keinen Griff (die Leiste ist dort ohnehin ausgeblendet)', async ({ page, seed }) => {
+    await page.goto(`/s/${seed.spaceKey}/edit/${seed.childPageId}`);
+    await ready(page);
+    await expect(page.locator('.sidebar-handle')).toHaveCount(0);
+  });
 });

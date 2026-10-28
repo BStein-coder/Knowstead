@@ -51,7 +51,7 @@ export function Sidebar() {
   const spaceMatch = useMatch('/s/:spaceKey/*');
   const adminMatch = useMatch('/admin/*');
   return (
-    <aside className="sidebar" aria-label={t('a11y.navigation')}>
+    <aside className="sidebar" id="sidebar" aria-label={t('a11y.navigation')}>
       {adminMatch ? <AdminNav /> : spaceMatch ? <SpaceNav spaceKey={spaceMatch.params.spaceKey!} /> : <GlobalNav />}
     </aside>
   );

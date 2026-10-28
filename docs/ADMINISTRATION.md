@@ -1035,6 +1035,16 @@ nacheinander bearbeitet (mit Konflikterkennung beim Veröffentlichen).
 Eigene Seiten haben **E-Mail** (SMTP, Benachrichtigungen, Versandprotokoll), **Single Sign-on**,
 **KI & Dateien** (KI, Office-Vorschau, Texterkennung, draw.io) und **Export-Vorlage** (PDF und Word).
 
+**Hinweis auf neue Versionen** (Administration → Über): Auf Wunsch fragt der Server bei GitHub nach der neuesten
+Version dieses Projekts und weist dort darauf hin, wenn es eine neuere gibt – mit Verweis auf die Versionshinweise.
+Die Suche ist **standardmäßig aus** und schaltet sich mit dem Schalter *Nach neuen Versionen suchen* auf der Seite
+ein (Einstellung `updateCheck`). Eingeschaltet geht nur die übliche Verbindung zu `api.github.com` hinaus
+(IP-Adresse des Servers, Kennung „Knowstead-update-check“) – nichts über diese Installation, nicht einmal die
+Versionsnummer. Die Seite fragt beim Öffnen nach, wenn der gemerkte Stand älter als zwölf Stunden ist; *Jetzt prüfen*
+fragt sofort (höchstens ein Abruf je Minute). Vorabversionen zählen nicht. Ist GitHub nicht erreichbar, zeigt die
+Seite den Grund und behält den letzten bekannten Stand; der Server braucht dafür ausgehendes HTTPS. Aktualisiert wird
+weiterhin von Hand mit dem Paket und `update.sh` (siehe Installationsanleitung, Abschnitt „Update“).
+
 **Sprache**: Die Oberfläche gibt es auf Deutsch und Englisch. Jede Person wählt die Sprache im
 Benutzermenü; sie wird im Profil gespeichert und gilt auch für E-Mails, Benachrichtigungen, Fehlermeldungen
 und Exporte. Die **Standardsprache** gilt für alle ohne eigene Wahl. Wird bei der Ersteinrichtung Englisch

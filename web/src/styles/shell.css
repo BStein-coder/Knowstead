@@ -522,9 +522,57 @@
   box-shadow: var(--panel-shadow);
 }
 
+/* ------------------------------ Griff zum Ein- und Ausklappen ------------------------------ */
+
+/* Ein Kreis halb auf der Kante der Seitenleiste, auf Höhe der Leiste über der Seite. Eingeklappt wird daraus ein
+   schmaler Reiter am Fensterrand: Ein Kreis läge dort auf dem Anfang der Leiste über der Seite. */
+.sidebar-handle {
+  position: fixed;
+  z-index: 45;
+  top: calc(var(--topbar-h) + var(--shell-gap) + 22px);
+  left: calc(var(--shell-gap) + var(--sidebar-w) - 12px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.sidebar-handle:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent);
+}
+
+.app.sidebar-collapsed .sidebar-handle {
+  top: calc(var(--topbar-h) + var(--shell-gap) + 14px);
+  left: 0;
+  width: 24px;
+  height: 40px;
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
+}
+
+@media print {
+  .sidebar-handle {
+    display: none;
+  }
+}
+
 /* ------------------------------ Schmale Fenster ------------------------------ */
 
 @media (max-width: 760px) {
+  /* Auf schmalen Fenstern öffnet der Knopf oben links die Schublade – ein Griff an der Kante gäbe es doppelt */
+  .sidebar-handle {
+    display: none;
+  }
+
   /* Angedockte Kopfleiste: gerade Kanten, eine Linie im Akzentverlauf statt des Rings */
   .topbar {
     border-radius: 0;

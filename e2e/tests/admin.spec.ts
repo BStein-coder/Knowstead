@@ -130,3 +130,59 @@ test.describe('Administration', () => {
     await expect(page.locator('tbody')).toContainText(/Anmeldung|Selbstregistrierung|Passwort/);
   });
 });
+
+test.describe('Hinweis auf neue Versionen', () => {
+  test('nur auf Wunsch: ausgeschaltet ohne Abruf, eingeschaltet mit Hinweis und Verweis', async ({ page }) => {
+    // Nie wirklich bei GitHub nachfragen: Der Abruf wird beantwortet, als gäbe es Version 9.9.9
+    const asked: string[] = [];
+    await page.route('**/api/v1/admin/update-check', async (route) => {
+      const request = route.request();
+      if (request.method() !== 'POST') return route.continue();
+      asked.push(request.method());
+      const real = await (await page.request.get('/api/v1/admin/update-check')).json();
+      return route.fulfill({
+        json: {
+          ...real,
+          latest: '9.9.9',
+          newer: true,
+          url: 'https://github.com/BStein-coder/Knowstead/releases/tag/v9.9.9',
+          publishedAt: '2030-01-02T10:00:00.000Z',
+          checkedAt: new Date().toISOString(),
+        },
+      });
+    });
+
+    await page.goto('/admin/about');
+    await ready(page);
+    const card = page.locator('.card', { hasText: 'Neue Versionen' });
+    const toggle = card.getByRole('switch', { name: /Nach neuen Versionen suchen/ });
+    try {
+      await expect(toggle).not.toBeChecked();
+      await expect(card.getByText(/Fragt bei GitHub/)).toBeVisible();
+      await expect(card.getByRole('button', { name: 'Jetzt prüfen' })).toHaveCount(0);
+      // Ausgeschaltet geht nichts hinaus
+      await page.waitForTimeout(500);
+      expect(asked, 'kein Abruf bei ausgeschalteter Suche').toEqual([]);
+
+      await toggle.click();
+      await expect(card.getByText('Version 9.9.9 ist verfügbar')).toBeVisible();
+      await expect(card.getByRole('link', { name: 'Versionshinweise ansehen' })).toHaveAttribute('href', 'https://github.com/BStein-coder/Knowstead/releases/tag/v9.9.9');
+      await expect(card.getByRole('button', { name: 'Jetzt prüfen' })).toBeVisible();
+      expect(asked.length).toBeGreaterThanOrEqual(1);
+      await expectAccessible(page, '.card');
+
+      // Die Einstellung steht auf dem Server – und nach dem Neuladen noch da
+      expect((await (await page.request.get('/api/v1/admin/settings')).json()).updateCheck).toBe(true);
+      await page.reload();
+      await ready(page);
+      await expect(toggle).toBeChecked();
+    } finally {
+      // Der Zustand gehört nicht in die übrigen Tests: wieder ausschalten
+      await page.request.put('/api/v1/admin/settings', { data: { updateCheck: false }, headers: { 'X-Knowstead-Client': 'e2e' } });
+    }
+    await page.reload();
+    await ready(page);
+    await expect(toggle).not.toBeChecked();
+    await expect(card.getByText('Version 9.9.9 ist verfügbar')).toHaveCount(0);
+  });
+});

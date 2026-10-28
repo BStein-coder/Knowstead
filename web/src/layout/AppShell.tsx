@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Outlet, useLocation, useMatch, useNavigate } from 'react-router';
 import { useAuth } from '../lib/auth';
 import { useRealtime } from '../lib/realtime';
@@ -156,6 +157,21 @@ export function AppShell() {
       </a>
       <TopBar onToggleSidebar={toggleSidebar} onOpenPalette={() => setPaletteOpen(true)} onOpenHelp={() => setHelpOpen(true)} />
       <Sidebar />
+      {/* Pfeil an der Kante der Seitenleiste: zeigt, dass sie sich ein- und ausklappen lässt (wie „[“ und der Knopf oben links).
+          Im Editor ist die Leiste ohnehin ausgeblendet, auf schmalen Fenstern gibt es die Schublade. */}
+      {!editing && (
+        <button
+          type="button"
+          className="sidebar-handle"
+          onClick={toggleSidebar}
+          aria-label={t(collapsed ? 'app.expandSidebar' : 'app.collapseSidebar')}
+          title={`${t(collapsed ? 'app.expandSidebar' : 'app.collapseSidebar')} ( [ )`}
+          aria-expanded={!collapsed}
+          aria-controls="sidebar"
+        >
+          {collapsed ? <ChevronRight size={14} aria-hidden="true" /> : <ChevronLeft size={14} aria-hidden="true" />}
+        </button>
+      )}
       {/* Schleier hinter der Schublade der Seitenleiste (nur auf schmalen Fenstern sichtbar): Tippen schließt sie */}
       <div className="sidebar-backdrop" aria-hidden="true" onClick={() => setMobileOpen(false)} />
       <main className="main" id="main" onScroll={onMainScroll}>

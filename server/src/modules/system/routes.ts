@@ -49,6 +49,26 @@ export async function systemRoutes(app: App, s: Services): Promise<void> {
     s.realtime.connect(req, reply);
   });
 
+  /* ------------------------- Hinweis auf neue Versionen ------------------------- */
+
+  app.get(
+    '/api/v1/admin/update-check',
+    { schema: { tags: ['Administration'], summary: 'Stand der Suche nach neuen Versionen (gemerkt, ohne Abruf)' } },
+    async (req) => s.updates.info(req.auth),
+  );
+
+  app.post(
+    '/api/v1/admin/update-check',
+    {
+      schema: {
+        tags: ['Administration'],
+        summary: 'Jetzt bei GitHub nach einer neuen Version suchen',
+        description: 'Nur wenn `updateCheck` eingeschaltet ist; höchstens ein Abruf je Minute, sonst kommt der gemerkte Stand.',
+      },
+    },
+    async (req) => s.updates.refresh(req.auth),
+  );
+
   /* ------------------------------ Konnektoren ------------------------------ */
 
   app.get('/api/v1/connectors/available', { schema: { tags: ['Integrationen'], summary: 'Verfügbare API-Konnektoren (für Makros)' } }, async (req) =>

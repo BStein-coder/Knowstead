@@ -241,6 +241,8 @@ export interface Settings {
   realtimeCollaboration: boolean;
   /** Adresse des draw.io-Editors (z. B. selbst betrieben) */
   drawioUrl: string;
+  /** Bei GitHub nach neuen Versionen suchen und in Administration → Über darauf hinweisen (Standard: aus) */
+  updateCheck: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -381,6 +383,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   realtimeCollaboration: true,
   drawioUrl: 'https://embed.diagrams.net',
+  updateCheck: false,
 };
 
 /** Einstellungen, die auch ohne Anmeldung an den Client geliefert werden. */

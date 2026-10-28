@@ -1048,6 +1048,15 @@ def verify(headers, raw_body: bytes, secret: str) -> bool:
 
 ---
 
+## Hinweis auf neue Versionen
+
+Nur für Administrationskonten. Die Suche ist standardmäßig aus (`updateCheck` in `PUT /api/v1/admin/settings`).
+
+| Aufruf | Zweck |
+| --- | --- |
+| `GET /api/v1/admin/update-check` | gemerkter Stand, ohne Abruf: `enabled`, `current`, `latest`, `newer`, `url`, `name`, `publishedAt`, `checkedAt`, `error` (`{ code: unreachable \| http \| format, detail }`), `source` |
+| `POST /api/v1/admin/update-check` | jetzt bei GitHub nachsehen (Fehler 400, wenn ausgeschaltet; höchstens ein Abruf je Minute, sonst kommt der gemerkte Stand) |
+
 ## API-Konnektoren
 
 Konnektoren holen Daten aus Fremdsystemen **serverseitig** ab, damit Zugangsdaten nie im Browser

@@ -9,6 +9,23 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+### Neu
+
+- **Pfeil an der Seitenleiste**: Ein kleiner Kreis sitzt auf der Kante der Seitenleiste und klappt sie ein und aus –
+  damit ist das Einklappen auffindbar, nicht nur über „≡“ oben links und die Taste `[`. Eingeklappt wird daraus ein
+  schmaler Reiter am Fensterrand (er verdeckt die Leiste über der Seite nicht). Der Zustand wird wie bisher gemerkt;
+  der Pfeil ist per Tastatur bedienbar, nennt seinen Zustand (`aria-expanded`) und hat in allen Aussehen und beiden
+  Farbschemata einen Symbolkontrast von mindestens 6 : 1. Im Editor und auf schmalen Fenstern (dort gibt es die
+  Schublade) erscheint er nicht.
+- **Hinweis auf neue Versionen** unter Administration → Über, **nur auf Wunsch** (Schalter *Nach neuen Versionen
+  suchen*, standardmäßig aus): Der Server fragt bei GitHub nach der neuesten Version und weist auf eine neuere hin, mit
+  Verweis auf die Versionshinweise und einem Satz zum Aktualisieren. Es geht nur die übliche Verbindung zu
+  `api.github.com` hinaus – nichts über die Installation, nicht einmal die Versionsnummer. Gemerkt, höchstens ein Abruf
+  je Minute, Vorabversionen zählen nicht, bei Fehlern bleibt der letzte Stand stehen und die Seite nennt den Grund.
+  Neue Endpunkte `GET`/`POST /api/v1/admin/update-check`, neue Einstellung `updateCheck`.
+
 ## [2.2.2] – 2026-10-27
 
 Die offenen Randpunkte der Gesamtprüfung sind erledigt, und eine Prüfung vor dem Release verhindert Fehlstarts wie bei 2.2.1.

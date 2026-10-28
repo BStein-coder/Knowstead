@@ -58,6 +58,7 @@ import { PluginManager } from './plugins/manager.ts';
 import { BackupService } from './modules/admin/backups.ts';
 import { AdminService } from './modules/admin/service.ts';
 import { AlertService } from './modules/system/alerts.ts';
+import { UpdateService } from './modules/system/updates.ts';
 import { TransferService } from './modules/transfer/service.ts';
 import { ExportService } from './modules/export/service.ts';
 import { ImportJobService } from './modules/transfer/jobs.ts';
@@ -135,6 +136,8 @@ export interface Services {
   backups: BackupService;
   /** Betriebswarnungen an die Administration (Sicherung, Speicherplatz, Neustart) */
   alerts: AlertService;
+  /** Hinweis auf neue Versionen (nur auf Wunsch, Administration → Über) */
+  updates: UpdateService;
   admin: AdminService;
   transfer: TransferService;
   exporter: ExportService;
@@ -339,6 +342,7 @@ function initServices(s: Services, log: Logger): void {
   s.plugins = new PluginManager(s);
   s.backups = new BackupService(s);
   s.alerts = new AlertService(s);
+  s.updates = new UpdateService(s);
   s.admin = new AdminService(s);
   s.transfer = new TransferService(s);
   s.exporter = new ExportService(s);
