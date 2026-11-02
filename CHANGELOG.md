@@ -9,6 +9,18 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+### Neu
+
+- **Breite der Seitenleiste einstellbar**: Am rechten Rand der Seitenleiste ziehen ändert die Breite (220 bis 480 Pixel,
+  höchstens 40 % des Fensters); der Inhalt rückt mit, und der Pfeil zum Einklappen bleibt auf der Kante. Der Rand ist
+  auch per Tastatur bedienbar (Pfeiltasten ±16 Pixel, mit Umschalt ±48, Pos1/Ende = schmalste/breiteste Breite) und
+  nennt Wert und Grenzen für Screenreader (`role="separator"`). **Doppelklick** stellt die Vorgabe (284 Pixel)
+  wieder her. Die Breite wird im Browser gemerkt; ein unsinniger gemerkter Wert wird begrenzt oder ignoriert. Bis
+  960 Pixel Fensterbreite gilt weiter die feste Breite, auf dem Handy die Schublade; eingeklappt und im Editor gibt es
+  den Rand nicht. Beim Ziehen rendert die Anwendung nicht neu – nur eine CSS-Variable ändert sich.
+
 ## [2.2.3] – 2026-10-28
 
 Das Einklappen der Seitenleiste ist leichter zu finden, und auf Wunsch weist die Über-Seite auf neue Versionen hin.

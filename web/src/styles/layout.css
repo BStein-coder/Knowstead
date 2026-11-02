@@ -17,6 +17,15 @@
   grid-template-columns: 0 minmax(0, 1fr);
 }
 
+/* Breite der Seitenleiste: die von Hand eingestellte (AppShell setzt --sidebar-user-w am Rahmen), sonst die Vorgabe
+   284 px wie in tokens.css – höchstens 40 % des Fensters. Bis 960 px Fensterbreite gilt die feste Breite weiter,
+   in der Schublade auf dem Handy ohnehin. */
+@media (min-width: 961px) {
+  .app {
+    --sidebar-w: clamp(220px, var(--sidebar-user-w, 284px), 40vw);
+  }
+}
+
 .app.sidebar-collapsed .sidebar {
   visibility: hidden;
 }

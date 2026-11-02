@@ -241,3 +241,107 @@ test.describe('Griff zum Ein- und Ausklappen der Seitenleiste', () => {
     await expect(page.locator('.sidebar-handle')).toHaveCount(0);
   });
 });
+
+test.describe('Breite der Seitenleiste', () => {
+  test.use({ storageState: AUTH.admin, viewport: { width: 1440, height: 900 } });
+
+  const widthOf = async (page: Page) => Math.round((await box(page.locator('.sidebar'))).width);
+  const gripOf = (page: Page) => page.getByRole('separator', { name: 'Breite der Seitenleiste ändern' });
+  const stored = (page: Page) => page.evaluate(() => localStorage.getItem('knowstead.sidebarWidth'));
+  /** Mit der Maus vom Griff zu einer Stelle ziehen (x = Fensterkoordinate des Zeigers). */
+  const dragTo = async (page: Page, x: number) => {
+    const g = await box(gripOf(page));
+    const y = g.y + g.height / 2;
+    await page.mouse.move(g.x + g.width / 2, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y, { steps: 10 });
+    await page.mouse.up();
+  };
+
+  test('lässt sich ziehen, auf Grenzen beschränken, merken, per Tastatur ändern und zurücksetzen', async ({ page, seed }) => {
+    await page.goto(`/s/${seed.spaceKey}/p/${seed.richPageId}`);
+    await ready(page);
+    await settled(page);
+    const grip = gripOf(page);
+    await expect(grip).toBeVisible();
+    await expect(grip).toHaveAttribute('aria-valuemin', '220');
+    await expect(grip).toHaveAttribute('aria-valuemax', '480');
+    await expect(grip).toHaveAttribute('aria-valuenow', '284');
+    expect(await widthOf(page), 'Vorgabe').toBe(284);
+    const mainBefore = (await box(page.locator('.main'))).x;
+
+    // Ziehen: Die Leiste folgt dem Zeiger (Abstand zum Fensterrand 10 px), der Inhalt rückt nach
+    await dragTo(page, 400);
+    await expect.poll(() => widthOf(page)).toBe(390);
+    await expect(grip).toHaveAttribute('aria-valuenow', '390');
+    expect((await box(page.locator('.main'))).x, 'Inhalt rückt nach rechts').toBeGreaterThan(mainBefore + 90);
+    expect(await stored(page)).toBe('390');
+    // Der Pfeil zum Einklappen sitzt weiter auf der Kante
+    const side = await box(page.locator('.sidebar'));
+    const arrow = await box(page.getByRole('button', { name: 'Seitenleiste einklappen' }));
+    expect(Math.abs(arrow.x + arrow.width / 2 - (side.x + side.width))).toBeLessThanOrEqual(3);
+
+    // Grenzen: höchstens 480 px, mindestens 220 px
+    await dragTo(page, 1300);
+    await expect.poll(() => widthOf(page)).toBe(480);
+    await dragTo(page, 5);
+    await expect.poll(() => widthOf(page)).toBe(220);
+
+    // Gemerkt: nach dem Neuladen noch da
+    await page.reload();
+    await ready(page);
+    expect(await widthOf(page)).toBe(220);
+    await expect(grip).toHaveAttribute('aria-valuenow', '220');
+
+    // Tastatur: Pfeile ±16 px, mit Umschalt ±48 px, Pos1 = schmalste, Ende = breiteste Breite
+    await grip.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => widthOf(page)).toBe(236);
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect.poll(() => widthOf(page)).toBe(284);
+    await page.keyboard.press('End');
+    await expect.poll(() => widthOf(page)).toBe(480);
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(() => widthOf(page)).toBe(464);
+    await page.keyboard.press('Home');
+    await expect.poll(() => widthOf(page)).toBe(220);
+    await expect(grip).toBeFocused();
+
+    // Doppelklick: zurück zur Vorgabe, und der gemerkte Wert verschwindet
+    await grip.dblclick();
+    await expect.poll(() => widthOf(page)).toBe(284);
+    expect(await stored(page)).toBeNull();
+    await expect(grip).toHaveAttribute('aria-valuenow', '284');
+
+    // Eingeklappt gibt es nichts zu ziehen
+    await page.getByRole('button', { name: 'Seitenleiste einklappen' }).click();
+    await expect(grip).toBeHidden();
+    await page.getByRole('button', { name: 'Seitenleiste ausklappen' }).click();
+    await expect(grip).toBeVisible();
+  });
+
+  test('ein unsinniger gemerkter Wert wird begrenzt oder ignoriert', async ({ page, seed }) => {
+    await page.addInitScript(() => localStorage.setItem('knowstead.sidebarWidth', '99999'));
+    await page.goto(`/s/${seed.spaceKey}`);
+    await ready(page);
+    await settled(page);
+    expect(await widthOf(page), 'höchstens 480 px').toBe(480);
+    await page.addInitScript(() => localStorage.setItem('knowstead.sidebarWidth', 'breit'));
+    await page.reload();
+    await ready(page);
+    expect(await widthOf(page), 'kein Zahlenwert: Vorgabe').toBe(284);
+  });
+
+  test.describe('schmale Fenster', () => {
+    test.use({ viewport: { width: 900, height: 800 } });
+
+    test('bis 960 px gilt die feste Breite, ein gemerkter Wert ändert nichts', async ({ page, seed }) => {
+      await page.addInitScript(() => localStorage.setItem('knowstead.sidebarWidth', '400'));
+      await page.goto(`/s/${seed.spaceKey}`);
+      await ready(page);
+      await settled(page);
+      await expect(gripOf(page)).toBeHidden();
+      expect(await widthOf(page)).toBe(250);
+    });
+  });
+});

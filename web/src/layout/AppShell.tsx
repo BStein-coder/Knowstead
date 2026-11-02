@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Outlet, useLocation, useMatch, useNavigate } from 'react-router';
 import { useAuth } from '../lib/auth';
@@ -9,11 +9,13 @@ import { useI18n } from '../i18n';
 import { cx } from '../components/ui';
 import { TopBar } from './TopBar';
 import { Sidebar } from './Sidebar';
+import { SidebarResizer, clampSidebarWidth } from './SidebarResizer';
 import { CommandPalette } from '../components/CommandPalette';
 import { OnboardingTour, useOnboarding } from '../lib/onboarding';
 import { ShortcutHelp } from '../components/ShortcutHelp';
 
 const SIDEBAR_KEY = 'knowstead.sidebar';
+const SIDEBAR_WIDTH_KEY = 'knowstead.sidebarWidth';
 
 export function AppShell() {
   const { user } = useAuth();
@@ -29,6 +31,24 @@ export function AppShell() {
       return false;
     }
   });
+  // Von Hand eingestellte Breite der Seitenleiste (null = Vorgabe) – gemerkt wie das Ein- und Ausklappen
+  const [sidebarWidth, setSidebarWidth] = useState<number | null>(() => {
+    try {
+      const stored = Number(localStorage.getItem(SIDEBAR_WIDTH_KEY));
+      return Number.isFinite(stored) && stored > 0 ? clampSidebarWidth(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const commitSidebarWidth = useCallback((width: number | null) => {
+    setSidebarWidth(width);
+    try {
+      if (width === null) localStorage.removeItem(SIDEBAR_WIDTH_KEY);
+      else localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
+    } catch {
+      /* ignorieren */
+    }
+  }, []);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -151,7 +171,11 @@ export function AppShell() {
   }, []);
 
   return (
-    <div ref={appRef} className={cx('app', (collapsed || editing) && 'sidebar-collapsed', mobileOpen && 'sidebar-open-mobile')}>
+    <div
+      ref={appRef}
+      className={cx('app', (collapsed || editing) && 'sidebar-collapsed', mobileOpen && 'sidebar-open-mobile')}
+      style={sidebarWidth ? ({ '--sidebar-user-w': `${sidebarWidth}px` } as CSSProperties) : undefined}
+    >
       <a className="skip-link" href="#main">
         {t('app.skipToContent')}
       </a>
@@ -172,6 +196,8 @@ export function AppShell() {
           {collapsed ? <ChevronRight size={14} aria-hidden="true" /> : <ChevronLeft size={14} aria-hidden="true" />}
         </button>
       )}
+      {/* Breite einstellen: am rechten Rand der Seitenleiste ziehen (oder mit den Pfeiltasten); Doppelklick = Vorgabe */}
+      <SidebarResizer appRef={appRef} width={sidebarWidth} onCommit={commitSidebarWidth} />
       {/* Schleier hinter der Schublade der Seitenleiste (nur auf schmalen Fenstern sichtbar): Tippen schließt sie */}
       <div className="sidebar-backdrop" aria-hidden="true" onClick={() => setMobileOpen(false)} />
       <main className="main" id="main" onScroll={onMainScroll}>

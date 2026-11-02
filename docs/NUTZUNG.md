@@ -46,6 +46,13 @@ um.
   oder `#Status=erledigt` grenzen ein.
 - **Stichwörter**, **Rückverweise** und die **Link-Karte** zeigen Zusammenhänge.
 
+**Navigation anpassen** – Die Seitenleiste lässt sich **einklappen** (Pfeil auf ihrer Kante, der Knopf oben links
+oder die Taste <kbd>[</kbd>) und in der **Breite** einstellen: am rechten Rand ziehen, oder den Rand mit <kbd>Tab</kbd>
+anwählen und mit den Pfeiltasten ändern (<kbd>Umschalt</kbd> = große Schritte, <kbd>Pos1</kbd>/<kbd>Ende</kbd> =
+schmalste/breiteste Breite). Ein **Doppelklick** auf den Rand stellt die Vorgabe wieder her. Die Breite liegt zwischen
+220 und 480 Pixeln (höchstens 40 % des Fensters) und wird im Browser gemerkt. Auf schmalen Fenstern (bis 960 Pixel) gilt
+eine feste Breite, auf dem Handy öffnet sich die Leiste als Schublade.
+
 **Mitreden**
 
 - **Kommentare** unter der Seite oder zu einer markierten Textstelle, mit `@Erwähnungen`.

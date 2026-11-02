@@ -116,6 +116,8 @@ const de = {
     toggleSidebar: 'Seitenleiste ein-/ausblenden',
     collapseSidebar: 'Seitenleiste einklappen',
     expandSidebar: 'Seitenleiste ausklappen',
+    resizeSidebar: 'Breite der Seitenleiste ändern',
+    resizeSidebarHint: 'Ziehen oder mit den Pfeiltasten ändern – Doppelklick stellt die Vorgabe wieder her',
     offline: 'Keine Verbindung zum Server – Änderungen werden erneut versucht.',
     shortcuts: 'Tastenkürzel',
   },

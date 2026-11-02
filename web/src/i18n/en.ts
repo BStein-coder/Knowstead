@@ -118,6 +118,8 @@ const en: Dictionary = {
     toggleSidebar: 'Toggle sidebar',
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
+    resizeSidebar: 'Resize sidebar',
+    resizeSidebarHint: 'Drag or use the arrow keys – double-click restores the default',
     offline: 'No connection to the server – retrying.',
     shortcuts: 'Keyboard shortcuts',
   },
