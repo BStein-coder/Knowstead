@@ -137,6 +137,7 @@ export class SpaceService {
   list(auth: AuthContext, filter: { q?: string; includeArchived?: boolean; kind?: 'team' | 'personal' } = {}): SpaceDto[] {
     const rows = this.s.db.all<SpaceRow>('SELECT * FROM spaces ORDER BY name COLLATE NOCASE');
     const q = filter.q?.toLowerCase();
+    this.s.perms.preloadRoles(auth, rows);
     return rows
       .filter((r) => (filter.includeArchived ? true : !r.archived_at))
       .filter((r) => (filter.kind ? r.kind === filter.kind : true))
@@ -375,6 +376,7 @@ export class SpaceService {
       this.s.db.run('UPDATE pages SET parent_id = NULL WHERE space_id = ?', space.id);
       this.s.db.run('DELETE FROM pages WHERE space_id = ?', space.id);
       this.s.db.run('DELETE FROM spaces WHERE id = ?', space.id);
+      this.s.labels.pruneUnused();
     });
     // Dateien erst nach der Karenzzeit entfernen – zusammen mit der Sicherung vor dem Löschen
     // lässt sich ein versehentlich gelöschter Bereich so vollständig zurückholen.

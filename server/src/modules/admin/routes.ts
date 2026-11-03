@@ -76,7 +76,7 @@ export async function adminRoutes(app: App, s: Services): Promise<void> {
         tags,
         summary: 'Benutzer verwalten',
         querystring: Type.Object({
-          q: Type.Optional(Type.String()),
+          q: Type.Optional(Type.String({ maxLength: 200 })),
           status: Type.Optional(Type.String()),
           kind: Type.Optional(Type.String()),
           group: Type.Optional(Type.Integer()),
@@ -253,7 +253,7 @@ export async function adminRoutes(app: App, s: Services): Promise<void> {
 
   /* --------------------------------- Gruppen --------------------------------- */
 
-  app.get('/api/v1/groups', { schema: { tags: ['Benutzer'], summary: 'Gruppen (für Auswahlfelder)', querystring: Type.Object({ q: Type.Optional(Type.String()) }) } }, async (req) => {
+  app.get('/api/v1/groups', { schema: { tags: ['Benutzer'], summary: 'Gruppen (für Auswahlfelder)', querystring: Type.Object({ q: Type.Optional(Type.String({ maxLength: 200 })) }) } }, async (req) => {
     s.perms.requireUser(req.auth);
     const groups = s.groups.list(req.query.q);
     // Auswahlfelder brauchen nur Namen: Rechte und zugeordnete Verzeichnisgruppen (Aufbau des Active Directory) sehen nur Benutzerverwalter
@@ -487,7 +487,7 @@ export async function adminRoutes(app: App, s: Services): Promise<void> {
     category: Type.Optional(Type.String()),
     type: Type.Optional(Type.String()),
     actor: Type.Optional(Type.Integer()),
-    q: Type.Optional(Type.String()),
+    q: Type.Optional(Type.String({ maxLength: 200 })),
     from: Type.Optional(Type.String()),
     to: Type.Optional(Type.String()),
     limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 1000 })),

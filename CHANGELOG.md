@@ -9,6 +9,42 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+Durchsicht auf Geschwindigkeit und Fehler: weniger Datenbankabfragen in Listen, ein paar Randfehler behoben, und neue
+Prüfungen, die solche Fehler künftig früh finden.
+
+### Geändert
+
+- **Weniger Datenbankabfragen in Listen, die über alle Bereiche laufen**: Bereichsliste, Stichwortliste, Suche,
+  Benachrichtigungen und alle Ansichten „aus allen Bereichen“ fragten die Rolle der Person bisher je Bereich einzeln ab
+  (bei 40 Bereichen rund 40 Abfragen je Aufruf). Jetzt genügt eine Abfrage für alle Bereiche (`/spaces` 47 → 7,
+  Stichwörter 46 → 6, Benachrichtigungen 49 → 9 Abfragen je Aufruf). Das Ergebnis ist dasselbe – ein Vergleichstest
+  prüft das gegen die Einzelabfrage für Benutzer, Gruppen, „alle Angemeldeten“, Anonyme, persönliche Bereiche und die
+  Administration. Auch in den Treffern der Suche werden Bereiche und Stichwörter gebündelt geholt (190 → 111 Abfragen).
+  Gemessen an der Antwortzeit ist der Gewinn bei dieser Größe klein (je Abfrage nur wenige Mikrosekunden); er wächst mit
+  der Zahl der Bereiche.
+- Unbenutzten Code entfernt (dreizehn nirgends aufgerufene Hilfsfunktionen, Typen und Konstanten).
+
+### Behoben
+
+- **Suche in der Benutzer- und Gruppenverwaltung**: `%` und `_` im Suchtext wirkten als Platzhalter („100 %“ fand alle
+  Konten); sie sind jetzt gewöhnlicher Text. Ein extrem langer Suchtext (mehr als 200 Zeichen) in Benutzerliste,
+  Gruppenliste und Audit-Log führte zu „Interner Serverfehler“ (SQLite lehnt sehr lange Muster ab) – jetzt gibt es
+  einen Anfragefehler (400). Über das Netz war das wegen der Längenbegrenzung der Anfragezeile kaum erreichbar.
+- **Nicht mehr benutzte Stichwörter** bleiben nach dem endgültigen Löschen von Seiten oder dem Löschen eines Bereichs
+  nicht mehr in der Datenbank zurück (sichtbar waren sie nie, die Tabelle wuchs aber).
+- **Hinweis auf neue Versionen**: Antwortet die Gegenstelle mit gültigem JSON, das kein Objekt ist (`null`, eine Liste),
+  zeigt die Über-Seite „falsches Format“ statt „nicht erreichbar“.
+
+### Intern
+
+- Neue Prüfungen in der Testsuite: eine Zufallsabfolge von Seitenoperationen (anlegen, verschieben, kopieren,
+  löschen, wiederherstellen, endgültig löschen, ändern, beschriften, suchen) mit anschließender Prüfung von Suchindex,
+  Seitenbaum, Startseiten, Papierkorb, Stichwörtern und Fremdschlüsseln – und ein Durchlauf **aller Routen** der
+  Schnittstelle mit falschen, überlangen und fremden Werten, der keinen Serverfehler (5xx) dulden darf. Beide sind
+  bei gleichem Startwert immer gleich und lassen sich mit `MODEL_SEED` bzw. `FUZZ_SEED` für die Fehlersuche ändern.
+
 ## [2.2.4] – 2026-11-02
 
 Die Breite der Seitenleiste lässt sich einstellen.

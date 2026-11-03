@@ -155,6 +155,7 @@ export class TrashService {
         this.s.db.run(`DELETE FROM pages WHERE id IN ${ph}`, ...chunk);
         this.s.db.run(`UPDATE spaces SET home_page_id = NULL WHERE home_page_id IN ${ph}`, ...chunk);
       }
+      this.s.labels.pruneUnused();
     });
     // Dateien erst nach der Karenzzeit entfernen (Wiederherstellung aus Sicherungen bleibt möglich)
     this.s.attachments.scheduleFileRemoval(files);

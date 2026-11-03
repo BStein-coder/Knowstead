@@ -124,6 +124,12 @@ test('Hinweis auf neue Versionen: nur auf Wunsch, nur für die Administration, g
     again();
     reply = { status: 200, body: JSON.stringify({ tag_name: 'nightly' }) };
     assert.equal((await admin.post('/api/v1/admin/update-check', {})).body.error.code, 'format');
+    // Antworten, die gültiges JSON, aber kein Objekt sind, gelten ebenfalls als falsches Format (nicht als „nicht erreichbar“)
+    for (const body of ['null', '[]', '"text"', '42']) {
+      again();
+      reply = { status: 200, body };
+      assert.equal((await admin.post('/api/v1/admin/update-check', {})).body.error.code, 'format', body);
+    }
 
     // Verweis nur auf GitHub (er wird in der Oberfläche zum Link)
     for (const url of ['https://evil.example/x', 'javascript:alert(1)', 'http://github.com/x']) {

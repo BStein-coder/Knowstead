@@ -160,12 +160,6 @@ export function extractMentions(html: string): number[] {
   );
 }
 
-export interface Heading {
-  level: number;
-  text: string;
-  id: string;
-}
-
 export function headingId(text: string, used: Map<string, number>): string {
   const base =
     text
@@ -178,17 +172,7 @@ export function headingId(text: string, used: Map<string, number>): string {
   return count ? `${base}-${count + 1}` : base;
 }
 
-export function extractHeadings(html: string): Heading[] {
-  if (!html) return [];
-  const root = parse(html);
-  const used = new Map<string, number>();
-  return root.querySelectorAll('h1, h2, h3, h4, h5, h6').map((el) => {
-    const text = el.textContent.trim();
-    return { level: Number(el.tagName.slice(1)), text, id: headingId(text, used) };
-  });
-}
-
-/** Aufgaben in einer Seite zählen bzw. umschalten. */
+/** Eine Aufgabe in einer Seite umschalten. */
 export function toggleTaskItem(html: string, index: number, checked: boolean): string | null {
   const root = parse(html);
   const items = root.querySelectorAll('li[data-type="taskItem"]');
@@ -201,11 +185,4 @@ export function toggleTaskItem(html: string, index: number, checked: boolean): s
     else input.removeAttribute('checked');
   }
   return root.toString();
-}
-
-export function countTasks(html: string): { total: number; done: number } {
-  if (!html) return { total: 0, done: 0 };
-  const root = parse(html);
-  const items = root.querySelectorAll('li[data-type="taskItem"]');
-  return { total: items.length, done: items.filter((i) => i.getAttribute('data-checked') === 'true').length };
 }

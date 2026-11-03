@@ -251,36 +251,75 @@ export class PermissionService {
 
   /* ------------------------- Bereichsrechte ------------------------- */
 
+  /** Rolle, die ohne Blick in die Rechtetabelle feststeht: Administration und Eigentümer eines persönlichen Bereichs. */
+  private fixedRole(auth: AuthContext, space: SpaceRow): SpaceRole | null {
+    if (auth.isAdmin) return 'admin';
+    if (auth.user && space.kind === 'personal' && space.owner_id === auth.user.id) return 'admin';
+    return null;
+  }
+
+  /** Bedingung für `space_permissions`: Einträge, die für diese Person (oder anonym) gelten. `null` = keine. */
+  private subjectClauses(auth: AuthContext): { sql: string; params: (number | string)[] } | null {
+    const clauses: string[] = [];
+    const params: (number | string)[] = [];
+    if (this.settings.get('anonymousAccess')) clauses.push("subject_type = 'anonymous'");
+    if (auth.user) {
+      clauses.push("subject_type = 'authenticated'");
+      clauses.push("(subject_type = 'user' AND subject_id = ?)");
+      params.push(auth.user.id);
+      if (auth.groupIds.length) {
+        clauses.push(`(subject_type = 'group' AND subject_id IN ${DbClass.placeholders(auth.groupIds.length)})`);
+        params.push(...auth.groupIds);
+      }
+    }
+    return clauses.length ? { sql: clauses.join(' OR '), params } : null;
+  }
+
   spaceRole(auth: AuthContext, space: SpaceRow): SpaceRole | null {
     const cacheKey = `role:${space.id}`;
     if (auth.cache.has(cacheKey)) return auth.cache.get(cacheKey) as SpaceRole | null;
 
-    let role: SpaceRole | null = null;
-    if (auth.isAdmin) role = 'admin';
-    else if (auth.user && space.kind === 'personal' && space.owner_id === auth.user.id) role = 'admin';
-    else {
-      const clauses: string[] = [];
-      const params: (number | string)[] = [space.id];
-      if (this.settings.get('anonymousAccess')) clauses.push("subject_type = 'anonymous'");
-      if (auth.user) {
-        clauses.push("subject_type = 'authenticated'");
-        clauses.push("(subject_type = 'user' AND subject_id = ?)");
-        params.push(auth.user.id);
-        if (auth.groupIds.length) {
-          clauses.push(`(subject_type = 'group' AND subject_id IN ${DbClass.placeholders(auth.groupIds.length)})`);
-          params.push(...auth.groupIds);
-        }
-      }
-      if (clauses.length) {
+    let role = this.fixedRole(auth, space);
+    if (!role) {
+      const subject = this.subjectClauses(auth);
+      if (subject) {
         const rows = this.db.all<{ role: SpaceRole }>(
-          `SELECT role FROM space_permissions WHERE space_id = ? AND (${clauses.join(' OR ')})`,
-          ...params,
+          `SELECT role FROM space_permissions WHERE space_id = ? AND (${subject.sql})`,
+          space.id,
+          ...subject.params,
         );
         for (const r of rows) if (!role || ROLE_RANK[r.role] > ROLE_RANK[role]) role = r.role;
       }
     }
     auth.cache.set(cacheKey, role);
     return role;
+  }
+
+  /**
+   * Rollen für viele Bereiche auf einmal: eine Abfrage statt einer je Bereich. Für Listen, die über alle Bereiche
+   * laufen (Bereichsliste, Suche, Tags, Benachrichtigungen) – das Ergebnis landet im Zwischenspeicher der Anfrage, den
+   * `spaceRole` ohnehin liest, und ist dasselbe wie bei Einzelabfragen. Einzelne Zugriffe fragen weiter gezielt.
+   */
+  preloadRoles(auth: AuthContext, spaces: SpaceRow[]): void {
+    const need: SpaceRow[] = [];
+    for (const space of spaces) {
+      const cacheKey = `role:${space.id}`;
+      if (auth.cache.has(cacheKey)) continue;
+      const fixed = this.fixedRole(auth, space);
+      if (fixed) auth.cache.set(cacheKey, fixed);
+      else need.push(space);
+    }
+    if (need.length < 3) return; // wenige Bereiche: die Einzelabfragen in spaceRole sind genauso schnell
+    const subject = this.subjectClauses(auth);
+    const best = new Map<number, SpaceRole>();
+    if (subject) {
+      const rows = this.db.all<{ space_id: number; role: SpaceRole }>(`SELECT space_id, role FROM space_permissions WHERE ${subject.sql}`, ...subject.params);
+      for (const r of rows) {
+        const current = best.get(r.space_id);
+        if (!current || ROLE_RANK[r.role] > ROLE_RANK[current]) best.set(r.space_id, r.role);
+      }
+    }
+    for (const space of need) auth.cache.set(`role:${space.id}`, best.get(space.id) ?? null);
   }
 
   canSpace(auth: AuthContext, space: SpaceRow, action: SpaceAction): boolean {
@@ -310,6 +349,7 @@ export class PermissionService {
     const cacheKey = 'viewableSpaces';
     if (auth.cache.has(cacheKey)) return auth.cache.get(cacheKey) as number[];
     const spaces = this.db.all<SpaceRow>('SELECT * FROM spaces');
+    this.preloadRoles(auth, spaces);
     const ids = spaces.filter((s) => this.canSpace(auth, s, 'view')).map((s) => s.id);
     auth.cache.set(cacheKey, ids);
     return ids;

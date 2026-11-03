@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { api } from './client';
 import type {
   SpaceCategory,
@@ -9,7 +9,6 @@ import type {
   Group,
   Notification,
   Page,
-  PageSummary,
   Paged,
   PresenceUser,
   Revision,
@@ -69,15 +68,6 @@ export function usePage(id: number | undefined, options: { render?: boolean; vie
     enabled: !!id && Number.isFinite(id),
     staleTime: 5_000,
     retry: (count, err) => (err as { status?: number }).status !== 404 && (err as { status?: number }).status !== 403 && count < 2,
-  });
-}
-
-export function useChildren(id: number | undefined, sort?: string, depth = 1, enabled = true) {
-  return useQuery({
-    queryKey: ['children', id, sort, depth],
-    queryFn: () => api.get<PageSummary[]>(`/api/v1/pages/${id}/children`, { sort, depth }),
-    enabled: !!id && enabled,
-    staleTime: 15_000,
   });
 }
 
@@ -144,16 +134,4 @@ export function usePresence(pageId: number | undefined) {
     enabled: false,
     initialData: [],
   });
-}
-
-/** Häufig benötigte Invalidierungen nach Seitenänderungen. */
-export function useInvalidatePage() {
-  const qc = useQueryClient();
-  return (page: { id: number; space?: { key: string }; spaceKey?: string }) => {
-    const key = page.space?.key ?? page.spaceKey;
-    void qc.invalidateQueries({ queryKey: ['page', page.id] });
-    void qc.invalidateQueries({ queryKey: ['children'] });
-    void qc.invalidateQueries({ queryKey: ['revisions', page.id] });
-    if (key) void qc.invalidateQueries({ queryKey: ['tree', key] });
-  };
 }

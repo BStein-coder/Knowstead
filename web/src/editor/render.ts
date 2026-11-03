@@ -38,10 +38,6 @@ export function highlightCode(code: string, language?: string | null): string {
   }
 }
 
-export function languageList(): string[] {
-  return hljs.listLanguages().sort();
-}
-
 export const COMMON_LANGUAGES = [
   'plaintext', 'bash', 'shell', 'powershell', 'javascript', 'typescript', 'json', 'yaml', 'xml', 'html', 'css', 'scss', 'sql',
   'python', 'java', 'kotlin', 'csharp', 'cpp', 'c', 'go', 'rust', 'php', 'ruby', 'swift', 'markdown', 'ini', 'dockerfile', 'nginx', 'diff', 'http', 'graphql',

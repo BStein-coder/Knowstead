@@ -68,11 +68,6 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-/** Reagiert auf Änderungen der Einstellung (Knowstead und Betriebssystem). */
-export function useMotionReduced(): boolean {
-  return useSyncExternalStore(subscribe, motionReduced, () => false);
-}
-
 /** Einstellung in Knowstead als Zustand – für Schalter in Menü und Profil. */
 export function useMotionMode(): MotionMode {
   return useSyncExternalStore(subscribe, currentMotion, () => 'full');

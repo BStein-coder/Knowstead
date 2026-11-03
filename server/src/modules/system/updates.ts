@@ -138,7 +138,9 @@ export class UpdateService {
     }
     let data: Record<string, unknown>;
     try {
-      data = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
+      const parsed: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('kein Objekt');
+      data = parsed as Record<string, unknown>;
     } catch {
       throw new UpdateFailure('format', 'kein JSON');
     }

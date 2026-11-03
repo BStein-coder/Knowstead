@@ -51,12 +51,3 @@ export function matchesPattern(pattern: string, value: string): boolean {
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-export function formatDateDe(date: Date): string {
-  return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-}
-
-export function toInt(value: unknown, fallback: number): number {
-  const n = typeof value === 'number' ? value : Number.parseInt(String(value ?? ''), 10);
-  return Number.isFinite(n) ? n : fallback;
-}

@@ -18,7 +18,6 @@ export type App = FastifyInstance<
   TypeBoxTypeProvider
 >;
 
-export type Req = FastifyRequest;
 export type Reply = FastifyReply;
 
 export function requireUser(req: FastifyRequest): AuthUser {
@@ -33,11 +32,6 @@ export const KeyParam = Type.Object({ key: Type.String({ minLength: 1, maxLength
 
 /** Obergrenze für Versatz-Angaben: größere Zahlen lassen sich nicht mehr an SQLite binden (Fehler 500 statt 400) */
 export const Offset = Type.Integer({ minimum: 0, maximum: 1_000_000_000 });
-
-export const Paging = {
-  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 500 })),
-  offset: Type.Optional(Offset),
-};
 
 /**
  * Wert oder `null`. Bewusst `nullable: true` statt `Type.Union([schema, Type.Null()])`: Mit

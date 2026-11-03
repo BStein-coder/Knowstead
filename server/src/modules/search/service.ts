@@ -1,5 +1,5 @@
 import type { Services } from '../../services.ts';
-import type { ContentType, PageRow, UserRef } from '../../core/types.ts';
+import type { ContentType, PageRow, SpaceRow, UserRef } from '../../core/types.ts';
 import type { AuthContext } from '../../core/permissions.ts';
 import { Db, fold, parseJson } from '../../db/database.ts';
 import { escapeHtml, makeExcerpt } from '../../core/html.ts';
@@ -341,7 +341,16 @@ export class SearchService {
 
     const limit = options.limit ?? 20;
     const offset = options.offset ?? 0;
-    const items = this.toHits(auth, this.hydrate(visible.slice(offset, offset + limit), parsed));
+    const spaceCache = new Map<number, SpaceRow>();
+    const spaceOf = (id: number) => {
+      let space = spaceCache.get(id);
+      if (!space) {
+        space = this.s.spaces.require(id);
+        spaceCache.set(id, space);
+      }
+      return space;
+    };
+    const items = this.toHits(this.hydrate(visible.slice(offset, offset + limit), parsed), spaceOf);
 
     // Facetten über alle sichtbaren Treffer
     const spaceCounts = new Map<number, number>();
@@ -365,7 +374,7 @@ export class SearchService {
       facets: {
         spaces: [...spaceCounts.entries()]
           .map(([id, count]) => {
-            const sp = this.s.spaces.require(id);
+            const sp = spaceOf(id);
             return { key: sp.key, name: sp.name, icon: sp.icon, count };
           })
           .sort((a, b) => b.count - a.count),
@@ -391,10 +400,11 @@ export class SearchService {
     });
   }
 
-  private toHits(auth: AuthContext, rows: (PageRow & { snippet?: string })[]): SearchHit[] {
+  private toHits(rows: (PageRow & { snippet?: string })[], spaceOf: (id: number) => SpaceRow): SearchHit[] {
     const users = this.s.users.refs(rows.map((r) => r.updated_by));
+    const labels = this.s.labels.labelsOfMany(rows.map((r) => r.id));
     return rows.map((r) => {
-      const space = this.s.spaces.require(r.space_id);
+      const space = spaceOf(r.space_id);
       const snippetRaw = r.snippet && r.snippet.includes(START) ? r.snippet : r.excerpt;
       const snippet = escapeHtml(snippetRaw ?? '')
         .replaceAll(START, '<mark>')
@@ -410,7 +420,7 @@ export class SearchService {
         contentType: r.content_type,
         updatedAt: r.updated_at,
         updatedBy: users.get(r.updated_by ?? 0) ?? null,
-        labels: this.s.labels.labelsOf(r.id),
+        labels: labels.get(r.id) ?? [],
         path: this.s.pages.ancestors(r).map((a) => a.title),
       };
     });

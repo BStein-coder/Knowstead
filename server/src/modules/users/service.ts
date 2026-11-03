@@ -134,8 +134,9 @@ export class UserService {
     const where: string[] = [];
     const params: (string | number)[] = [];
     if (filter.q) {
-      where.push('(u.username LIKE ? OR u.display_name LIKE ? OR u.email LIKE ?)');
-      const like = `%${filter.q}%`;
+      // „!“ als Maskierzeichen: Prozent und Unterstrich im Suchtext sind Text, keine Platzhalter
+      where.push("(u.username LIKE ? ESCAPE '!' OR u.display_name LIKE ? ESCAPE '!' OR u.email LIKE ? ESCAPE '!')");
+      const like = `%${filter.q.replace(/[!%_]/g, '!$&')}%`;
       params.push(like, like, like);
     }
     if (filter.status) {

@@ -183,3 +183,33 @@ test('Aufgaben: Der Beginn darf nicht nach der Fälligkeit liegen', async () => 
     await ctx.close();
   }
 });
+
+test('Suche in Benutzer- und Gruppenverwaltung: Prozent und Unterstrich sind Text, überlanger Suchtext wird abgelehnt', async () => {
+  const ctx = await createTestApp();
+  try {
+    const admin = new Client(ctx.app);
+    await admin.post('/api/v1/setup', SETUP);
+    for (const name of ['anna', 'ben']) {
+      assert.equal((await admin.post('/api/v1/admin/users', { username: name, displayName: name, password: 'geheim-geheim', email: `${name}@example.com` })).status, 200);
+    }
+    assert.equal((await admin.post('/api/v1/admin/groups', { name: 'Vertrieb_Nord', description: '' })).status, 200);
+    assert.equal((await admin.post('/api/v1/admin/groups', { name: 'Vertrieb Sued', description: '' })).status, 200);
+
+    const names = async (q: string) => ((await admin.get(`/api/v1/admin/users?q=${encodeURIComponent(q)}`)).body.items as { username: string }[]).map((u) => u.username).sort();
+    assert.deepEqual(await names('an'), ['anna'], 'gewöhnlicher Suchtext');
+    assert.deepEqual(await names('%'), [], '„%“ ist kein Platzhalter für alles');
+    assert.deepEqual(await names('_nna'), [], '„_“ ist kein Platzhalter für ein Zeichen');
+
+    const groups = async (q: string) => ((await admin.get(`/api/v1/groups?q=${encodeURIComponent(q)}`)).body as { name: string }[]).map((g) => g.name);
+    assert.deepEqual(await groups('Vertrieb_'), ['Vertrieb_Nord'], '„_“ in der Gruppensuche ist Text');
+    assert.deepEqual(await groups('%'), []);
+
+    // Überlanger Suchtext: Fehler der Anfrage statt „Interner Serverfehler“ (SQLite lehnt sehr lange LIKE-Muster ab)
+    const long = 'x'.repeat(100_000);
+    assert.equal((await admin.get(`/api/v1/admin/users?q=${long}`)).status, 400);
+    assert.equal((await admin.get(`/api/v1/groups?q=${long}`)).status, 400);
+    assert.equal((await admin.get(`/api/v1/admin/audit?q=${long}`)).status, 400);
+  } finally {
+    await ctx.close();
+  }
+});

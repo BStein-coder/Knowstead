@@ -83,8 +83,8 @@ export class GroupService {
   list(q?: string): GroupDto[] {
     const rows = this.s.db.all<GroupRow & { member_count: number }>(
       `SELECT g.*, (SELECT COUNT(*) FROM group_members m WHERE m.group_id = g.id) AS member_count
-       FROM groups g ${q ? 'WHERE g.name LIKE ?' : ''} ORDER BY g.is_system DESC, g.name COLLATE NOCASE`,
-      ...(q ? [`%${q}%`] : []),
+       FROM groups g ${q ? "WHERE g.name LIKE ? ESCAPE '!'" : ''} ORDER BY g.is_system DESC, g.name COLLATE NOCASE`,
+      ...(q ? [`%${q.replace(/[!%_]/g, '!$&')}%`] : []),
     );
     return rows.map((r) => this.toDto(r));
   }

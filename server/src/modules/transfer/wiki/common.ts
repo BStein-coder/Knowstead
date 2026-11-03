@@ -83,9 +83,6 @@ export function mediaSrc(name: string): string {
   return `/__media/${encodeURIComponent(name)}`;
 }
 
-export const WIKI_HREF_RE = /\/__wiki\/([A-Za-z0-9%._~!*'()-]+)(?:#([A-Za-z0-9%._~!*'()-]*))?/g;
-export const MEDIA_SRC_RE = /\/__media\/([A-Za-z0-9%._~!*'()-]+)/g;
-
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i;
 export const isImage = (name: string) => IMAGE_EXT.test(name);
 

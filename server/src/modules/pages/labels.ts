@@ -47,6 +47,25 @@ export class LabelService {
       .map((r) => r.name);
   }
 
+  /** Labels mehrerer Seiten in einer Abfrage (für Trefferlisten); Seiten ohne Labels fehlen in der Karte. */
+  labelsOfMany(pageIds: number[]): Map<number, string[]> {
+    const map = new Map<number, string[]>();
+    for (let i = 0; i < pageIds.length; i += 500) {
+      const chunk = pageIds.slice(i, i + 500);
+      const rows = this.s.db.all<{ page_id: number; name: string }>(
+        `SELECT pl.page_id, l.name FROM page_labels pl JOIN labels l ON l.id = pl.label_id
+         WHERE pl.page_id IN ${Db.placeholders(chunk.length)} ORDER BY l.name`,
+        ...chunk,
+      );
+      for (const r of rows) {
+        const list = map.get(r.page_id);
+        if (list) list.push(r.name);
+        else map.set(r.page_id, [r.name]);
+      }
+    }
+    return map;
+  }
+
   /** Schreibt Labels ohne Prüfung/Ereignis (intern). */
   writeLabels(pageId: number, names: string[]): string[] {
     const clean = [...new Set(names.map(normalizeLabel).filter(Boolean))].slice(0, 50);
@@ -56,9 +75,14 @@ export class LabelService {
         this.s.db.run('INSERT OR IGNORE INTO labels (name) VALUES (?)', name);
         this.s.db.run('INSERT OR IGNORE INTO page_labels (page_id, label_id) SELECT ?, id FROM labels WHERE name = ?', pageId, name);
       }
-      this.s.db.run('DELETE FROM labels WHERE id NOT IN (SELECT label_id FROM page_labels)');
+      this.pruneUnused();
     });
     return clean;
+  }
+
+  /** Entfernt Labels, die keine Seite mehr trägt (nach dem Löschen von Seiten und Bereichen). */
+  pruneUnused(): void {
+    this.s.db.run('DELETE FROM labels WHERE id NOT IN (SELECT label_id FROM page_labels)');
   }
 
   setLabels(auth: AuthContext, pageId: number, names: string[]): string[] {

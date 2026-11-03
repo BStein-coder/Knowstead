@@ -165,7 +165,3 @@ export function useI18n(): I18nValue {
   if (!ctx) throw new Error('I18nProvider fehlt');
   return ctx;
 }
-
-export function useT(): TFn {
-  return useI18n().t;
-}
