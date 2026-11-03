@@ -338,7 +338,8 @@ function EditorScreen({ page, serverDraft, collab }: { page: Page; serverDraft: 
         publishedRef.current = true;
         setDirty(false);
         if (labelsDirty || (collab && labels.join('\u0000') !== page.labels.join('\u0000'))) await api.put(`/api/v1/pages/${updated.id}/labels`, { labels }).catch((err) => toast.error(err));
-        toast.success(t('editor.published', { n: updated.version }));
+        // Gleiche Versionsnummer wie zuvor: nichts Inhaltliches geändert oder nur der „Stand“ nachgeführt
+        toast.success(t(!isNew && !force && updated.version === cur.baseVersion ? 'editor.publishedUnchanged' : 'editor.published', { n: updated.version }));
         qc.setQueryData(['page', updated.id, 'raw'], updated);
         void qc.invalidateQueries({ queryKey: ['page', updated.id] });
         void qc.invalidateQueries({ queryKey: ['tree', page.space.key] });
@@ -356,7 +357,7 @@ function EditorScreen({ page, serverDraft, collab }: { page: Page; serverDraft: 
         setPublishing(false);
       }
     },
-    [saveDraft, toast, t, page.id, page.space.key, page.labels, icon, fullWidth, changeNote, notify, qc, navigate, base, labels, labelsDirty, collab],
+    [saveDraft, toast, t, page.id, page.space.key, page.labels, icon, fullWidth, changeNote, notify, qc, navigate, base, labels, labelsDirty, collab, isNew],
   );
 
   const close = useCallback(() => {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Eye, GitCompare, History, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Eye, GitCompare, GitCompareArrows, History, RotateCcw } from 'lucide-react';
 import { api } from '../../api/client';
 import { usePage, useRevisions } from '../../api/hooks';
 import { useI18n } from '../../i18n';
@@ -92,6 +92,7 @@ export default function PageHistory() {
               <div className="row gap-xs">
                 <IconButton icon={Eye} label={t('history.view')} onClick={() => navigate(`${base}/history/${id}/v/${r.version}`)} />
                 {prev && <IconButton icon={GitCompare} label={t('history.compare')} onClick={() => navigate(`${base}/diff/${id}?from=${prev.version}&to=${r.version}`)} />}
+                {!r.isCurrent && <IconButton icon={GitCompareArrows} label={t('history.compareCurrent')} onClick={() => navigate(`${base}/diff/${id}?from=${r.version}&to=${page.version}`)} />}
                 {page.access.edit && !r.isCurrent && <IconButton icon={RotateCcw} label={t('history.restore')} onClick={() => void restore(r.version)} />}
               </div>
             </div>

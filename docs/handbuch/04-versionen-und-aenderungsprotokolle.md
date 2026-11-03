@@ -15,13 +15,16 @@ Nachvollziehbarkeit ist ein Kernprinzip von Knowstead: Jede veröffentlichte Än
 
 - Jede Version zeigt **Autor**, **Zeitpunkt**, **Art der Änderung** (erstellt, bearbeitet, umbenannt, wiederhergestellt …) und die **Änderungsnotiz**.
 - **Ansehen** zeigt die Seite genau so, wie sie in dieser Version aussah.
-- **Vergleichen** zeigt Unterschiede zwischen zwei Versionen – **visuell** (eingefügter Text grün, entfernter Text rot durchgestrichen) oder als **Quelltext** (Zeilen-Diff).
+- **Vergleichen** zeigt Unterschiede zur vorherigen Version – **visuell** (eingefügter Text grün, entfernter Text rot durchgestrichen) oder als **Quelltext** (Zeilen-Diff).
+- **Mit aktueller Version vergleichen** zeigt, was sich seit dieser Version bis heute geändert hat – auch in der Ansicht einer alten Version. Zwei beliebige Versionen vergleichst du, indem du sie ankreuzt und oben **Ausgewählte vergleichen** wählst.
 - **Wiederherstellen** übernimmt den Inhalt einer alten Version als neue Version. Die Geschichte bleibt dabei vollständig erhalten.
 
 > [!TIP]
 > Gute Änderungsnotizen sind kurz und konkret: „Kapitel 3 um Rollback-Anleitung ergänzt“ statt „Update“. Sie erscheinen in Benachrichtigungen, Webhooks und im Änderungsprotokoll.
 
 **Kleine Änderungen** (Häkchen „Beobachter benachrichtigen“ entfernen) werden versioniert, lösen aber keine Benachrichtigungen aus und sind im Änderungsprotokoll standardmäßig ausgeblendet.
+
+**Nur der „Stand“ geändert:** Steht auf einer Seite eine Angabe wie `Stand: 03.11.2026 09:15` und unterscheidet sich die gespeicherte Fassung vom Vorgänger **nur darin**, entsteht keine neue Version. Der neue Stand ersetzt den alten in der aktuellen Version; „zuletzt geändert“ bleibt, Beobachter bekommen keine Nachricht, und wer die Seite verantwortet, hat sie damit weiterhin geprüft. Erkannt werden „Stand“, „Zuletzt aktualisiert“, „Last updated“ und „As of“ mit einem vollständigen Datum (`03.11.2026`, `3.11.26`, `2026-11-03`, `11/03/2026`, `3. November 2026`) und optional einer Uhrzeit. Schreibst du dazu eine **Änderungsnotiz**, ändert sich auch noch etwas anderes (Text oder Titel) oder ist es eine Code-Seite, entsteht wie gewohnt eine Version.
 
 ## Änderungsprotokoll eines Bereichs
 

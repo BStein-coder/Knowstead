@@ -6,6 +6,7 @@ import type { AuthContext, PageAccess } from '../../core/permissions.ts';
 import { Db, nowIso } from '../../db/database.ts';
 import { HttpError, badRequest, conflict, forbidden, notFound } from '../../core/errors.ts';
 import { slugify } from '../../core/util.ts';
+import { onlyStampsDiffer } from '../../core/stamp.ts';
 import { nextRowId } from '../../core/subjects.ts';
 import { sanitizeRichText, toggleTaskItem } from '../../core/html.ts';
 import { CONTENT_TYPES, prepareContent, toDisplayHtml } from './content.ts';
@@ -647,7 +648,21 @@ export class PageService {
       (input.icon !== undefined && input.icon !== page.icon) ||
       (input.fullWidth !== undefined && (input.fullWidth ? 1 : 0) !== page.full_width);
 
-    if (!isFirstPublish && !contentChanged && !titleChanged) {
+    // Ändert sich nur die Zeitangabe „Stand: Datum Uhrzeit“, entsteht keine Version: der neue Text ersetzt den alten in
+    // der aktuellen Fassung. Eine eigene Änderungsnotiz, eine ausdrückliche Art (Wiederherstellen, Aufgabe) oder ein
+    // Code-Inhalt bleiben immer eine Version.
+    const stampOnly =
+      !isFirstPublish &&
+      contentChanged &&
+      !titleChanged &&
+      filtered.contentType !== 'code' &&
+      filtered.contentType === page.content_type &&
+      (language ?? null) === (page.language ?? null) &&
+      input.changeType === undefined &&
+      !input.changeNote?.trim() &&
+      onlyStampsDiffer(page.content, prepared.content);
+
+    if (!isFirstPublish && !titleChanged && (!contentChanged || stampOnly)) {
       if (metaChanged) {
         this.s.db.run(
           'UPDATE pages SET icon = ?, full_width = ? WHERE id = ?',
@@ -655,6 +670,15 @@ export class PageService {
           input.fullWidth === undefined ? page.full_width : input.fullWidth ? 1 : 0,
           id,
         );
+      }
+      if (stampOnly) {
+        this.s.db.transaction(() => {
+          this.s.db.run('UPDATE pages SET content = ?, content_text = ?, excerpt = ? WHERE id = ?', prepared.content, prepared.text, prepared.excerpt, id);
+          this.s.db.run('UPDATE page_revisions SET content = ?, size = ? WHERE page_id = ? AND version = ?', prepared.content, Buffer.byteLength(prepared.content, 'utf8'), id, page.version);
+          this.s.search.index(id);
+        });
+        // Wer die Seite verantwortet und den Stand nachführt, hat sie geprüft – auch ohne neue Version
+        this.s.reviewCycle.onPageSaved(auth, this.require(id), !!input.minor);
       }
       this.s.db.run('DELETE FROM page_drafts WHERE page_id = ? AND user_id = ?', id, user.id);
       this.s.collab.afterSave(id, page.version, user.displayName, !!input.collab);

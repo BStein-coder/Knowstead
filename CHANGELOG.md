@@ -9,6 +9,26 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+### Neu
+
+- **Mit aktueller Version vergleichen**: In der Versionsgeschichte hat jede ältere Version einen eigenen Knopf dafür
+  (bisher nur über zwei angekreuzte Versionen oder den Vergleich mit dem Vorgänger), ebenso die Ansicht einer alten
+  Version. Der Vergleich selbst – visuell und als Quelltext – ist unverändert.
+
+### Geändert
+
+- **Keine eigene Version, wenn nur der „Stand“ nachgeführt wird**: Unterscheidet sich eine Fassung von der
+  bisherigen ausschließlich in einer Angabe wie `Stand: 03.11.2026 09:15`, entsteht keine neue Version. Der neue Text
+  ersetzt den alten in der aktuellen Fassung (auch im Suchindex); „zuletzt geändert“ bleibt, es gibt keine
+  Benachrichtigung, und die Bestätigung durch die Seitenverantwortlichen (Wiedervorlage) gilt weiterhin. Erkannt werden
+  „Stand“, „Zuletzt aktualisiert“, „Last updated“ und „As of“ mit vollständigem Datum (`03.11.2026`, `3.11.26`,
+  `2026-11-03`, `11/03/2026`, `3. November 2026`, `November 3, 2026`) und optionaler Uhrzeit. Mit eigener
+  Änderungsnotiz, bei jeder weiteren Änderung (Text, Titel), bei Code-Seiten und beim Wiederherstellen bleibt es eine
+  Version. Der Editor meldet in diesem Fall „Gespeichert – keine neue Version“ statt „Veröffentlicht (Version n)“.
+  Bereits vorhandene Versionen werden nicht verändert.
+
 ## [2.2.5] – 2026-11-03
 
 Durchsicht auf Geschwindigkeit und Fehler: weniger Datenbankabfragen in Listen, ein paar Randfehler behoben, und neue

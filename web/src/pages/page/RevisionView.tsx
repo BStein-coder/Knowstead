@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, History, RotateCcw } from 'lucide-react';
+import { ArrowLeft, GitCompareArrows, History, RotateCcw } from 'lucide-react';
 import { api } from '../../api/client';
 import type { RevisionDetail } from '../../api/types';
 import { usePage } from '../../api/hooks';
@@ -40,6 +40,11 @@ export default function RevisionView() {
         <Link className="btn btn-sm" to={`${base}/history/${id}`}>
           <ArrowLeft size={14} /> {t('history.title')}
         </Link>
+        {!data.isCurrent && (
+          <Link className="btn btn-sm" to={`${base}/diff/${id}?from=${data.version}&to=${page.version}`}>
+            <GitCompareArrows size={14} /> {t('history.compareCurrent')}
+          </Link>
+        )}
         <Link className="btn btn-sm" to={page.isHome ? base : page.url}>
           {t('page.toCurrent')}
         </Link>

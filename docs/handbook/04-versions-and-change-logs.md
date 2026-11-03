@@ -15,13 +15,16 @@ Open the version history via **… → Versions** (or <kbd>H</kbd>):
 
 - Every version shows the **author**, **time**, **type of change** (created, edited, renamed, restored …) and the **change note**.
 - **View** shows the page exactly as it looked in this version.
-- **Compare** shows differences between two versions – **visually** (inserted text in green, removed text struck through in red) or as **source** (line diff).
+- **Compare** shows the differences to the previous version – **visually** (inserted text in green, removed text struck through in red) or as **source** (line diff).
+- **Compare with current version** shows what has changed from this version to today – also on the view of an old version. To compare any two versions, tick them and choose **Compare selected** at the top.
 - **Restore** takes over the content of an old version as a new version. The history remains complete.
 
 > [!TIP]
 > Good change notes are short and specific: "Added rollback instructions to chapter 3" instead of "Update". They appear in notifications, webhooks and the change log.
 
 **Minor changes** (untick "Notify watchers") are versioned but do not trigger notifications and are hidden in the change log by default.
+
+**Only the date stamp changed:** if a page contains a line such as `Stand: 03.11.2026 09:15` or `Last updated: 11/03/2026 9:15 AM` and the saved version differs from its predecessor **only in that**, no new version is created. The new stamp replaces the old one in the current version; "last modified" stays, watchers get no notification, and the page owner still counts as having reviewed it. Recognised are "Stand", "Zuletzt aktualisiert", "Last updated" and "As of" followed by a full date (`03.11.2026`, `3.11.26`, `2026-11-03`, `11/03/2026`, `November 3, 2026`) and optionally a time. With a **change note**, any other change (text or title) or on a code page, a version is created as usual.
 
 ## Change log of a space
 
