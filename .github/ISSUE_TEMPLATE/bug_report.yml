@@ -28,7 +28,7 @@ body:
     attributes:
       label: Knowstead-Version
       description: Administration → Über oder `npm run cli -- status`
-      placeholder: 2.2.5
+      placeholder: 2.2.6
     validations:
       required: true
   - type: dropdown
