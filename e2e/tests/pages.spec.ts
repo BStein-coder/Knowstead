@@ -43,7 +43,7 @@ test.describe('Seiten', () => {
     await page.goto(history);
     await expect(page.getByRole('heading', { level: 1, name: 'Versionsgeschichte' })).toBeVisible();
     await expect(page.getByText('Zweite Fassung')).toBeVisible();
-    await page.getByRole('button', { name: 'Vergleichen', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Mit aktueller Version vergleichen', exact: true }).first().click();
     await expect(page).toHaveURL(/\/diff\/\d+\?from=1&to=2/);
     await expect(page.locator('main')).toContainText('Ergänzt in Fassung zwei.');
 

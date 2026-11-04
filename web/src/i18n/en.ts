@@ -544,7 +544,6 @@ const en: Dictionary = {
     unchangedLines: '… {count} unchanged lines …',
     title: 'Version history',
     subtitle: 'All published versions with change notes',
-    compare: 'Compare',
     compareCurrent: 'Compare with current version',
     compareSelected: 'Compare selected',
     view: 'View',

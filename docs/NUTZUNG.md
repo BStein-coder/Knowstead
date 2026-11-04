@@ -77,7 +77,7 @@ verstanden**. Offene Dokumente stehen unter **Lesebestätigungen → Für mich**
 | --- | --- |
 | gemeinsam schreiben | Rich-Text-Seiten öffnen mehrere Personen gleichzeitig – Cursor mit Namen zeigen, wer wo schreibt |
 | Änderungen vorschlagen | auf Seiten im Vorschlagsmodus werden Änderungen zu Vorschlägen, die die Autorin oder der Autor annimmt |
-| Versionen vergleichen | **… → Versionen**, zwei Versionen wählen, **Vergleichen** |
+| Versionen vergleichen | **… → Versionen**, zwei Versionen ankreuzen, **Ausgewählte vergleichen** – oder bei einer älteren Version **Mit aktueller Version vergleichen** |
 | Fehler zurücknehmen | **Letzte Änderungen → Rückgängig** oder eine alte Version wiederherstellen |
 | exportieren | **… → Exportieren** als PDF oder Word (mit Firmenvorlage), Markdown oder HTML |
 | Diagramme | `/drawio`, `/whiteboard` oder `/diagramm` (Mermaid) |

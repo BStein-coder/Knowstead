@@ -15,8 +15,8 @@ Open the version history via **… → Versions** (or <kbd>H</kbd>):
 
 - Every version shows the **author**, **time**, **type of change** (created, edited, renamed, restored …) and the **change note**.
 - **View** shows the page exactly as it looked in this version.
-- **Compare** shows the differences to the previous version – **visually** (inserted text in green, removed text struck through in red) or as **source** (line diff).
-- **Compare with current version** shows what has changed from this version to today – also on the view of an old version. To compare any two versions, tick them and choose **Compare selected** at the top.
+- **Compare with current version** shows what has changed from this version to today – also on the view of an old version. The differences are shown **visually** (inserted text in green, removed text struck through in red) or as **source** (line diff).
+- To compare any two versions, tick them and choose **Compare selected** at the top – this also shows what a single change did (tick a version and its predecessor).
 - **Restore** takes over the content of an old version as a new version. The history remains complete.
 
 > [!TIP]

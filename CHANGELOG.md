@@ -9,6 +9,14 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+### Geändert
+
+- **Versionsgeschichte**: Der Knopf „Vergleichen“ (Vergleich mit der Vorversion) in jeder Zeile entfällt. Übrig
+  bleiben „Mit aktueller Version vergleichen“ und – für zwei beliebige Versionen, auch eine Version und ihre
+  Vorgängerin – das Ankreuzen mit „Ausgewählte vergleichen“. Die Seite des Vergleichs selbst ist unverändert.
+
 ## [2.2.6] – 2026-11-04
 
 ### Neu

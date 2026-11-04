@@ -15,8 +15,8 @@ Nachvollziehbarkeit ist ein Kernprinzip von Knowstead: Jede veröffentlichte Än
 
 - Jede Version zeigt **Autor**, **Zeitpunkt**, **Art der Änderung** (erstellt, bearbeitet, umbenannt, wiederhergestellt …) und die **Änderungsnotiz**.
 - **Ansehen** zeigt die Seite genau so, wie sie in dieser Version aussah.
-- **Vergleichen** zeigt Unterschiede zur vorherigen Version – **visuell** (eingefügter Text grün, entfernter Text rot durchgestrichen) oder als **Quelltext** (Zeilen-Diff).
-- **Mit aktueller Version vergleichen** zeigt, was sich seit dieser Version bis heute geändert hat – auch in der Ansicht einer alten Version. Zwei beliebige Versionen vergleichst du, indem du sie ankreuzt und oben **Ausgewählte vergleichen** wählst.
+- **Mit aktueller Version vergleichen** zeigt, was sich seit dieser Version bis heute geändert hat – auch in der Ansicht einer alten Version. Die Unterschiede sind **visuell** zu sehen (eingefügter Text grün, entfernter Text rot durchgestrichen) oder als **Quelltext** (Zeilen-Diff).
+- Zwei beliebige Versionen vergleichst du, indem du sie ankreuzt und oben **Ausgewählte vergleichen** wählst – so siehst du auch, was eine einzelne Änderung bewirkt hat (Version und ihre Vorgängerin ankreuzen).
 - **Wiederherstellen** übernimmt den Inhalt einer alten Version als neue Version. Die Geschichte bleibt dabei vollständig erhalten.
 
 > [!TIP]

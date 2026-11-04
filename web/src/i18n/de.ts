@@ -542,7 +542,6 @@ const de = {
     unchangedLines: '… {count} unveränderte Zeilen …',
     title: 'Versionsgeschichte',
     subtitle: 'Alle veröffentlichten Versionen mit Änderungsnotizen',
-    compare: 'Vergleichen',
     compareCurrent: 'Mit aktueller Version vergleichen',
     compareSelected: 'Ausgewählte vergleichen',
     view: 'Ansehen',

@@ -91,7 +91,6 @@ export default function PageHistory() {
               </div>
               <div className="row gap-xs">
                 <IconButton icon={Eye} label={t('history.view')} onClick={() => navigate(`${base}/history/${id}/v/${r.version}`)} />
-                {prev && <IconButton icon={GitCompare} label={t('history.compare')} onClick={() => navigate(`${base}/diff/${id}?from=${prev.version}&to=${r.version}`)} />}
                 {!r.isCurrent && <IconButton icon={GitCompareArrows} label={t('history.compareCurrent')} onClick={() => navigate(`${base}/diff/${id}?from=${r.version}&to=${page.version}`)} />}
                 {page.access.edit && !r.isCurrent && <IconButton icon={RotateCcw} label={t('history.restore')} onClick={() => void restore(r.version)} />}
               </div>
