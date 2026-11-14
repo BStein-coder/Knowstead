@@ -26,6 +26,8 @@ Nachvollziehbarkeit ist ein Kernprinzip von Knowstead: Jede veröffentlichte Än
 
 **Nur der „Stand“ geändert:** Steht auf einer Seite eine Angabe wie `Stand: 03.11.2026 09:15` und unterscheidet sich die gespeicherte Fassung vom Vorgänger **nur darin**, entsteht keine neue Version. Der neue Stand ersetzt den alten in der aktuellen Version; „zuletzt geändert“ bleibt, Beobachter bekommen keine Nachricht, und wer die Seite verantwortet, hat sie damit weiterhin geprüft. Erkannt werden „Stand“, „Zuletzt aktualisiert“, „Last updated“ und „As of“ mit einem vollständigen Datum (`03.11.2026`, `3.11.26`, `2026-11-03`, `11/03/2026`, `3. November 2026`) und optional einer Uhrzeit. Schreibst du dazu eine **Änderungsnotiz**, ändert sich auch noch etwas anderes (Text oder Titel) oder ist es eine Code-Seite, entsteht wie gewohnt eine Version.
 
+Das gilt nur für Seiten **ohne förmlichen Vorgang**. Sobald an der aktuellen Version etwas hängt, das sich auf ihren Inhalt bezieht, ist auch ein neuer Stand immer eine neue Version: in Bereichen mit **Prüfpflicht**, bei einem offenen **Prüfauftrag**, bei einer **freigegebenen** oder zurückgewiesenen Version und bei Seiten mit **Lesebestätigung** (verlangt oder für diese Version schon abgegeben). Dasselbe gilt, wenn gerade ein **gemeinsamer Entwurf** besteht und die Änderung von außen kommt (z. B. über die API). Wer einen Stand ohne neue Version ersetzt hat, steht mit altem und neuem Wert im **Audit-Log** (Ereignis `page.stamp_updated`).
+
 ## Änderungsprotokoll eines Bereichs
 
 In jedem Bereich findest du links **Änderungsprotokoll**. Es listet alle Änderungen chronologisch und nach Tagen gruppiert:

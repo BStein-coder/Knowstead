@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type PointerEvent, type RefObject } from 'react';
+import { useEffect, useRef, type KeyboardEvent, type PointerEvent, type RefObject } from 'react';
 import { useI18n } from '../i18n';
 
 /** Grenzen und Vorgabe der Breite der Seitenleiste (Pixel) – die Vorgabe steht auch in tokens.css (`--sidebar-w`). */
@@ -34,6 +34,15 @@ export function SidebarResizer({ appRef, width, onCommit }: Props) {
   const frame = useRef(0);
   const current = width ?? SIDEBAR_DEFAULT;
 
+  // Verschwindet der Griff mitten im Ziehen (Leiste eingeklappt), käme kein Loslassen mehr an
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(frame.current);
+      document.body.classList.remove('sidebar-resizing');
+    },
+    [],
+  );
+
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     const app = appRef.current;
     if (event.button !== 0 || !app) return;
@@ -43,9 +52,11 @@ export function SidebarResizer({ appRef, width, onCommit }: Props) {
     // Die Leiste beginnt nach dem Abstand zum Fensterrand
     const gap = parseFloat(getComputedStyle(app).getPropertyValue('--shell-gap')) || 0;
     let latest = current;
+    let moved = false;
     document.body.classList.add('sidebar-resizing');
 
     const move = (e: globalThis.PointerEvent) => {
+      moved = true;
       latest = clampSidebarWidth(e.clientX - gap);
       cancelAnimationFrame(frame.current);
       frame.current = requestAnimationFrame(() => app.style.setProperty('--sidebar-user-w', `${latest}px`));
@@ -56,6 +67,8 @@ export function SidebarResizer({ appRef, width, onCommit }: Props) {
       grip.removeEventListener('pointercancel', finish);
       cancelAnimationFrame(frame.current);
       document.body.classList.remove('sidebar-resizing');
+      // Ein Klick ohne Ziehen (auch die beiden eines Doppelklicks) legt keine Breite fest
+      if (!moved) return;
       app.style.setProperty('--sidebar-user-w', `${latest}px`);
       onCommit(latest);
     };
@@ -85,7 +98,7 @@ export function SidebarResizer({ appRef, width, onCommit }: Props) {
       aria-controls="sidebar"
       aria-valuemin={SIDEBAR_MIN}
       aria-valuemax={sidebarMax()}
-      aria-valuenow={current}
+      aria-valuenow={Math.min(current, sidebarMax())}
       tabIndex={0}
       title={t('app.resizeSidebarHint')}
       onPointerDown={onPointerDown}

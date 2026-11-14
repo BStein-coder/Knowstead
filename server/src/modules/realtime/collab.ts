@@ -128,6 +128,14 @@ export class CollabService {
     return { editors: [], unpublished: dirty === 1 };
   }
 
+  /**
+   * Gibt es zu der Seite einen gemeinsamen Entwurf – gerade geladen oder mit Unveröffentlichtem gespeichert? Er erkennt
+   * fremde Änderungen nur an einer neuen Versionsnummer (`afterSave`).
+   */
+  hasSharedDraft(pageId: number): boolean {
+    return this.rooms.has(pageId) || this.s.db.value<number>('SELECT dirty FROM collab_documents WHERE page_id = ?', pageId) === 1;
+  }
+
   /* ------------------------------ Verbindungsaufbau ------------------------------ */
 
   /** Wird vom HTTP-Server für jedes Upgrade aufgerufen; gehört die Adresse nicht hierher, passiert nichts. */

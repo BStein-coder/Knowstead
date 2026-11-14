@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeStamps, onlyStampsDiffer } from '../src/core/stamp.ts';
+import { normalizeStamps, onlyStampsDiffer, stampTexts } from '../src/core/stamp.ts';
 import { Client, createTestApp } from './helpers.ts';
 
 test('Stand-Angaben: nur Datum und Uhrzeit hinter „Stand“ zählen, in allen üblichen Schreibweisen', () => {
@@ -37,6 +37,13 @@ test('Stand-Angaben: nur Datum und Uhrzeit hinter „Stand“ zählen, in allen 
 
   assert.equal(onlyStampsDiffer('<p>Stand: 03.11.2026 09:15</p>', '<p>Stand: 03.11.2026 09:15</p>'), false, 'gleich ist nicht „nur der Stand unterscheidet sich“');
   assert.equal(normalizeStamps('<p>Nichts</p>'), '<p>Nichts</p>');
+
+  // Lesbar für das Audit-Log: ohne Auszeichnung, höchstens fünf Angaben
+  assert.deepEqual(stampTexts('<p><strong>Stand:</strong> 03.11.2026, 09:15 Uhr</p><p>x</p>'), ['Stand: 03.11.2026, 09:15 Uhr']);
+  assert.deepEqual(stampTexts('<table><tr><td>Stand</td><td>03.11.2026 09:15</td></tr></table>'), ['Stand 03.11.2026 09:15']);
+  assert.deepEqual(stampTexts('**Stand:** 03.11.2026 09:15\n\nText'), ['Stand: 03.11.2026 09:15']);
+  assert.deepEqual(stampTexts('<p>kein Stand</p>'), []);
+  assert.equal(stampTexts('Stand: 1.1.2026 '.repeat(20)).length, 5);
 });
 
 test('Stand-Angaben: auch bösartig geformte Texte werden in kurzer Zeit geprüft', () => {
@@ -54,6 +61,7 @@ test('Stand-Angaben: auch bösartig geformte Texte werden in kurzer Zeit geprüf
     const started = performance.now();
     normalizeStamps(text);
     onlyStampsDiffer(text, `${text}!`);
+    stampTexts(text);
     const ms = performance.now() - started;
     assert.ok(ms < 1500, `${name}: ${Math.round(ms)} ms`);
   }
@@ -143,6 +151,69 @@ test('Seite speichern: ändert sich nur der Stand, entsteht keine neue Version',
       assert.equal((await admin.put(`/api/v1/pages/${pageId}`, { content: next, baseVersion: version })).body.version, version);
       assert.ok(String(verified()) > '2024', 'wesentlich: geprüft');
       assert.equal(await revisions(), 5);
+    });
+
+    await t.test('Wer den Stand ersetzt hat, steht im Audit-Log – nicht im Aktivitätsfeed', async () => {
+      const events = ctx.s.db.all<{ data: string; actor_id: number; category: string }>("SELECT data, actor_id, category FROM events WHERE type = 'page.stamp_updated' AND page_id = ? ORDER BY id", pageId);
+      assert.ok(events.length >= 2, `${events.length} Einträge`);
+      assert.equal(events[0].actor_id, adminId);
+      assert.equal(events[0].category, 'system');
+      const first = JSON.parse(events[0].data) as { version: number; from: string[]; to: string[] };
+      assert.deepEqual([first.version, first.from, first.to], [1, ['Stand: 03.11.2026 09:15'], ['Stand: 17.12.2031 18:45']]);
+      const audit = await admin.get('/api/v1/admin/audit?type=page.stamp_updated');
+      assert.equal(audit.status, 200, audit.raw);
+      assert.ok(audit.body.items.length >= 2, 'im Audit-Log zu finden');
+      const feed = await admin.get('/api/v1/activity');
+      assert.ok(!feed.body.items.some((i: { type: string }) => i.type === 'page.stamp_updated'));
+    });
+
+    await t.test('Hängt an der Fassung ein förmlicher Vorgang, entsteht immer eine Version', async () => {
+      const next = (() => {
+        let day = 10;
+        return () => stored().content.replace(/Stand:<\/strong> [^<]*/, `Stand:</strong> ${++day}.07.2035 07:07`);
+      })();
+      const save = async () => (await admin.put(`/api/v1/pages/${pageId}`, { content: next(), baseVersion: stored().version })).body.version as number;
+      let version = stored().version;
+      assert.equal(await save(), version, 'Ausgangslage: ohne Vorgang keine Version');
+
+      // Freigabe, offener Prüfauftrag oder Zurückweisung der aktuellen Fassung
+      for (const status of ['approved', 'pending', 'rejected']) {
+        ctx.s.db.run('UPDATE pages SET review_status = ? WHERE id = ?', status, pageId);
+        assert.equal(await save(), ++version, status);
+      }
+      ctx.s.db.run("UPDATE pages SET review_status = 'none' WHERE id = ?", pageId);
+      assert.equal(await save(), version);
+
+      // Lesebestätigung verlangt – und danach ein schon abgegebener Nachweis für genau diese Fassung
+      assert.equal((await admin.put(`/api/v1/pages/${pageId}/read-requirement`, { audience: [{ type: 'user', id: adminId }] })).status, 200);
+      assert.equal(await save(), ++version, 'Lesebestätigung verlangt');
+      assert.equal((await admin.post(`/api/v1/pages/${pageId}/read-confirmations`)).status, 200);
+      assert.equal((await admin.del(`/api/v1/pages/${pageId}/read-requirement`)).status, 200);
+      assert.equal(await save(), ++version, 'Nachweis für diese Fassung liegt vor');
+      assert.equal(await save(), version, 'die neue Fassung hat noch niemand bestätigt');
+
+      // Prüfpflicht im Bereich
+      assert.equal((await admin.post('/api/v1/spaces', { key: 'QM', name: 'Qualität', reviewRequired: true })).status, 200);
+      const strict = await admin.post('/api/v1/pages', { spaceKey: 'QM', title: 'Verfahren', content: content('03.11.2026 09:15') });
+      assert.equal(strict.status, 200, strict.raw);
+      const changed = await admin.put(`/api/v1/pages/${strict.body.id}`, { content: content('04.11.2026 10:42'), baseVersion: 1 });
+      assert.equal(changed.body.version, 2, 'Prüfpflicht: jede Änderung ist eine Version');
+    });
+
+    await t.test('Besteht ein gemeinsamer Entwurf, ist eine Änderung von außen immer eine Version', async () => {
+      const version = stored().version;
+      const draft = () =>
+        ctx.s.db.run('INSERT OR REPLACE INTO collab_documents (page_id, state, base_version, dirty, updated_at, updated_by) VALUES (?, ?, ?, 1, ?, ?)', pageId, new Uint8Array([0]), stored().version, new Date().toISOString(), adminId);
+      const stamp = (day: number) => stored().content.replace(/Stand:<\/strong> [^<]*/, `Stand:</strong> ${day}.08.2036 08:08`);
+
+      draft();
+      // Aus der gemeinsamen Bearbeitung selbst veröffentlicht: Der Entwurf ist die Quelle, es bleibt bei der Fassung
+      assert.equal((await admin.put(`/api/v1/pages/${pageId}`, { content: stamp(11), baseVersion: version, collab: true })).body.version, version);
+      assert.equal(ctx.s.db.value<number>('SELECT COUNT(*) FROM collab_documents WHERE page_id = ?', pageId), 0);
+
+      draft();
+      const outside = await admin.put(`/api/v1/pages/${pageId}`, { content: stamp(12), baseVersion: version });
+      assert.equal(outside.body.version, version + 1, 'sonst bliebe die Änderung für den Entwurf unsichtbar');
     });
 
     await t.test('Markdown-Seiten ebenso, Code-Seiten nie', async () => {

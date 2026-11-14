@@ -313,6 +313,12 @@ test.describe('Breite der Seitenleiste', () => {
     expect(await stored(page)).toBeNull();
     await expect(grip).toHaveAttribute('aria-valuenow', '284');
 
+    // Ein Klick ohne Ziehen legt keine Breite fest (sonst wäre die Vorgabe nach jedem Klick „von Hand eingestellt“)
+    await grip.click();
+    expect(await stored(page)).toBeNull();
+    expect(await widthOf(page)).toBe(284);
+    await expect(page.locator('body')).not.toHaveClass(/sidebar-resizing/);
+
     // Eingeklappt gibt es nichts zu ziehen
     await page.getByRole('button', { name: 'Seitenleiste einklappen' }).click();
     await expect(grip).toBeHidden();

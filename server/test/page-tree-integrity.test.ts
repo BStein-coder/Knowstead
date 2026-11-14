@@ -4,9 +4,10 @@ import { Client, createTestApp } from './helpers.ts';
 
 /**
  * Zufällige, aber bei gleichem Startwert immer gleiche Abfolge von Seitenoperationen (anlegen, verschieben, kopieren,
- * löschen, wiederherstellen, endgültig löschen, ändern, beschriften, suchen). Nach je zehn Schritten müssen die
- * Zusammenhänge der Daten stimmen: Suchindex, Seitenbaum ohne Zyklen und über Bereichsgrenzen hinweg, Startseiten,
- * Papierkorb-Wurzeln, Labels, Fremdschlüssel. Für die Fehlersuche: `MODEL_SEED=7 MODEL_STEPS=1500 node --test …`.
+ * löschen, wiederherstellen, endgültig löschen, ändern, nur den „Stand“ nachführen, beschriften, suchen). Nach je zehn
+ * Schritten müssen die Zusammenhänge der Daten stimmen: Suchindex, Seitenbaum ohne Zyklen und über Bereichsgrenzen
+ * hinweg, Startseiten, Papierkorb-Wurzeln, Labels, Fremdschlüssel – und die aktuelle Fassung im Verlauf ist die Seite
+ * selbst. Für die Fehlersuche: `MODEL_SEED=7 MODEL_STEPS=1500 node --test …`.
  */
 let seed = Number(process.env.MODEL_SEED ?? 1);
 const rnd = () => {
@@ -37,6 +38,8 @@ test('Seitenoperationen bewahren den Zusammenhang der Daten (Suchindex, Baum, Pa
       return res;
     };
     const word = () => pick(['alpha', 'beta', 'gamma', 'delta', 'omega', 'sigma', 'kappa', 'theta']);
+    const STAMP = /Stand: \d\d\.11\.2026 \d\d:\d\d/;
+    const stamp = () => `<p>Stand: ${String(1 + Math.floor(rnd() * 28)).padStart(2, '0')}.11.2026 ${String(Math.floor(rnd() * 24)).padStart(2, '0')}:15</p>`;
 
     const check = (step: number) => {
       const pages = db.all<{ id: number; space_id: number; parent_id: number | null; status: string; deleted_at: string | null; trash_root_id: number | null; position: number }>(
@@ -67,6 +70,12 @@ test('Seitenoperationen bewahren den Zusammenhang der Daten (Suchindex, Baum, Pa
         const home = byId.get(sp.home_page_id);
         if (!home || home.space_id !== sp.id || home.deleted_at) problems.push(`Schritt ${step}: Startseite ${sp.home_page_id} von Bereich ${sp.id} ungültig`);
       }
+      // Die aktuelle Fassung im Verlauf ist die Seite selbst – auch wenn nur der „Stand“ ohne neue Version ersetzt wurde
+      const drifted = db.all<{ id: number; version: number; missing: number }>(
+        `SELECT p.id, p.version, r.id IS NULL AS missing FROM pages p LEFT JOIN page_revisions r ON r.page_id = p.id AND r.version = p.version
+          WHERE p.status = 'current' AND (r.id IS NULL OR r.content != p.content OR r.title != p.title)`,
+      );
+      for (const d of drifted) problems.push(`Schritt ${step}: Seite ${d.id} – Fassung ${d.version} im Verlauf ${d.missing ? 'fehlt' : 'weicht von der Seite ab'}`);
       const orphanLabels = db.get<{ c: number }>('SELECT COUNT(*) AS c FROM labels WHERE id NOT IN (SELECT label_id FROM page_labels)')!.c;
       if (orphanLabels) problems.push(`Schritt ${step}: ${orphanLabels} Label ohne Seite`);
       const fk = db.all('PRAGMA foreign_key_check');
@@ -85,7 +94,7 @@ test('Seitenoperationen bewahren den Zusammenhang der Daten (Suchindex, Baum, Pa
           spaceKey: space,
           parentId: parent,
           title: `${word()} ${step}`,
-          content: `<p>${word()} ${word()} Text ${step}</p>`,
+          content: `${rnd() < 0.5 ? stamp() : ''}<p>${word()} ${word()} Text ${step}</p>`,
           labels: rnd() < 0.5 ? [word(), word()] : [],
           status: rnd() < 0.15 ? 'draft' : 'current',
         });
@@ -112,11 +121,20 @@ test('Seitenoperationen bewahren den Zusammenhang der Daten (Suchindex, Baum, Pa
         await call('wiederherstellen', 'POST', `/api/v1/pages/${pick(trashed)}/restore`, {});
       } else if (op < 0.76 && trashed.length) {
         await call('endgültig', 'DELETE', `/api/v1/pages/${pick(trashed)}/purge`);
-      } else if (op < 0.86) {
+      } else if (op < 0.82) {
         const id = pick(live);
         const page = await call('lesen', 'GET', `/api/v1/pages/${id}`);
         if (page.status === 200) {
-          await call('ändern', 'PUT', `/api/v1/pages/${id}`, { title: `${word()} neu ${step}`, content: `<p>${word()} geändert</p>`, version: page.body.version, labels: rnd() < 0.5 ? [word()] : [] });
+          await call('ändern', 'PUT', `/api/v1/pages/${id}`, { title: `${word()} neu ${step}`, content: `${rnd() < 0.5 ? stamp() : ''}<p>${word()} geändert</p>`, baseVersion: page.body.version });
+        }
+      } else if (op < 0.86) {
+        // Nur der „Stand“ ändert sich: keine neue Version, aber neuer Text in Seite, aktueller Fassung und Suchindex
+        const id = pick(live);
+        const before = db.get<{ content: string; version: number; status: string }>('SELECT content, version, status FROM pages WHERE id = ?', id)!;
+        if (before.status === 'current' && STAMP.test(before.content)) {
+          const res = await call('Stand', 'PUT', `/api/v1/pages/${id}`, { content: before.content.replace(STAMP, stamp().slice(3, -4)), baseVersion: before.version });
+          const after = db.get<{ content: string; version: number }>('SELECT content, version FROM pages WHERE id = ?', id)!;
+          if (res.status === 200 && after.content !== before.content && after.version !== before.version) problems.push(`Schritt ${step}: neuer Stand auf Seite ${id} hat Version ${after.version} erzeugt`);
         }
       } else if (op < 0.92) {
         await call('Beschriftung', 'PUT', `/api/v1/pages/${pick(live)}/labels`, { labels: rnd() < 0.3 ? [] : [word(), word()] });
@@ -139,6 +157,9 @@ test('Seitenoperationen bewahren den Zusammenhang der Daten (Suchindex, Baum, Pa
       console.log(`in Ordnung nach ${STEPS} Schritten, Seiten: ${db.get<{ c: number }>('SELECT COUNT(*) AS c FROM pages')!.c}`);
     }
     assert.equal(problems.length, 0);
+    // Die Abfolge soll den Stand ohne neue Version wirklich üben (bei gleichem Startwert immer gleich oft)
+    const stamped = db.get<{ c: number }>("SELECT COUNT(*) AS c FROM events WHERE type = 'page.stamp_updated'")!.c;
+    if (STEPS >= 300) assert.ok(stamped >= 1, `nur ${stamped} Stand-Änderungen ohne neue Version`);
   } finally {
     await ctx.close();
   }

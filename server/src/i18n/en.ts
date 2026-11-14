@@ -445,6 +445,7 @@ export const EN_TEXTS: Record<string, string> = {
   'Eigenschaften geändert': 'Properties changed',
   'Seiteneinschränkungen geändert': 'Page restrictions changed',
   'Seite als aktuell bestätigt': 'Page confirmed as up to date',
+  'Stand der Seite nachgeführt (ohne neue Version)': 'Page date stamp updated (no new version)',
   'Wiedervorlage geändert': 'Review schedule changed',
   'Bearbeitungsmodus geändert': 'Editing mode changed',
   'Lesebestätigung angefordert oder geändert': 'Read confirmation requested or changed',

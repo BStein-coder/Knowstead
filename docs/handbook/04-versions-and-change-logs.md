@@ -26,6 +26,8 @@ Open the version history via **… → Versions** (or <kbd>H</kbd>):
 
 **Only the date stamp changed:** if a page contains a line such as `Stand: 03.11.2026 09:15` or `Last updated: 11/03/2026 9:15 AM` and the saved version differs from its predecessor **only in that**, no new version is created. The new stamp replaces the old one in the current version; "last modified" stays, watchers get no notification, and the page owner still counts as having reviewed it. Recognised are "Stand", "Zuletzt aktualisiert", "Last updated" and "As of" followed by a full date (`03.11.2026`, `3.11.26`, `2026-11-03`, `11/03/2026`, `November 3, 2026`) and optionally a time. With a **change note**, any other change (text or title) or on a code page, a version is created as usual.
 
+This only applies to pages **without a formal process**. As soon as something refers to the content of the current version, a new stamp is always a new version: in spaces with **mandatory review**, with an open **review request**, with an **approved** or rejected version, and on pages with a **read confirmation** (required, or already given for this version). The same holds while a **shared draft** exists and the change comes from outside (e.g. via the API). Whoever replaced a stamp without a new version is recorded in the **audit log** with the old and new value (event `page.stamp_updated`).
+
 ## Change log of a space
 
 In every space you find **Change log** on the left. It lists all changes chronologically, grouped by day:

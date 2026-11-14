@@ -44,6 +44,24 @@ export function normalizeStamps(content: string): string {
   );
 }
 
+/** Die Stand-Angaben eines Inhalts als lesbarer Text („Stand: 03.11.2026 09:15“) – für das Audit-Log. */
+export function stampTexts(content: string, limit = 5): string[] {
+  const texts: string[] = [];
+  for (const match of content.matchAll(STAMP)) {
+    texts.push(
+      match[0]
+        .replace(TAGS, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/[*_]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 80),
+    );
+    if (texts.length >= limit) break;
+  }
+  return texts;
+}
+
 /** Unterscheiden sich die beiden Fassungen, aber ausschließlich in solchen Stand-Angaben? */
 export function onlyStampsDiffer(before: string, after: string): boolean {
   return before !== after && normalizeStamps(before) === normalizeStamps(after);

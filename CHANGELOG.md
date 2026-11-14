@@ -9,6 +9,31 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+### Behoben
+
+- **„Stand“ ohne neue Version (seit 2.2.6) nur noch ohne förmlichen Vorgang**: Der neue Stand ersetzte den alten auch
+  in Versionen, auf die sich eine Freigabe, ein offener Prüfauftrag oder eine Lesebestätigung bezieht – der Inhalt
+  einer geprüften oder bestätigten Version änderte sich also ohne neue Prüfung. Jetzt entsteht in Bereichen mit
+  Prüfpflicht, bei offenem Prüfauftrag, bei freigegebener oder zurückgewiesener Version und bei Seiten mit
+  Lesebestätigung (verlangt oder für diese Version schon abgegeben) immer eine neue Version.
+- **„Stand“ und gemeinsame Bearbeitung**: Ein gemeinsamer Entwurf erkennt fremde Änderungen an der Versionsnummer. Ein
+  von außen nachgeführter Stand blieb für ihn unsichtbar und wurde beim nächsten Veröffentlichen zurückgedreht. Besteht
+  ein gemeinsamer Entwurf, ist eine Änderung von außen jetzt immer eine Version.
+- **Nachvollziehbarkeit**: Wer einen Stand ohne neue Version ersetzt, steht mit altem und neuem Wert im Audit-Log
+  (neues Ereignis `page.stamp_updated`, auch für Webhooks; nicht im Aktivitätsfeed). Bisher blieb davon keine Spur.
+- **Breite der Seitenleiste**: Ein einfacher Klick auf den Griff (ohne zu ziehen) legte die Vorgabe als „von Hand
+  eingestellt“ fest; ein Doppelklick schrieb dreimal. Jetzt hält nur noch echtes Ziehen eine Breite fest. Wird die
+  Leiste mitten im Ziehen eingeklappt, bleibt kein Ziehzustand am Fenster hängen; der gemeldete Wert für Hilfstechnik
+  liegt nie über dem Höchstwert.
+
+### Sicherheit
+
+- Abhängigkeiten aktualisiert (`@fastify/static` 10.1.11 mit `glob` 14 und `minimatch` 11): zwei Meldungen mittlerer
+  Stufe in der Laufzeit. Ausnutzbar war das hier nicht – das Suchmuster ist fest und kommt nie von außen –, `npm audit`
+  ist für die Laufzeit damit wieder ohne Befund.
+
 ## [2.2.7] – 2026-11-04
 
 ### Geändert

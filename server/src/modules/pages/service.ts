@@ -6,7 +6,7 @@ import type { AuthContext, PageAccess } from '../../core/permissions.ts';
 import { Db, nowIso } from '../../db/database.ts';
 import { HttpError, badRequest, conflict, forbidden, notFound } from '../../core/errors.ts';
 import { slugify } from '../../core/util.ts';
-import { onlyStampsDiffer } from '../../core/stamp.ts';
+import { onlyStampsDiffer, stampTexts } from '../../core/stamp.ts';
 import { nextRowId } from '../../core/subjects.ts';
 import { sanitizeRichText, toggleTaskItem } from '../../core/html.ts';
 import { CONTENT_TYPES, prepareContent, toDisplayHtml } from './content.ts';
@@ -540,6 +540,14 @@ export class PageService {
     }
   }
 
+  /**
+   * Hängt an der aktuellen Fassung ein förmlicher Vorgang – Prüfpflicht des Bereichs, offener Prüfauftrag, Freigabe
+   * oder Zurückweisung, Lesebestätigung? Dann gilt ihr Inhalt als geprüft bzw. bestätigt und wird nie still ersetzt.
+   */
+  private versionIsBound(page: PageRow, space: SpaceRow): boolean {
+    return !!space.review_required || (page.review_status ?? 'none') !== 'none' || this.s.reads.bindsVersion(page.id, page.version);
+  }
+
   /** Inhalt ohne neue Version ersetzen (Importe: Verweise nachträglich auflösen). */
   replaceContentInPlace(pageId: number, html: string): void {
     const page = this.require(pageId);
@@ -650,7 +658,8 @@ export class PageService {
 
     // Ändert sich nur die Zeitangabe „Stand: Datum Uhrzeit“, entsteht keine Version: der neue Text ersetzt den alten in
     // der aktuellen Fassung. Eine eigene Änderungsnotiz, eine ausdrückliche Art (Wiederherstellen, Aufgabe) oder ein
-    // Code-Inhalt bleiben immer eine Version.
+    // Code-Inhalt bleiben immer eine Version – ebenso jede Fassung, an der ein förmlicher Vorgang hängt, und jede
+    // Änderung von außen, während ein gemeinsamer Entwurf besteht (er erkennt sie nur an der neuen Versionsnummer).
     const stampOnly =
       !isFirstPublish &&
       contentChanged &&
@@ -660,7 +669,9 @@ export class PageService {
       (language ?? null) === (page.language ?? null) &&
       input.changeType === undefined &&
       !input.changeNote?.trim() &&
-      onlyStampsDiffer(page.content, prepared.content);
+      onlyStampsDiffer(page.content, prepared.content) &&
+      !this.versionIsBound(page, space) &&
+      (!!input.collab || !this.s.collab.hasSharedDraft(id));
 
     if (!isFirstPublish && !titleChanged && (!contentChanged || stampOnly)) {
       if (metaChanged) {
@@ -679,6 +690,14 @@ export class PageService {
         });
         // Wer die Seite verantwortet und den Stand nachführt, hat sie geprüft – auch ohne neue Version
         this.s.reviewCycle.onPageSaved(auth, this.require(id), !!input.minor);
+        // Die Fassung nennt weiter ihre Autorin; wer den Stand ersetzt hat, steht im Audit-Log
+        this.s.emit(auth, {
+          type: 'page.stamp_updated',
+          spaceId: space.id,
+          pageId: id,
+          target: { type: 'page', id, label: page.title },
+          data: { version: page.version, from: stampTexts(page.content), to: stampTexts(prepared.content), url: pageUrl(space.key, id, page.title) },
+        });
       }
       this.s.db.run('DELETE FROM page_drafts WHERE page_id = ? AND user_id = ?', id, user.id);
       this.s.collab.afterSave(id, page.version, user.displayName, !!input.collab);

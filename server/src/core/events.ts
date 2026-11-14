@@ -32,6 +32,8 @@ export const EVENT_TYPES: Record<string, { category: EventCategory; label: strin
   'page.properties_changed': { category: 'content', label: 'Eigenschaften geändert' },
   'page.restrictions_changed': { category: 'security', label: 'Seiteneinschränkungen geändert' },
   'page.verified': { category: 'content', label: 'Seite als aktuell bestätigt' },
+  // Bewusst nicht im Aktivitätsfeed: Der Inhalt der aktuellen Fassung wurde ohne neue Version ersetzt – das Audit-Log hält fest, von wem.
+  'page.stamp_updated': { category: 'system', label: 'Stand der Seite nachgeführt (ohne neue Version)' },
   'page.review_cycle_changed': { category: 'content', label: 'Wiedervorlage geändert' },
   'page.edit_mode_changed': { category: 'content', label: 'Bearbeitungsmodus geändert' },
   'page.read_requirement_changed': { category: 'admin', label: 'Lesebestätigung angefordert oder geändert' },

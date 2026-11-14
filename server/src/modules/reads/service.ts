@@ -101,6 +101,14 @@ export class ReadConfirmationService {
     return this.s.db.get<RequirementRow>('SELECT * FROM read_requirements WHERE page_id = ?', pageId);
   }
 
+  /**
+   * Hängt an dieser Fassung eine Lesebestätigung – verlangt oder schon abgegeben (Nachweise bleiben auch ohne
+   * Anforderung bestehen)? Dann steht ihr Inhalt für das, was bestätigt wird, und darf nicht still ersetzt werden.
+   */
+  bindsVersion(pageId: number, version: number): boolean {
+    return !!this.row(pageId) || !!this.s.db.value('SELECT 1 FROM read_confirmations WHERE page_id = ? AND version = ? LIMIT 1', pageId, version);
+  }
+
   private audience(row: RequirementRow): AudienceEntry[] {
     return parseJson<AudienceEntry[]>(row.audience, []);
   }
