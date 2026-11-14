@@ -47,6 +47,7 @@ Macros are dynamic building blocks. In the editor you configure them via the gea
 | **Callout** | Info, note, tip, warning or error – change the colour by clicking the icon |
 | **Expand** | Content that is only expanded when needed |
 | **Status** | Coloured label such as <span data-type="status" data-color="green">DONE</span> – click to change text and colour |
+| **Page date stamp** | Shows the date of the page in the text, e.g. "As of: 14/11/2026, 13:36" – the last change, the last confirmation ("confirmed as up to date") or the later of the two. The date updates itself; click to choose date, label, time and name |
 | **Table of contents** | Generated automatically from the headings |
 | **Child pages** | List of child pages with adjustable depth and sorting |
 | **Include page** | Shows the content of another page (single source of truth) |

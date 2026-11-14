@@ -675,6 +675,7 @@ export const EN_TEXTS: Record<string, string> = {
   'Inhalt': 'Contents',
   'Keine Unterseiten': 'No child pages',
   'Eingebundene Seite nicht verfügbar': 'Included page not available',
+  'noch nicht bestätigt': 'not confirmed yet',
   'Datum': 'Date',
   'Autor': 'Author',
   'Änderung': 'Change',

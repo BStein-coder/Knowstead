@@ -5,6 +5,7 @@ import { Suggestion, type SuggestionProps } from '@tiptap/suggestion';
 import { PluginKey } from '@tiptap/pm/state';
 import {
   AlertOctagon,
+  CalendarCheck,
   CalendarDays,
   CheckCircle2,
   ChevronRightSquare,
@@ -238,6 +239,15 @@ export function slashItems(ctx: SlashContext): SlashItem[] {
       icon: icon(Tag),
       keywords: 'status lozenge etikett label',
       run: (e, r) => block(e, r).insertContent({ type: 'status', attrs: { text: t('macros.statusDefault').toUpperCase(), color: 'blue' } }).insertContent(' ').run(),
+    },
+    {
+      id: 'stand',
+      title: t('macros.stand'),
+      description: t('macros.standDesc'),
+      group: g('macros'),
+      icon: icon(CalendarCheck),
+      keywords: 'stand datum uhrzeit aktualisiert geändert bestätigt geprüft as of date updated verified',
+      run: (e, r) => block(e, r).insertContent({ type: 'pageStand' }).insertContent(' ').run(),
     },
     { id: 'toc', title: t('macros.toc'), description: t('macros.tocDesc'), group: g('macros'), icon: icon(ListTree), keywords: 'inhaltsverzeichnis toc inhalt', run: insertMacro('toc') },
     { id: 'children', title: t('macros.children'), description: t('macros.childrenDesc'), group: g('macros'), icon: icon(FolderTree), keywords: 'unterseiten children kinder', run: insertMacro('children') },

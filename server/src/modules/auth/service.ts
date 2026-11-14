@@ -10,6 +10,14 @@ import { HttpError, badRequest, forbidden, unauthorized } from '../../core/error
 import { renderMail } from '../mail/templates.ts';
 import { localeOfPreferences } from '../../core/i18n.ts';
 import { forgetSubject, rememberRowId } from '../../core/subjects.ts';
+import { LoginThrottle } from './throttle.ts';
+
+/**
+ * Das ganze Konto wird erst gesperrt, wenn – über alle Absender hinweg – das Zehnfache der erlaubten Fehlversuche
+ * zusammenkommt, ohne dass sich die Person zwischendurch anmeldet. Das fängt verteiltes Raten ab; ein einzelner
+ * Absender ist lange vorher für sich gesperrt (`LoginThrottle`).
+ */
+export const ACCOUNT_LOCK_FACTOR = 10;
 
 export const SESSION_COOKIE = 'knowstead_session';
 
@@ -78,6 +86,8 @@ export class AuthService {
   private readonly s: Services;
   private readonly touched = new Map<string, number>();
   private cachedSetupCode: string | null = null;
+  /** Fehlversuche je Konto und Absender */
+  readonly throttle = new LoginThrottle();
 
   constructor(s: Services) {
     this.s = s;
@@ -225,9 +235,23 @@ export class AuthService {
       return unauthorized('Benutzername oder Passwort ist falsch');
     };
 
+    // Bremse je Konto und Absender – vor jeder Prüfung, auch vor der Anfrage ans Verzeichnis. Ein unbekannter Name
+    // wird genauso gebremst wie ein Konto: An der Sperre lässt sich nicht ablesen, ob es das Konto gibt.
+    const lockMs = settings.lockMinutes * 60000;
+    const key = LoginThrottle.key(user?.id, login, auth.ip);
+    const tooMany = (ms: number) => new HttpError(429, 'locked', `Zu viele Fehlversuche. Bitte in ${Math.max(1, Math.ceil(ms / 60000))} Minute(n) erneut versuchen.`);
+    const wait = this.throttle.lockedFor(key);
+    if (wait > 0) {
+      this.s.emit(auth, { type: 'auth.login_failed', target: { type: 'user', id: user?.id ?? 0, label: user?.username ?? login.slice(0, 80) }, data: { reason: 'locked', scope: 'source' } });
+      throw tooMany(wait);
+    }
+    const countFailure = () => this.throttle.fail(key, settings.maxLoginAttempts, lockMs);
+
     // 1. Verzeichnisanmeldung (Active Directory/LDAP), sofern eingerichtet.
     if (this.s.directory.isEnabled() && (!user || user.auth_source === 'ldap' || !user.password_hash)) {
       const profile = await this.s.directory.authenticate(login, password).catch((err) => {
+        // Nur ein abgelehntes Kennwort zählt als Fehlversuch – nicht ein unerreichbares Verzeichnis
+        if (err instanceof HttpError && err.status === 401) countFailure();
         this.s.emit(auth, {
           type: 'auth.login_failed',
           target: { type: 'user', id: user?.id ?? 0, label: user?.username ?? login.slice(0, 80) },
@@ -238,6 +262,7 @@ export class AuthService {
       if (profile) {
         const row = this.s.directory.syncUser(profile);
         if (row.status !== 'active') throw forbidden('Dieses Konto ist deaktiviert. Bitte wende dich an einen Administrator.');
+        this.throttle.clear(key);
         this.s.db.run('UPDATE users SET failed_logins = 0, locked_until = NULL, last_login_at = ? WHERE id = ?', nowIso(), row.id);
         this.s.emit(
           { ...auth, user: { id: row.id, username: row.username, displayName: row.display_name, email: row.email, kind: row.kind, avatarColor: row.avatar_color, preferences: {} } },
@@ -245,35 +270,37 @@ export class AuthService {
         );
         return row;
       }
-      if (!settings.directory.allowLocalLogin) throw fail('directory_unknown', user);
+      if (!settings.directory.allowLocalLogin) {
+        countFailure();
+        throw fail('directory_unknown', user);
+      }
     }
 
     // 2. Lokales Konto mit Passwort.
     if (!user || user.kind === 'bot' || !user.password_hash) {
       // Antwortzeit angleichen: Sonst ließe sich an der Dauer ablesen, ob ein Konto existiert.
       await dummyPasswordCheck(password);
+      countFailure();
       throw fail('unknown_user', user);
     }
+    // Sperre des ganzen Kontos – nur noch nach sehr vielen Fehlversuchen aus vielen Richtungen (siehe unten)
     if (user.locked_until && user.locked_until > nowIso()) {
-      const minutes = Math.max(1, Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 60000));
-      this.s.emit(auth, { type: 'auth.login_failed', target: { type: 'user', id: user.id, label: user.username }, data: { reason: 'locked' } });
-      throw new HttpError(429, 'locked', `Zu viele Fehlversuche. Bitte in ${minutes} Minute(n) erneut versuchen.`);
+      this.s.emit(auth, { type: 'auth.login_failed', target: { type: 'user', id: user.id, label: user.username }, data: { reason: 'locked', scope: 'account' } });
+      throw tooMany(new Date(user.locked_until).getTime() - Date.now());
     }
     if (!(await verifyPasswordAsync(password, user.password_hash))) {
+      const sourceLocked = countFailure();
       const attempts = user.failed_logins + 1;
-      const lock = attempts >= settings.maxLoginAttempts;
-      this.s.db.run(
-        'UPDATE users SET failed_logins = ?, locked_until = ? WHERE id = ?',
-        lock ? 0 : attempts,
-        lock ? new Date(Date.now() + settings.lockMinutes * 60000).toISOString() : null,
-        user.id,
-      );
-      throw fail(lock ? 'locked_now' : 'bad_password', user);
+      const lock = attempts >= settings.maxLoginAttempts * ACCOUNT_LOCK_FACTOR;
+      this.s.db.run('UPDATE users SET failed_logins = ?, locked_until = ? WHERE id = ?', lock ? 0 : attempts, lock ? new Date(Date.now() + lockMs).toISOString() : null, user.id);
+      throw fail(lock ? 'locked_now' : sourceLocked ? 'source_locked_now' : 'bad_password', user);
     }
     if (user.status !== 'active') throw forbidden('Dieses Konto ist deaktiviert. Bitte wende dich an einen Administrator.');
     if (user.registration_pending_at) {
       throw new HttpError(403, 'email_unverified', 'Bitte bestätige zuerst deine E-Mail-Adresse – den Link dazu haben wir dir per E-Mail geschickt.');
     }
+    // Nur dieser Absender beginnt neu – wer von anderswo rät, bleibt gebremst
+    this.throttle.clear(key);
     this.s.db.run('UPDATE users SET failed_logins = 0, locked_until = NULL, last_login_at = ? WHERE id = ?', nowIso(), user.id);
     // Ältere, schwächere Hashes beim Anmelden unbemerkt auf die aktuellen Parameter heben
     if (needsRehash(user.password_hash)) this.s.db.run('UPDATE users SET password_hash = ? WHERE id = ?', hashPassword(password), user.id);

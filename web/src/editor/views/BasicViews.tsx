@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import { AlertOctagon, CheckCircle2, Copy, Info, Lightbulb, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { usePage } from '../../api/hooks';
+import type { Page, UserRef } from '../../api/types';
 import { useI18n } from '../../i18n';
-import { Input, Popover, cx } from '../../components/ui';
+import { Checkbox, Field, Input, Popover, cx } from '../../components/ui';
+import { useDoc } from '../context';
 import { COMMON_LANGUAGES } from '../render';
 
 /* ------------------------------ Hinweisbox ------------------------------ */
@@ -108,6 +111,92 @@ export function StatusView(props: NodeViewProps) {
               </button>
             ))}
           </div>
+        </div>
+      </Popover>
+    </NodeViewWrapper>
+  );
+}
+
+/* ------------------------------ Stand der Seite ------------------------------ */
+
+export const STAND_SOURCES = ['auto', 'updated', 'verified'] as const;
+export type StandSource = (typeof STAND_SOURCES)[number];
+
+/**
+ * Welches Datum der Baustein „Stand“ zeigt: die letzte Änderung, die letzte Bestätigung („als aktuell bestätigt“,
+ * Wiedervorlage) oder – Vorgabe – das spätere von beiden. Dieselbe Regel gilt im Export (`TransferService.renderStatic`).
+ */
+export function resolveStand(page: Pick<Page, 'updatedAt' | 'updatedBy' | 'reviewCycle'>, source: StandSource): { at: string; by: UserRef | null } | null {
+  const updated = { at: page.updatedAt, by: page.updatedBy };
+  const verified = page.reviewCycle?.verifiedAt ? { at: page.reviewCycle.verifiedAt, by: page.reviewCycle.verifiedBy } : null;
+  if (source === 'updated') return updated;
+  if (source === 'verified') return verified;
+  return verified && verified.at > updated.at ? verified : updated;
+}
+
+/**
+ * „Stand: 14.11.2026, 13:36“ – das Datum kommt aus der Seite selbst und stimmt deshalb immer; niemand muss es pflegen,
+ * und es entsteht nie eine Version dafür. In eingebundenen Seiten zeigt der Baustein den Stand der eingebundenen Seite.
+ */
+export function PageStandView(props: NodeViewProps) {
+  const { t, fmt } = useI18n();
+  const doc = useDoc();
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const attrs = props.node.attrs as { source: string; time: boolean; person: boolean; label: string };
+  const source: StandSource = STAND_SOURCES.includes(attrs.source as StandSource) ? (attrs.source as StandSource) : 'auto';
+  const { data: page, isError } = usePage(doc.pageId ?? undefined, { render: false });
+  const stand = page ? resolveStand(page, source) : null;
+  const value = !doc.pageId
+    ? t('macros.standNoPage')
+    : isError
+      ? '–'
+      : !page
+        ? '…'
+        : !stand
+          ? t('macros.standNever')
+          : `${attrs.time ? fmt.dateTime(stand.at) : fmt.date(stand.at)}${attrs.person && stand.by ? ` · ${stand.by.displayName}` : ''}`;
+  const text = `${attrs.label || t('macros.standLabel')}: ${value}`;
+  const editable = props.editor.isEditable;
+  return (
+    <NodeViewWrapper as="span" style={{ display: 'inline' }}>
+      {editable ? (
+        <button ref={setAnchor} type="button" className="page-stand" contentEditable={false} title={t('macros.standHint')} onClick={() => setOpen(true)}>
+          {text}
+        </button>
+      ) : (
+        <span className="page-stand" title={t(`macros.standSources.${source}`)}>
+          {text}
+        </span>
+      )}
+      <Popover anchor={anchor} open={open} onClose={() => setOpen(false)}>
+        <div style={{ padding: '0.75rem', width: 280 }} className="col">
+          <Field label={t('macros.standSource')}>
+            <select className="input select" value={source} onChange={(e) => props.updateAttributes({ source: e.target.value })}>
+              {STAND_SOURCES.map((s) => (
+                <option key={s} value={s}>
+                  {t(`macros.standSources.${s}`)}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t('macros.standCustomLabel')}>
+            <Input
+              value={attrs.label}
+              maxLength={40}
+              placeholder={t('macros.standLabel')}
+              onChange={(e) => props.updateAttributes({ label: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === 'Escape') {
+                  e.preventDefault();
+                  setOpen(false);
+                  props.editor.commands.focus();
+                }
+              }}
+            />
+          </Field>
+          <Checkbox checked={!!attrs.time} onChange={(time) => props.updateAttributes({ time })} label={t('macros.standTime')} />
+          <Checkbox checked={!!attrs.person} onChange={(person) => props.updateAttributes({ person })} label={t('macros.standPerson')} />
         </div>
       </Popover>
     </NodeViewWrapper>

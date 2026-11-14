@@ -229,7 +229,7 @@ function UserDetailDialog({ id, onClose, onChanged }: { id: number; onClose: () 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['admin-user', id],
     queryFn: () =>
-      api.get<{ user: User; tokens: ApiToken[]; sessions: number; lockedUntil: string | null; registrationPendingAt: string | null }>(`/api/v1/admin/users/${id}`),
+      api.get<{ user: User; tokens: ApiToken[]; sessions: number; lockedUntil: string | null; sourceLocks: { count: number; until: string | null }; registrationPendingAt: string | null }>(`/api/v1/admin/users/${id}`),
   });
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -336,6 +336,11 @@ function UserDetailDialog({ id, onClose, onChanged }: { id: number; onClose: () 
           {data.lockedUntil && new Date(data.lockedUntil) > new Date() && (
             <Alert variant="warning" title={t('adminUsers.locked')} action={<Button size="sm" icon={Unlock} onClick={() => void call(() => api.post(`/api/v1/admin/users/${id}/unlock`))}>{t('adminUsers.unlock')}</Button>}>
               {t('adminUsers.lockedText')} <Time value={data.lockedUntil} mode="datetime" />.
+            </Alert>
+          )}
+          {data.sourceLocks.count > 0 && (
+            <Alert variant="info" title={t('adminUsers.sourceLocked', { count: data.sourceLocks.count })} action={<Button size="sm" icon={Unlock} onClick={() => void call(() => api.post(`/api/v1/admin/users/${id}/unlock`))}>{t('adminUsers.unlock')}</Button>}>
+              {t('adminUsers.sourceLockedText')} <Time value={data.sourceLocks.until} mode="datetime" />.
             </Alert>
           )}
           {u.kind === 'user' && (

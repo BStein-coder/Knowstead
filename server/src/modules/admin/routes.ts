@@ -126,6 +126,8 @@ export async function adminRoutes(app: App, s: Services): Promise<void> {
       tokens: s.tokens.listForUser(row.id),
       sessions: s.db.value<number>('SELECT COUNT(*) FROM sessions WHERE user_id = ? AND expires_at > ?', row.id, new Date().toISOString()) ?? 0,
       lockedUntil: row.locked_until,
+      // Sperren einzelner Absender (Fehlversuche von dort) – das Konto selbst ist dabei offen
+      sourceLocks: s.auth.throttle.lockedSources(row.id),
       registrationPendingAt: row.registration_pending_at,
     };
   });
@@ -224,6 +226,7 @@ export async function adminRoutes(app: App, s: Services): Promise<void> {
     s.perms.requireGlobal(req.auth, 'users.manage');
     s.users.requireManageable(req.auth, req.params.id);
     s.db.run('UPDATE users SET failed_logins = 0, locked_until = NULL, registration_pending_at = NULL WHERE id = ?', req.params.id);
+    s.auth.throttle.clearUser(req.params.id);
     return { ok: true };
   });
 

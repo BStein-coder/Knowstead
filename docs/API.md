@@ -175,7 +175,8 @@ curl -X POST https://knowstead.example.com/api/v1/pages \
 ```
 
 - `format: "markdown"` wandelt den Inhalt in Editor-HTML um (inklusive Hinweisboxen, Aufgabenlisten,
-  Mermaid-Blöcken und `<!-- toc -->`). Ohne `format` wird `content` als HTML verstanden.
+  Mermaid-Blöcken, `<!-- toc -->` und `<!-- stand -->` für den Baustein „Stand der Seite“). Ohne `format` wird
+  `content` als HTML verstanden.
 - `contentType` steuert den Seitentyp: `richtext` (Standard), `markdown` (Quelltext bleibt Markdown),
   `code` (zusätzlich `language`).
 - `status: "draft"` legt einen Entwurf an, der nur für dich sichtbar ist.

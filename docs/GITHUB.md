@@ -99,6 +99,14 @@ Knopfdruck (*Actions → CI → Run workflow*):
 
 Scheitert ein Test, enthält das Artefakt `playwright-report` Screenshots und Traces des Fehlers.
 
+Zusätzlich läuft **montags** der Workflow `.github/workflows/audit.yml` („Abhängigkeiten prüfen“, auch auf
+Knopfdruck). Er meldet schon Sicherheitshinweise **mittlerer** Stufe in den Laufzeitabhängigkeiten – die CI schlägt
+erst ab „hoch“ an, damit nicht jede Meldung jeden Push aufhält. Der Lauf blockiert nichts: Er schlägt nur selbst
+fehl, GitHub benachrichtigt dann per E-Mail, und die Meldungen stehen in der Zusammenfassung des Laufs (dort auch,
+nur zur Information, die Hinweise zu Entwicklungs- und Testwerkzeugen). Meist genügt danach `npm audit fix` – anschließend
+ansehen, welche Pakete sich in der Lock-Datei geändert haben, und die Tests laufen lassen. GitHub schaltet Zeitpläne ab, wenn im Repository 60 Tage nichts geschieht – dann unter
+*Actions* wieder einschalten.
+
 ## 6. Versionen veröffentlichen
 
 1. Die Änderungen unter *Unveröffentlicht* in `CHANGELOG.md` eintragen. Dann die Version überall setzen –

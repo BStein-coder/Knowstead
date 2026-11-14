@@ -9,6 +9,42 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
+## [Unveröffentlicht]
+
+### Neu
+
+- **Baustein „Stand der Seite“** (`/stand` im Editor): zeigt im Text das Datum der Seite – die letzte Änderung, die
+  letzte Bestätigung („als aktuell bestätigen“ in der Wiedervorlage) oder, als Vorgabe, das spätere von beiden. Das
+  Datum kommt beim Anzeigen aus der Seite selbst: Es stimmt immer, niemand muss es pflegen, und ein neuer Stand ändert
+  den Inhalt nicht – es entsteht also nie eine Version dafür. Per Klick einstellbar: welches Datum, eigene Beschriftung
+  (z. B. „Gültig seit“), mit oder ohne Uhrzeit, mit Namen der Person. In eingebundenen Seiten zeigt der Baustein den
+  Stand der eingebundenen Seite. In Exporten (PDF, Word, HTML, Markdown) steht das Datum als Text – die Uhrzeit mit der
+  Zeitzone des Servers, weil dieser die Zeitzone der Lesenden nicht kennt. Über die Schnittstelle fügt ihn
+  `<!-- stand -->` in Markdown ein. Die Erkennung des getippten „Stand: …“ (seit 2.2.6) bleibt für vorhandene Seiten.
+
+### Geändert
+
+- **Fehlversuche bei der Anmeldung sperren den Absender, nicht mehr das Konto.** Bisher sperrte sich das Konto nach
+  den eingestellten Fehlversuchen für alle – wer einen Benutzernamen kannte, konnte die Person mit ein paar falschen
+  Kennwörtern aussperren, beliebig oft. Jetzt zählt jeder Absender für sich (IPv4-Adresse bzw. IPv6-Anschluss): Gesperrt
+  wird nur er, die Person meldet sich von ihrem Gerät weiter an. Ein erfundener Name wird genauso gebremst – die Sperre
+  verrät also nicht, ob es ein Konto gibt –, und die Bremse greift auch vor der Anfrage an das Verzeichnis (LDAP/AD).
+  Das ganze Konto wird erst gesperrt, wenn über alle Absender hinweg das Zehnfache der eingestellten Fehlversuche
+  zusammenkommt, ohne dass sich die Person zwischendurch anmeldet. Die Benutzerverwaltung zeigt Sperren einzelner
+  Absender an und hebt sie mit „Entsperren“ auf; ein neues Kennwort hebt sie ebenfalls auf. Die Zählung liegt im
+  Arbeitsspeicher (keine Adressen in der Datenbank) und beginnt nach einem Neustart neu. **Zu beachten:** Verteiltes
+  Raten hat damit je Konto mehr Versuche als bisher (höchstens das Zehnfache je Sperrdauer); hinter einem Reverse-Proxy
+  braucht es ein passendes `TRUST_PROXY`, sonst gelten alle Anmeldungen als ein Absender – dann trifft die Sperre wie
+  bisher alle.
+- Einstellungen: Das Feld „Fehlversuche bis zur Sperre“ ließ 1 und 2 zu, der Server verlangt mindestens 3 – die
+  Oberfläche nennt jetzt dieselbe Grenze.
+
+### Betrieb
+
+- **Wöchentlicher Lauf „Abhängigkeiten prüfen“** (`.github/workflows/audit.yml`): meldet schon Sicherheitshinweise
+  mittlerer Stufe in den Laufzeitabhängigkeiten. Die CI schlägt weiterhin erst ab „hoch“ an; der neue Lauf blockiert
+  nichts, er schlägt nur selbst fehl und benachrichtigt so die Betreuenden.
+
 ## [2.2.8] – 2026-11-14
 
 Korrekturen aus einer erneuten Durchsicht. Wer 2.2.6 oder 2.2.7 mit Prüfpflicht, Freigaben oder Lesebestätigungen

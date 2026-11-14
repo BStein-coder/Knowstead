@@ -52,13 +52,12 @@ function parseMarkdown(markdown: string): string {
 /**
  * Markdown → HTML im Format des Knowstead-Editors.
  * Unterstützt GFM, GitHub-Hinweise (`> [!NOTE]`), Mermaid-Blöcke,
- * Aufgabenlisten und `<!-- toc -->` als Inhaltsverzeichnis-Makro.
+ * Aufgabenlisten, `<!-- toc -->` als Inhaltsverzeichnis-Makro und `<!-- stand -->` als Stand der Seite.
  */
 export function markdownToHtml(markdown: string): string {
-  const raw = parseMarkdown(markdown.replace(/^\uFEFF/, '')).replace(
-    /<!--\s*toc\s*-->/gi,
-    '<div data-type="toc"></div>',
-  );
+  const raw = parseMarkdown(markdown.replace(/^\uFEFF/, ''))
+    .replace(/<!--\s*toc\s*-->/gi, '<div data-type="toc"></div>')
+    .replace(/<!--\s*stand\s*-->/gi, '<span data-type="page-stand"></span>');
   // <pre> nicht als Rohtext behandeln, damit Codeblöcke (z. B. Mermaid) als Elemente erreichbar sind.
   const root = parse(raw, { blockTextElements: { script: true, noscript: true, style: true } });
 
@@ -171,6 +170,10 @@ function getTurndown(): TurndownService {
     filter: (node) => (node as HTMLElement).getAttribute?.('data-type') === 'status',
     replacement: (content) => `**[${content.trim()}]**`,
   });
+  td.addRule('pageStand', {
+    filter: (node) => (node as HTMLElement).getAttribute?.('data-type') === 'page-stand',
+    replacement: () => '<!-- stand -->',
+  });
   td.addRule('details', {
     filter: ['details'],
     replacement: (content, node) => {
@@ -193,6 +196,12 @@ function getTurndown(): TurndownService {
   return td;
 }
 
+/**
+ * Der Baustein „Stand der Seite“ ist ein leeres Element im Fließtext. Leere Elemente verwirft Turndown samt dem
+ * Leerraum daneben – mit einem Platzhalter als Inhalt bleibt der Abstand zum Text erhalten.
+ */
+const EMPTY_STAND = /(<span\b[^>]{0,400}\bdata-type="page-stand"[^>]{0,400}>)(<\/span>)/g;
+
 export function htmlToMarkdown(html: string): string {
-  return getTurndown().turndown(html || '').trim() + '\n';
+  return getTurndown().turndown((html || '').replace(EMPTY_STAND, '$1stand$2')).trim() + '\n';
 }

@@ -363,6 +363,8 @@ export class UserService {
       nowIso(),
       id,
     );
+    // Mit dem neuen Kennwort beginnt auch die Zählung der Fehlversuche neu
+    this.s.auth.throttle.clearUser(id);
   }
 
   setStatus(id: number, status: 'active' | 'disabled', auth: AuthContext): void {

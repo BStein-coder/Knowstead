@@ -135,3 +135,12 @@ export function localeOfPreferences(preferences: Record<string, unknown> | null 
 export function formatDay(value: string | Date, locale: Locale): string {
   return new Date(value).toLocaleDateString(locale === 'en' ? 'en-GB' : 'de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
+
+/**
+ * Datum und Uhrzeit mit Zeitzone – für Exporte: Der Server kennt die Zeitzone der Lesenden nicht, deshalb steht dabei,
+ * in welcher die Uhrzeit gemeint ist (die des Servers).
+ */
+export function formatDayTime(value: string | Date, locale: Locale): string {
+  const date = new Date(value);
+  return `${formatDay(date, locale)}, ${date.toLocaleTimeString(locale === 'en' ? 'en-GB' : 'de-DE', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}`;
+}

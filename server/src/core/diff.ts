@@ -19,6 +19,7 @@ const ATOM_LABELS: Record<string, string> = {
   'block-math': 'Formel',
   'inline-math': 'Formel',
   changelog: 'Änderungshistorie',
+  'page-stand': 'Stand der Seite',
   'recent-pages': 'Zuletzt geändert',
   'properties-report': 'Eigenschaften-Bericht',
   attachments: 'Anhänge',

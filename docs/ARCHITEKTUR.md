@@ -523,7 +523,7 @@ DOMPurify bereinigt, bevor es angezeigt oder in den Editor übernommen wird.
   Bilder als JSON in `data-items` ab; beim Anzeigen werden nur Quellen aus `http(s)`, relativen
   Pfaden und `data:image/...` akzeptiert.
 - **Markdown-Brücke**: `core/markdown.ts` wandelt Markdown nach Editor-HTML (inklusive
-  GitHub-Hinweisboxen, Aufgabenlisten, Mermaid-Blöcken, `<!-- toc -->`) und über Turndown zurück.
+  GitHub-Hinweisboxen, Aufgabenlisten, Mermaid-Blöcken, `<!-- toc -->`, `<!-- stand -->`) und über Turndown zurück.
   Das ist die Grundlage für Import, Export und die Handbuch-Auslieferung.
 - **Vergleich**: `core/diff.ts` erzeugt für Rich-Text einen Wort-Diff über HTML-Token
   (`<ins>`/`<del>`, Makros als Marker) und für Markdown/Code einen Zeilen-Diff.
@@ -559,7 +559,7 @@ DOMPurify bereinigt, bevor es angezeigt oder in den Editor übernommen wird.
 
 | Thema | Umsetzung |
 | --- | --- |
-| Passwörter | scrypt (N = 2^15, r = 8, p = 1) mit Zufallssalz, Prüfung im Thread-Pool, ältere Hashes werden beim Anmelden erneuert, gleiche Antwortzeit für unbekannte Konten, Sperre nach konfigurierbarer Fehlversuchszahl |
+| Passwörter | scrypt (N = 2^15, r = 8, p = 1) mit Zufallssalz, Prüfung im Thread-Pool, ältere Hashes werden beim Anmelden erneuert, gleiche Antwortzeit für unbekannte Konten, Bremse nach konfigurierbarer Fehlversuchszahl je Konto und Absender (`modules/auth/throttle.ts`, im Arbeitsspeicher; auch für unbekannte Namen), Sperre des ganzen Kontos erst beim Zehnfachen |
 | Passwort zurücksetzen | Link mit 256-Bit-Geheimnis (nur Hash gespeichert), befristet, einmalig – das Benutzen entwertet alle offenen Links der Person; nicht für Verzeichniskonten |
 | Kontenverwaltung | `users.manage` ohne `admin` darf Administratorkonten weder ändern noch sperren, löschen, entsperren, ihr Passwort setzen oder Rücksetz-Links und Einladungen erzeugen (`UserService.requireManageable`) – und allgemein nichts weitergeben, was es selbst nicht hat: Gruppen anlegen/ändern, Mitglieder setzen, Konten in Gruppen anlegen und Konten mit fremden Rechten verwalten brauchen alle dort vergebenen Rechte (`PermissionService.uncovered`, `GroupService.requireDelegable`) |
 | Ersteinrichtung | Solange kein Konto existiert, verlangt `POST /setup` den Einrichtungscode aus dem Serverprotokoll (zufällig je Prozess, zeitkonstanter Vergleich) – außer bei Anfragen direkt vom Server: Socket-Adresse localhost und keine Proxy-Header, damit `X-Forwarded-For` nichts vortäuschen kann |

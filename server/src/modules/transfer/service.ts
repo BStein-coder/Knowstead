@@ -15,7 +15,7 @@ import { MAX_CONTENT_BYTES, toDisplayHtml } from '../pages/content.ts';
 import { pageUrl } from '../pages/service.ts';
 import { SPACE_KEY_RE } from '../spaces/service.ts';
 import { parseFrontMatter, writeFrontMatter } from './frontmatter.ts';
-import { formatDay, translate, type Locale } from '../../core/i18n.ts';
+import { formatDay, formatDayTime, translate, type Locale } from '../../core/i18n.ts';
 import { LEGACY_ARCHIVE_FILE, LEGACY_ARCHIVE_FORMAT } from '../../core/legacy.ts';
 
 /** Beschreibungsdatei und Formatkennung eines Bereichsarchivs. Archive aus Versionen bis 1.9 heißen noch anders. */
@@ -181,6 +181,23 @@ export class TransferService {
         }
         case 'status': {
           el.setAttribute('class', 'status');
+          break;
+        }
+        case 'page-stand': {
+          // Dieselbe Regel wie in der Oberfläche (`resolveStand`): letzte Änderung, letzte Bestätigung oder das spätere
+          const source = el.getAttribute('data-source') ?? 'auto';
+          const updated = { at: page.updated_at, by: page.updated_by };
+          const verified = page.verified_at ? { at: page.verified_at, by: page.verified_by } : null;
+          const stand = source === 'updated' ? updated : source === 'verified' ? verified : verified && verified.at > updated.at ? verified : updated;
+          let value = tr('noch nicht bestätigt');
+          if (stand) {
+            value = el.getAttribute('data-time') === 'false' ? formatDay(stand.at, locale) : formatDayTime(stand.at, locale);
+            const person = el.getAttribute('data-person') === 'true' ? this.s.users.refOf(stand.by) : null;
+            if (person) value += ` · ${person.displayName}`;
+          }
+          // Wie in der Oberfläche „Stand“ bzw. „As of“ (das Wort „Stand“ der Fußzeile heißt im Englischen „Date“)
+          const label = el.getAttribute('data-label') || (locale === 'en' ? 'As of' : 'Stand');
+          el.replaceWith(`<span class="page-stand">${escapeHtml(`${label}: ${value}`)}</span>`);
           break;
         }
         case 'plugin-macro': {

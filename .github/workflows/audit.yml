@@ -1,0 +1,51 @@
+# Wöchentlicher Blick auf die Abhängigkeiten: meldet schon Sicherheitshinweise mittlerer Stufe in der Laufzeit.
+# Die CI (ci.yml) schlägt erst ab „hoch“ an, damit nicht jede Meldung jeden Push aufhält – mittlere blieben dort
+# unbemerkt. Dieser Lauf blockiert nichts: Er schlägt nur selbst fehl, und GitHub benachrichtigt dann die Betreuenden.
+# Die Meldungen stehen in der Zusammenfassung des Laufs. Hinweis: GitHub schaltet Zeitpläne in Repositorys ab, in
+# denen 60 Tage lang nichts geschieht – dann unter „Actions“ wieder einschalten.
+name: Abhängigkeiten prüfen
+
+on:
+  schedule:
+    # montags 05:17 UTC
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: npm audit (Laufzeit ab mittlerer Stufe)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # npm audit liest die Lock-Datei – eine Installation ist dafür nicht nötig
+      - name: Alle Abhängigkeiten, auch Entwicklungs- und Testwerkzeuge (nur zur Information)
+        run: |
+          {
+            echo '### Alle Abhängigkeiten, auch Entwicklungswerkzeuge – nur zur Information'
+            echo '```'
+            npm audit --audit-level=moderate || true
+            echo '```'
+            echo '### Oberflächentests (e2e) – nur zur Information'
+            echo '```'
+            npm --prefix e2e audit --audit-level=moderate || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY" 2>&1
+      - name: Laufzeit – ab mittlerer Stufe schlägt der Lauf fehl
+        run: |
+          status=0
+          npm audit --omit=dev --audit-level=moderate > audit.txt 2>&1 || status=$?
+          {
+            echo '### Laufzeit (das, was im Paket ausgeliefert wird)'
+            echo '```'
+            cat audit.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat audit.txt
+          exit "$status"

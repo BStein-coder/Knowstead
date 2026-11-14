@@ -350,6 +350,28 @@ button.callout-icon:hover {
   background: var(--info-soft);
 }
 
+/* Stand der Seite: liest sich wie Text; im Editor zeigt die gestrichelte Linie, dass es ein Baustein ist */
+.page-stand {
+  font: inherit;
+  color: inherit;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+button.page-stand {
+  padding: 0 0.15em;
+  border: none;
+  border-bottom: 1px dashed var(--border-strong, currentColor);
+  border-radius: 3px 3px 0 0;
+  background: var(--bg-muted);
+  cursor: pointer;
+}
+
+button.page-stand:hover,
+button.page-stand:focus-visible {
+  background: var(--accent-soft, var(--bg-muted));
+}
+
 /* Status-Etiketten */
 .status-lozenge {
   display: inline-flex;

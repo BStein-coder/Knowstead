@@ -528,8 +528,16 @@ Bereichseinstellungen unter „Eingeschränkte Seiten“ aufgelistet.
 - **Benutzer** melden sich mit Passwort oder über das Verzeichnis an.
 - **Dienstkonten** (Typ „bot“) haben kein Passwort und dienen Automatisierungen – Tokens dafür legt
   ein Administrator an (Administration → Benutzer → Konto → Token erzeugen).
-- Nach zu vielen Fehlversuchen sperrt sich ein Konto vorübergehend; Administratoren können die Sperre
-  sofort aufheben (auch per `npm run cli -- user:unlock <name>`).
+- Nach zu vielen Fehlversuchen wird vorübergehend **der Absender** für dieses Konto gesperrt – die Adresse, von der
+  die Fehlversuche kommen (bei IPv6 der ganze Anschluss), nicht das Konto. Wer einen Benutzernamen kennt, kann die
+  Person also nicht mehr mit ein paar falschen Kennwörtern aussperren; sie meldet sich von ihrem Rechner weiter an.
+  Ein erfundener Name wird genauso gebremst, die Sperre verrät also kein Konto. Das **ganze Konto** wird erst gesperrt,
+  wenn über alle Absender hinweg das Zehnfache der eingestellten Fehlversuche zusammenkommt, ohne dass sich die Person
+  zwischendurch anmeldet (verteiltes Raten). Administratoren heben beides sofort auf (Benutzer → Sperre aufheben);
+  `npm run cli -- user:unlock <name>` hebt die Sperre des Kontos auf, die Bremse der Absender läuft nach der
+  Sperrdauer von selbst ab. Die Zählung je Absender liegt im Arbeitsspeicher und beginnt nach einem Neustart neu.
+  Hinter einem Reverse-Proxy sieht der Server die echten Adressen nur mit passendem `TRUST_PROXY` – sonst gelten alle
+  Anmeldungen als ein Absender.
 - **Selbstregistrierung** (Einstellungen → Zugriff & Sicherheit): Ist der E-Mail-Versand eingerichtet,
   bestätigen neue Konten ihre Adresse über einen Link und können sich erst danach anmelden. Eine
   Beschränkung auf **E-Mail-Domains** wirkt nur so – ohne E-Mail-Versand ist die Registrierung dann

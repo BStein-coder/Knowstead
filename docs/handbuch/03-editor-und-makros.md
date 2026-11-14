@@ -47,6 +47,7 @@ Makros sind dynamische Bausteine. Im Editor kannst du sie über das Zahnrad-Symb
 | **Hinweisbox** | Info, Notiz, Tipp, Warnung oder Fehler – Farbe per Klick auf das Symbol wechseln |
 | **Aufklappbereich** | Inhalte, die erst bei Bedarf aufgeklappt werden |
 | **Status** | Farbiges Etikett wie <span data-type="status" data-color="green">ERLEDIGT</span> – Text und Farbe per Klick ändern |
+| **Stand der Seite** | Zeigt im Text das Datum der Seite, z. B. „Stand: 14.11.2026, 13:36“ – die letzte Änderung, die letzte Bestätigung („als aktuell bestätigt“) oder das spätere von beiden. Das Datum aktualisiert sich selbst; per Klick wählst du Datum, Beschriftung, Uhrzeit und Namen |
 | **Inhaltsverzeichnis** | Wird automatisch aus den Überschriften erzeugt |
 | **Unterseiten** | Liste der Unterseiten mit einstellbarer Tiefe und Sortierung |
 | **Seite einbinden** | Zeigt den Inhalt einer anderen Seite an (Single Source of Truth) |

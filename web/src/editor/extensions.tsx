@@ -25,7 +25,7 @@ import type { MentionScope } from './mentions';
 import type { TFn } from '../i18n';
 import type { PluginMacro } from '../lib/plugins';
 import { HeadingIds } from './headings';
-import { CalloutView, CodeBlockView, StatusView } from './views/BasicViews';
+import { CalloutView, CodeBlockView, PageStandView, StatusView } from './views/BasicViews';
 import { AttachmentsView, ChangelogView, ChildrenView, IncludePageView, PropertiesReportView, RecentPagesView, TocView } from './views/MacroViews';
 import { EmbedView, MermaidView, PluginMacroView } from './views/EmbedViews';
 import { ApiDataView } from './views/ApiDataView';
@@ -161,6 +161,33 @@ export const Status = Node.create({
   },
   addNodeView() {
     return ReactNodeViewRenderer(StatusView);
+  },
+});
+
+/**
+ * Stand der Seite als Baustein im Text: Der gespeicherte Inhalt nennt nur, was gezeigt werden soll – das Datum selbst
+ * kommt beim Anzeigen aus der Seite. So ändert ein neuer Stand nie den Inhalt (und erzeugt keine Version).
+ */
+export const PageStand = Node.create({
+  name: 'pageStand',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return dataAttrs({ source: 'auto', time: true, person: false, label: '' });
+  },
+  parseHTML() {
+    return [{ tag: 'span[data-type="page-stand"]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['span', mergeAttributes({ 'data-type': 'page-stand' }, HTMLAttributes)];
+  },
+  renderText({ node }) {
+    return `[${(node.attrs.label as string) || 'Stand'}]`;
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(PageStandView);
   },
 });
 
@@ -362,6 +389,7 @@ export function buildExtensions(options: BuildOptions): AnyExtension[] {
     }),
     Callout,
     Status,
+    PageStand,
     Mermaid,
     Toc,
     Children,

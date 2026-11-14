@@ -175,8 +175,8 @@ export function AdminSettings() {
                 <Input type="number" min={1} max={365} value={s.sessionDays} onChange={num('sessionDays')} />
               </Field>
             </div>
-            <Field label={t('adminSettings.attempts')}>
-              <Input type="number" min={1} max={100} value={s.maxLoginAttempts} onChange={num('maxLoginAttempts')} />
+            <Field label={t('adminSettings.attempts')} help={t('adminSettings.attemptsHelp')}>
+              <Input type="number" min={3} max={100} value={s.maxLoginAttempts} onChange={num('maxLoginAttempts')} />
             </Field>
             <Field label={t('adminSettings.lockMinutes')}>
               <Input type="number" min={1} max={1440} value={s.lockMinutes} onChange={num('lockMinutes')} />
