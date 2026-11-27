@@ -9,7 +9,10 @@ Die Versionshinweise sind auch in der Oberfläche unter **Administration → Üb
 > **Bis Version 1.9.0 hieß das Programm „Doku“.** Die Abschnitte bis dahin stehen so da, wie sie
 > geschrieben wurden – mit dem damaligen Namen, den damaligen Dateinamen und Befehlen.
 
-## [Unveröffentlicht]
+## [2.2.9] – 2026-11-27
+
+Ein Baustein „Stand der Seite“, der das Datum selbst pflegt, und eine Anmeldebremse, die nicht mehr das Konto sperrt,
+sondern den Absender der Fehlversuche.
 
 ### Neu
 
